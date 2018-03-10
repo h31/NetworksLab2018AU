@@ -59,8 +59,8 @@ typedef struct client_data {
 void* client_interaction_routine(void* arg) {
 	client_data_t *client_data = (client_data_t*)arg;
 
-	char *buffer = malloc(MAX_STRING_LEN + 1);
-	bzero(buffer, sizeof(char) * (MAX_STRING_LEN + 1));
+	char *buffer = malloc(MAX_MSG_LEN + 1);
+	bzero(buffer, sizeof(char) * (MAX_MSG_LEN + 1));
 
 	while (receive_cstring(client_data->sock, buffer) != 0) {
 		printf("%s\n", buffer);

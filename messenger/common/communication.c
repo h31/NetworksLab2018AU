@@ -4,65 +4,88 @@
 #include <stdio.h>
 #include <string.h>
 
-void send_uint16(int sock, uint16_t data) {
-	char buffer[2] = {data & 0xFF, (data >> 8) & 0xFF};
-
-	if (write(sock, buffer, 2) < 0) {
-		perror("ERROR writing to socket");
+ssize_t send_data(int sock, void *data, size_t size) {
+	if (size > MAX_MSG_LEN) {
+		perror("ERROR: attempt to send long data chunk");
 		exit(1);
 	}
+
+	void *ptr = data;
+	void *end = data + size;
+
+	while (ptr != end) {
+		ssize_t bytes_written = write(sock, ptr, end - ptr);
+		if (bytes_written < 0) {
+			return bytes_written;
+		}
+
+		ptr += bytes_written;
+	}
+
+	return size;
 }
 
-void send_cstring(int sock, char *string) {
+ssize_t send_uint16(int sock, uint16_t data) {
+	uint8_t buffer[2] = {data & 0xFF, (data >> 8) & 0xFF};
+	return send_data(sock, buffer, 2);
+}
+
+ssize_t send_cstring(int sock, char *string) {
 	size_t length = strlen(string);
 
-	if (length > MAX_STRING_LEN) {
-		perror("ERROR: attempt to send a long string");
-		exit(1);
+	ssize_t bytes_written1 = send_uint16(sock, length);
+	if (bytes_written1 < 0) {
+		return bytes_written1;
 	}
 
-	send_uint16(sock, length);
-
-	if (write(sock, string, strlen(string)) < 0) {
-		perror("ERROR writing to socket");
-		exit(1);
+	ssize_t bytes_written2 = send_data(sock, string, length);
+	if (bytes_written2 < 0) {
+		return bytes_written2;
 	}
+
+	return bytes_written1 + bytes_written2;
+}
+
+ssize_t receive_data(int sock, void *data, size_t size) {
+	void *ptr = data;
+	void *end = data + size;
+
+	while (ptr != end) {
+		ssize_t bytes_read = read(sock, ptr, end - ptr);
+		if (bytes_read <= 0) {
+			return bytes_read;
+		}
+
+		ptr += bytes_read;
+	}
+
+	return size;
 }
 
 ssize_t receive_uint16(int sock, uint16_t *data) {
-	char buffer[2];
+	uint8_t buffer[2];
+	ssize_t bytes_read = receive_data(sock, buffer, 2);
 
-	int ret_code = read(sock, buffer, 2);
-	if (ret_code == 0) {
-		return 0;
-	}
-
-	if (ret_code != 2) {
-		perror("ERROR reading from socket");
-		exit(1);
+	if (bytes_read <= 0) {
+		return bytes_read;
 	}
 
 	*data = buffer[0] | (buffer[1] << 8);
-	return ret_code;
+	return bytes_read;
 }
 
-ssize_t receive_cstring(int sock, char *data) {
+ssize_t receive_cstring(int sock, char *string) {
 	uint16_t length;
-	ssize_t ret_code1 = receive_uint16(sock, &length);
-	if (ret_code1 == 0) {
-		return 0;
+	ssize_t bytes_read1 = receive_uint16(sock, &length);
+	if (bytes_read1 <= 0) {
+		return bytes_read1;
 	}
 
-	ssize_t ret_code2 = read(sock, data, length);
-	if (ret_code2 == 0) {
-		return 0;
+	ssize_t bytes_read2 = receive_data(sock, string, length);
+	if (bytes_read2 <= 0) {
+		return bytes_read2;
 	}
 
-	if (ret_code2 != length) {
-		perror("ERROR reading from socket");
-		exit(1);
-	}
-
-	data[length] = 0;
-	return ret_code1 + ret_code2;
+	string[length] = 0;
+	return bytes_read1 + bytes_read2;
 }

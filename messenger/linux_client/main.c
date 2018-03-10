@@ -49,10 +49,10 @@ int main(int argc, char *argv[]) {
 
     int sockfd = connect_to_server(argv[1], (uint16_t) atoi(argv[2]));
 
-    char buffer[MAX_STRING_LEN + 1];
+    char buffer[MAX_MSG_LEN + 1];
     bzero(buffer, sizeof(buffer));
 
-    while (feof(stdin) || fgets(buffer, MAX_STRING_LEN, stdin) != 0) {
+    while (feof(stdin) || fgets(buffer, MAX_MSG_LEN, stdin) != 0) {
     	send_cstring(sockfd, buffer);
     }
 
