@@ -5,7 +5,7 @@
 #include <string.h>
 
 ssize_t send_data(int sock, void *data, size_t size) {
-	if (size > MAX_MSG_LEN) {
+	if (size > MAX_CHUNK_LEN) {
 		perror("ERROR: attempt to send long data chunk");
 		exit(1);
 	}

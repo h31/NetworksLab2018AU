@@ -45,10 +45,16 @@ int connect_to_server(char *hostname, uint16_t portno) {
 
 void* receiver_routine(void* arg) {
 	int server_socket = *((int*)arg);
-	char buffer[MAX_MSG_LEN + 1];
+	char nickname_buffer[MAX_CHUNK_LEN + 1];
+	char text_buffer[MAX_CHUNK_LEN + 1];
 
-	while (receive_cstring(server_socket, buffer) > 0) {
-		printf("%s\n", buffer);
+	while (1) {
+		if (receive_cstring(server_socket, nickname_buffer) <= 0 ||
+			receive_cstring(server_socket, text_buffer) <= 0) {
+			break;
+		}
+
+		printf("[] %s: %s\n", nickname_buffer, text_buffer);
 	}
 
 	return NULL;
@@ -61,12 +67,13 @@ int main(int argc, char *argv[]) {
     }
 
     int server_socket = connect_to_server(argv[1], (uint16_t) atoi(argv[2]));
-    char buffer[MAX_MSG_LEN + 1];
+    char buffer[MAX_CHUNK_LEN + 1];
 
     pthread_t receiver_thread;
     pthread_create(&receiver_thread, NULL, receiver_routine, &server_socket);
 
-    while (feof(stdin) || fgets(buffer, MAX_MSG_LEN, stdin) != 0) {
+    send_cstring(server_socket, argv[3]);
+    while (feof(stdin) || fgets(buffer, MAX_CHUNK_LEN, stdin) != 0) {
     	send_cstring(server_socket, buffer);
     }
 

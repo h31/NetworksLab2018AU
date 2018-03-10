@@ -7,15 +7,21 @@
 void* client_interaction_routine(void* arg) {
 	struct client_data *client_data = (struct client_data*)arg;
 
-	char *buffer = malloc(sizeof(char) * (MAX_MSG_LEN + 1));
-	bzero(buffer, sizeof(char) * (MAX_MSG_LEN + 1));
+	char *buffer = malloc(sizeof(char) * (MAX_CHUNK_LEN + 1));
+	bzero(buffer, sizeof(char) * (MAX_CHUNK_LEN + 1));
 
-	while (receive_cstring(client_data->sock, buffer) > 0) {
-		printf("%s\n", buffer);
-		broadcast_message(buffer, client_data->broadcast_mutex);
+	if (receive_cstring(client_data->sock, buffer) > 0) {
+		client_data->nickname = malloc(strlen(buffer) + 1);
+		strcpy(client_data->nickname, buffer);
+
+		while (receive_cstring(client_data->sock, buffer) > 0) {
+			struct message msg = {client_data->nickname, buffer};
+			broadcast_message(msg, client_data->broadcast_mutex);
+		}
 	}
 
 	free(buffer);
+	free(client_data->nickname);
 	close(client_data->sock);
 	client_data->state = REQUIRE_DELETION;
 
@@ -38,7 +44,7 @@ struct client_data* find_empty_client_cell() {
 	return NULL;
 }
 
-void broadcast_message(char *message, pthread_mutex_t *broadcast_mutex) {
+void broadcast_message(struct message msg, pthread_mutex_t *broadcast_mutex) {
 	pthread_mutex_lock(broadcast_mutex);
 
 	for (int i = 0; i < MAX_CLIENTS; ++i) {
@@ -46,7 +52,8 @@ void broadcast_message(char *message, pthread_mutex_t *broadcast_mutex) {
 			continue;
 		}
 
-		if (send_cstring(clients[i].sock, message) < 0) {
+		if (send_cstring(clients[i].sock, msg.nickname) < 0 ||
+			send_cstring(clients[i].sock, msg.text) < 0) {
 			fprintf(stderr, "Failed to send data to socket #%d\n", clients[i].sock);
 		}
 	}

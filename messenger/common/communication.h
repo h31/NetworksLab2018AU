@@ -5,7 +5,7 @@
 
 #include <unistd.h>
 
-#define MAX_MSG_LEN (1000)
+#define MAX_CHUNK_LEN (1000)
 
 ssize_t send_data(int sock, void *data, size_t size);
 ssize_t send_uint16(int sock, uint16_t data);

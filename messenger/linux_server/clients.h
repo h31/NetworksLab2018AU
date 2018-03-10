@@ -12,8 +12,14 @@ struct client_data {
 	enum client_data_state state;
 	int sock;
 	pthread_t thread;
+	char *nickname;
 
 	pthread_mutex_t *broadcast_mutex;
+};
+
+struct message {
+	char *nickname;
+	char *text;
 };
 
 #define MAX_CLIENTS (100)
@@ -22,6 +28,6 @@ struct client_data clients[MAX_CLIENTS];
 
 void* client_interaction_routine(void* arg);
 struct client_data* find_empty_client_cell();
-void broadcast_message(char *message, pthread_mutex_t *broadcast_mutex);
+void broadcast_message(struct message msg, pthread_mutex_t *broadcast_mutex);
 
 #endif /* CLIENTS_H_ */
