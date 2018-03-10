@@ -5,11 +5,14 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include <signal.h>
+
 #include <string.h>
 
 #include <pthread.h>
 
 #include "../common/communication.h"
+#include "clients.h"
 
 int create_server_socket(uint16_t portno) {
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -50,65 +53,40 @@ int accept_client(int server_socket) {
 	return client_socket;
 }
 
-typedef struct client_data {
-	uint8_t is_valid;
-	int sock;
-	pthread_t thread;
-} client_data_t;
-
-void* client_interaction_routine(void* arg) {
-	client_data_t *client_data = (client_data_t*)arg;
-
-	char *buffer = malloc(MAX_MSG_LEN + 1);
-	bzero(buffer, sizeof(char) * (MAX_MSG_LEN + 1));
-
-	while (receive_cstring(client_data->sock, buffer) != 0) {
-		printf("%s\n", buffer);
-	}
-
-	free(buffer);
-	close(client_data->sock);
-
-	return NULL;
-}
-
-client_data_t* find_empty_client_cell(client_data_t *clients, size_t size) {
-	for (int i = 0; i < size; ++i) { // todo: add thread check (it should be communication)
-		if (!clients[i].is_valid) {
-			return clients + i;
-		}
-	}
-
-	return NULL;
-}
-
 int main(int argc, char *argv[]) {
     if (argc != 2) {
 		fprintf(stderr, "usage %s port\n", argv[0]);
 		exit(0);
 	}
 
-    int server_socket = create_server_socket((uint16_t) atoi(argv[1]));
+    struct sigaction new_actn, old_actn;
+    new_actn.sa_handler = SIG_IGN;
+    sigemptyset(&new_actn.sa_mask);
+    new_actn.sa_flags = 0;
+    sigaction(SIGPIPE, &new_actn, &old_actn);
 
-    int max_clients = 100;
-    client_data_t clients[max_clients];
-    bzero(clients, sizeof(clients));
+    pthread_mutex_t broadcast_mutex;
+    pthread_mutex_init(&broadcast_mutex, NULL);
+
+    int server_socket = create_server_socket((uint16_t) atoi(argv[1]));
 
     while (1) {
     	int client_socket = accept_client(server_socket);
 
-    	client_data_t *client_data = find_empty_client_cell(clients, max_clients);
+    	struct client_data *client_data = find_empty_client_cell();
     	if (client_data == NULL) {
     		continue;
     	}
 
     	client_data->is_valid = 1;
     	client_data->sock = client_socket;
+    	client_data->broadcast_mutex = &broadcast_mutex;
 
     	pthread_create(&client_data->thread, NULL, client_interaction_routine, client_data);
     }
 
     close(server_socket);
+    pthread_mutex_destroy(&broadcast_mutex);
 
     return 0;
 }

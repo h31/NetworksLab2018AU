@@ -7,6 +7,8 @@
 
 #include <string.h>
 
+#include <pthread.h>
+
 #include "../common/communication.h"
 
 int connect_to_server(char *hostname, uint16_t portno) {
@@ -41,22 +43,34 @@ int connect_to_server(char *hostname, uint16_t portno) {
     return sockfd;
 }
 
+void* receiver_routine(void* arg) {
+	int server_socket = *((int*)arg);
+	char buffer[MAX_MSG_LEN + 1];
+
+	while (receive_cstring(server_socket, buffer) > 0) {
+		printf("%s\n", buffer);
+	}
+
+	return NULL;
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 4) {
         fprintf(stderr, "usage %s host port nickname\n", argv[0]);
         exit(0);
     }
 
-    int sockfd = connect_to_server(argv[1], (uint16_t) atoi(argv[2]));
-
+    int server_socket = connect_to_server(argv[1], (uint16_t) atoi(argv[2]));
     char buffer[MAX_MSG_LEN + 1];
-    bzero(buffer, sizeof(buffer));
+
+    pthread_t receiver_thread;
+    pthread_create(&receiver_thread, NULL, receiver_routine, &server_socket);
 
     while (feof(stdin) || fgets(buffer, MAX_MSG_LEN, stdin) != 0) {
-    	send_cstring(sockfd, buffer);
+    	send_cstring(server_socket, buffer);
     }
 
-    close(sockfd);
+    close(server_socket);
     return 0;
 }
 
