@@ -5,7 +5,7 @@
 
 #include <unistd.h>
 
-const uint16_t max_string_len;
+#define MAX_STRING_LEN (1000)
 
 void send_uint16(int sock, uint16_t data);
 void send_cstring(int sock, char *string);

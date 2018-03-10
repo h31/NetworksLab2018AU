@@ -7,6 +7,8 @@
 
 #include <string.h>
 
+#include <pthread.h>
+
 #include "../common/communication.h"
 
 int create_server_socket(uint16_t portno) {
@@ -48,6 +50,38 @@ int accept_client(int server_socket) {
 	return client_socket;
 }
 
+typedef struct client_data {
+	uint8_t is_valid;
+	int sock;
+	pthread_t thread;
+} client_data_t;
+
+void* client_interaction_routine(void* arg) {
+	client_data_t *client_data = (client_data_t*)arg;
+
+	char *buffer = malloc(MAX_STRING_LEN + 1);
+	bzero(buffer, sizeof(char) * (MAX_STRING_LEN + 1));
+
+	while (receive_cstring(client_data->sock, buffer) != 0) {
+		printf("%s\n", buffer);
+	}
+
+	free(buffer);
+	close(client_data->sock);
+
+	return NULL;
+}
+
+client_data_t* find_empty_client_cell(client_data_t *clients, size_t size) {
+	for (int i = 0; i < size; ++i) { // todo: add thread check (it should be communication)
+		if (!clients[i].is_valid) {
+			return clients + i;
+		}
+	}
+
+	return NULL;
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 2) {
 		fprintf(stderr, "usage %s port\n", argv[0]);
@@ -55,16 +89,25 @@ int main(int argc, char *argv[]) {
 	}
 
     int server_socket = create_server_socket((uint16_t) atoi(argv[1]));
-    int client_socket = accept_client(server_socket);
 
-    char buffer[max_string_len + 1];
-	bzero(buffer, sizeof(buffer));
+    int max_clients = 100;
+    client_data_t clients[max_clients];
+    bzero(clients, sizeof(clients));
 
-    while (receive_cstring(client_socket, buffer) != 0) {
-    	printf("%s\n", buffer);
+    while (1) {
+    	int client_socket = accept_client(server_socket);
+
+    	client_data_t *client_data = find_empty_client_cell(clients, max_clients);
+    	if (client_data == NULL) {
+    		continue;
+    	}
+
+    	client_data->is_valid = 1;
+    	client_data->sock = client_socket;
+
+    	pthread_create(&client_data->thread, NULL, client_interaction_routine, client_data);
     }
 
-    close(client_socket);
     close(server_socket);
 
     return 0;

@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-const uint16_t max_string_len = UINT16_MAX;
-
 void send_uint16(int sock, uint16_t data) {
 	char buffer[2] = {data & 0xFF, (data >> 8) & 0xFF};
 
@@ -18,7 +16,7 @@ void send_uint16(int sock, uint16_t data) {
 void send_cstring(int sock, char *string) {
 	size_t length = strlen(string);
 
-	if (length > max_string_len) {
+	if (length > MAX_STRING_LEN) {
 		perror("ERROR: attempt to send a long string");
 		exit(1);
 	}
