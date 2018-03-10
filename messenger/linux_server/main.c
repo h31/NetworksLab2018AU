@@ -14,6 +14,14 @@
 #include "../common/communication.h"
 #include "clients.h"
 
+void disable_broken_pipe() {
+	struct sigaction new_actn, old_actn;
+	new_actn.sa_handler = SIG_IGN;
+	sigemptyset(&new_actn.sa_mask);
+	new_actn.sa_flags = 0;
+	sigaction(SIGPIPE, &new_actn, &old_actn);
+}
+
 int create_server_socket(uint16_t portno) {
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -53,37 +61,39 @@ int accept_client(int server_socket) {
 	return client_socket;
 }
 
+void run_server(int server_socket, pthread_mutex_t *broadcast_mutex) {
+	// todo: add proper shutdown
+	while (1) {
+		int client_socket = accept_client(server_socket);
+
+		struct client_data *client_data = find_empty_client_cell();
+		if (client_data == NULL) {
+			close(client_socket);
+			continue;
+		}
+
+		client_data->state = INITIALIZED;
+		client_data->sock = client_socket;
+		client_data->broadcast_mutex = broadcast_mutex;
+
+		pthread_create(&client_data->thread, NULL, client_interaction_routine, client_data);
+	}
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 2) {
 		fprintf(stderr, "usage %s port\n", argv[0]);
 		exit(0);
 	}
 
-    struct sigaction new_actn, old_actn;
-    new_actn.sa_handler = SIG_IGN;
-    sigemptyset(&new_actn.sa_mask);
-    new_actn.sa_flags = 0;
-    sigaction(SIGPIPE, &new_actn, &old_actn);
+    disable_broken_pipe();
 
     pthread_mutex_t broadcast_mutex;
     pthread_mutex_init(&broadcast_mutex, NULL);
 
     int server_socket = create_server_socket((uint16_t) atoi(argv[1]));
 
-    while (1) {
-    	int client_socket = accept_client(server_socket);
-
-    	struct client_data *client_data = find_empty_client_cell();
-    	if (client_data == NULL) {
-    		continue;
-    	}
-
-    	client_data->is_valid = 1;
-    	client_data->sock = client_socket;
-    	client_data->broadcast_mutex = &broadcast_mutex;
-
-    	pthread_create(&client_data->thread, NULL, client_interaction_routine, client_data);
-    }
+    run_server(server_socket, &broadcast_mutex);
 
     close(server_socket);
     pthread_mutex_destroy(&broadcast_mutex);

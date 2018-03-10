@@ -6,8 +6,10 @@
 
 #include <pthread.h>
 
+enum client_data_state {UNITIALIZED = 0, INITIALIZED, REQUIRE_DELETION};
+
 struct client_data {
-	uint8_t is_valid;
+	enum client_data_state state;
 	int sock;
 	pthread_t thread;
 

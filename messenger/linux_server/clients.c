@@ -17,15 +17,20 @@ void* client_interaction_routine(void* arg) {
 
 	free(buffer);
 	close(client_data->sock);
-	client_data->is_valid = 0;
+	client_data->state = REQUIRE_DELETION;
 
 	return NULL;
 }
 
 struct client_data* find_empty_client_cell() {
 	for (int i = 0; i < MAX_CLIENTS; ++i) {
-		if (!clients[i].is_valid) {
-			pthread_join(clients[i].thread, NULL);
+		if (clients[i].state != INITIALIZED) {
+			if (clients[i].state == REQUIRE_DELETION) {
+				pthread_join(clients[i].thread, NULL);
+				close(clients[i].sock);
+				clients[i].state = UNITIALIZED;
+			}
+
 			return clients + i;
 		}
 	}
@@ -37,7 +42,7 @@ void broadcast_message(char *message, pthread_mutex_t *broadcast_mutex) {
 	pthread_mutex_lock(broadcast_mutex);
 
 	for (int i = 0; i < MAX_CLIENTS; ++i) {
-		if (!clients[i].is_valid) {
+		if (clients[i].state != INITIALIZED) {
 			continue;
 		}
 
