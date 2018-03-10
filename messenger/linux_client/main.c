@@ -43,12 +43,18 @@ int connect_to_server(char *hostname, uint16_t portno) {
 
 int main(int argc, char *argv[]) {
     if (argc != 4) {
-        fprintf(stderr, "usage %s hostname port nickname\n", argv[0]);
+        fprintf(stderr, "usage %s host port nickname\n", argv[0]);
         exit(0);
     }
 
     int sockfd = connect_to_server(argv[1], (uint16_t) atoi(argv[2]));
-    send_cstring(sockfd, "Hello.");
+
+    char buffer[max_string_len + 1];
+    bzero(buffer, sizeof(buffer));
+
+    while (feof(stdin) || fgets(buffer, max_string_len, stdin) != 0) {
+    	send_cstring(sockfd, buffer);
+    }
 
     close(sockfd);
     return 0;

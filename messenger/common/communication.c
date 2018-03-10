@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <unistd.h>
-
 const uint16_t max_string_len = UINT16_MAX;
 
 void send_uint16(int sock, uint16_t data) {
@@ -33,27 +31,40 @@ void send_cstring(int sock, char *string) {
 	}
 }
 
-uint16_t receive_uint16(int sock) {
+ssize_t receive_uint16(int sock, uint16_t *data) {
 	char buffer[2];
 
-	if (read(sock, buffer, 2) < 0) {
+	int ret_code = read(sock, buffer, 2);
+	if (ret_code == 0) {
+		return 0;
+	}
+
+	if (ret_code != 2) {
 		perror("ERROR reading from socket");
 		exit(1);
 	}
 
-	return buffer[0] | (buffer[1] << 8);
+	*data = buffer[0] | (buffer[1] << 8);
+	return ret_code;
 }
 
-char* receive_cstring(int sock) {
-	uint16_t length = receive_uint16(sock);
+ssize_t receive_cstring(int sock, char *data) {
+	uint16_t length;
+	ssize_t ret_code1 = receive_uint16(sock, &length);
+	if (ret_code1 == 0) {
+		return 0;
+	}
 
-	char *string = (char*)malloc(length + 1);
+	ssize_t ret_code2 = read(sock, data, length);
+	if (ret_code2 == 0) {
+		return 0;
+	}
 
-	if (read(sock, string, length) < 0) {
+	if (ret_code2 != length) {
 		perror("ERROR reading from socket");
 		exit(1);
 	}
 
-	string[length] = 0;
-	return string;
+	data[length] = 0;
+	return ret_code1 + ret_code2;
 }

@@ -3,12 +3,14 @@
 
 #include <stdint.h>
 
+#include <unistd.h>
+
 const uint16_t max_string_len;
 
 void send_uint16(int sock, uint16_t data);
 void send_cstring(int sock, char *string);
 
-uint16_t receive_uint16(int sock);
-char* receive_cstring(int sock);
+ssize_t receive_uint16(int sock, uint16_t *data);
+ssize_t receive_cstring(int sock, char *data);
 
 #endif /* COMMUNICATION_H_ */

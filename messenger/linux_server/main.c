@@ -38,7 +38,6 @@ int accept_client(int server_socket) {
 	struct sockaddr_in cli_addr;
 	unsigned int clilen = sizeof(cli_addr);
 
-	/* Accept actual connection from the client */
 	int client_socket = accept(server_socket, (struct sockaddr *) &cli_addr, &clilen);
 
 	if (client_socket < 0) {
@@ -58,10 +57,12 @@ int main(int argc, char *argv[]) {
     int server_socket = create_server_socket((uint16_t) atoi(argv[1]));
     int client_socket = accept_client(server_socket);
 
-    char *string = receive_cstring(client_socket);
-    printf("%s\n", string);
+    char buffer[max_string_len + 1];
+	bzero(buffer, sizeof(buffer));
 
-    free(string);
+    while (receive_cstring(client_socket, buffer) != 0) {
+    	printf("%s\n", buffer);
+    }
 
     close(client_socket);
     close(server_socket);
