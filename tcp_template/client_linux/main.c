@@ -14,10 +14,14 @@ void* server_updates_routine(void* arg) {
     int socket_id = (int) arg;
     char message[256];
     char login[256];
+    char time[9];
+    time[2] = ':';
+    time[5] = ':';
+    time[8] = 0;
     while (!should_finish) {
         bzero(message, 256);
         bzero(login, 256);
-        if (read(socket_id, message, 2) != 2) {
+        if (read(socket_id, message, 8) != 8) {
             if (should_finish) {
                 break;
             }
@@ -26,6 +30,13 @@ void* server_updates_routine(void* arg) {
         }
         uint8_t login_length = (uint8_t) message[0];
         uint8_t message_length = (uint8_t) message[1];
+        time[0] = message[2]; // H
+        time[1] = message[3]; // H
+        time[3] = message[4]; // M
+        time[4] = message[5]; // M
+        time[6] = message[6]; // S
+        time[7] = message[7]; // S
+        bzero(message, 8);
         if (read(socket_id, login, login_length) != login_length) {
             if (should_finish) {
                 break;
@@ -40,11 +51,11 @@ void* server_updates_routine(void* arg) {
             perror("ERROR reading from socket");
             return (void*) 1;
         }
-
         /* Waiting for the user to stop entering */
         while (message_entering_mode && !should_finish);
-        printf("%s: %s\n", login, message);
+        printf("<%s> [%s] %s\n", time, login, message);
     }
+    return (void*) 0;
 }
 
 int main(int argc, char *argv[]) {

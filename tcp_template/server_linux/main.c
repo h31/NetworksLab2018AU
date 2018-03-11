@@ -12,21 +12,19 @@ pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 int* client_socket_ids;
 int clients_array_size, clients_count;
 
-void send_message_to_everyone(char* login, char* message, int sender_socket_id) {
+void send_message_to_everyone(char* login, char* message, char* time, int sender_socket_id) {
     uint8_t login_length = (uint8_t) strlen(login);
     uint8_t message_length = (uint8_t) strlen(message);
-    char buffer[512];
+    char buffer[518];
     buffer[0] = login_length;
     buffer[1] = message_length;
-    strcpy(buffer + 2, login);
-    strcpy(buffer + 2 + login_length, message);
+    strncpy(buffer + 2, time, 6);
+    strcpy(buffer + 8, login);
+    strcpy(buffer + 8 + login_length, message);
     pthread_mutex_lock(&clients_mutex);
     printf("Sending message from %d\n", sender_socket_id);
     for (int i = 0; i < clients_count; i++) {
         int socket_id = client_socket_ids[i];
-        if (socket_id == sender_socket_id) {
-            continue;
-        }
         ssize_t n = write(socket_id, buffer, strlen(buffer));
         if (n < 0) {
             printf("Could not write message to %d\n", socket_id);
@@ -89,8 +87,14 @@ void inner_client_handling(int socket_id) {
             printf("Connection with %d will be closed due to read() error\n", socket_id);
             return;
         }
+        time_t rawtime;
+        struct tm* timeinfo;
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+        char time[6];
+        strftime(time, 6, "%H%M%S", timeinfo);
         printf("Received the message from %d: %s\n", socket_id, buffer);
-        send_message_to_everyone(login, buffer, socket_id);
+        send_message_to_everyone(login, buffer, time, socket_id);
     }
 }
 
