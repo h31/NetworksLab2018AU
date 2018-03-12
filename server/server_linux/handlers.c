@@ -40,6 +40,7 @@ void* handle_client_read(void* arg) {
                         if (n < 0) {
                             pthread_mutex_lock(&client->mutex);
                             client->is_closed = true;
+                            pthread_cond_signal(&client->can_consume);
                             pthread_mutex_unlock(&client->mutex);
                             pthread_exit(NULL);
                         }
@@ -100,6 +101,9 @@ void* handle_client_write(void* arg) {
                             ssize_t n = write_message(client->sockfd, &cur->msg);
                             if (n < 0) {
                                 perror("ERROR: cannot write to client");
+                                pthread_mutex_lock(&client->mutex);
+                                client->is_closed = true;
+                                pthread_mutex_unlock(&client->mutex);
                                 pthread_exit(NULL);
                             }
                         }
