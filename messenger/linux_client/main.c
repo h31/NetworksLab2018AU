@@ -45,16 +45,22 @@ int connect_to_server(char *hostname, uint16_t portno) {
 
 void* receiver_routine(void* arg) {
 	int server_socket = *((int*)arg);
+
+	uint16_t hours, minutes;
 	char nickname_buffer[MAX_CHUNK_LEN + 1];
 	char text_buffer[MAX_CHUNK_LEN + 1];
 
 	while (1) {
-		if (receive_cstring(server_socket, nickname_buffer) <= 0 ||
+		pthread_testcancel();
+
+		if (receive_uint16(server_socket, &hours) <= 0 ||
+			receive_uint16(server_socket, &minutes) <= 0 ||
+			receive_cstring(server_socket, nickname_buffer) <= 0 ||
 			receive_cstring(server_socket, text_buffer) <= 0) {
 			break;
 		}
 
-		printf("[] %s: %s\n", nickname_buffer, text_buffer);
+		printf("[%02d:%02d] %s: %s\n", hours, minutes, nickname_buffer, text_buffer);
 	}
 
 	return NULL;
@@ -77,7 +83,10 @@ int main(int argc, char *argv[]) {
     	send_cstring(server_socket, buffer);
     }
 
+    pthread_cancel(receiver_thread);
+    pthread_join(receiver_thread, NULL);
     close(server_socket);
+
     return 0;
 }
 

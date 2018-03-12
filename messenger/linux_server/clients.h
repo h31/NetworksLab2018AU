@@ -18,6 +18,8 @@ struct client_data {
 };
 
 struct message {
+	uint16_t hours;
+	uint16_t minutes;
 	char *nickname;
 	char *text;
 };
