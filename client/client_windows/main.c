@@ -68,6 +68,7 @@ int main(int argc, char *argv[]) {
     client_t client;
     client.sock = sock;
     client.name = name;
+	client.is_closed = false;
 	InitializeCriticalSection(&client.msg_section);
 	InitializeConditionVariable(&client.msg_can_consume);
 	DWORD thread_id;

@@ -22,6 +22,7 @@ DWORD WINAPI handle_client_read(LPVOID arg) {
     int n = read_message(client->sock, &client->name);
     if (n < 0) {
         perror("cannot read nick name of client from socket");
+		closesocket(client->sock);
 		client->is_closed = true;
 		LeaveCriticalSection(&client->msg_section);
 		WakeConditionVariable(&client->msg_can_consume);
@@ -36,8 +37,10 @@ DWORD WINAPI handle_client_read(LPVOID arg) {
         if (n < 0) {
 			free_vector(&read_msg);
 			EnterCriticalSection(&client->msg_section);
+			closesocket(client->sock);
 			client->is_closed = true;
 			LeaveCriticalSection(&client->msg_section);
+			WakeConditionVariable(&client->msg_can_consume);
 			return 0;
         }
         struct msg_list* node = malloc(sizeof(struct msg_list));
@@ -76,6 +79,13 @@ DWORD WINAPI handle_client_write(LPVOID arg) {
     while (1) {
 		EnterCriticalSection(&msg_section);
 		while (cur->next == NULL) {
+			EnterCriticalSection(&client->msg_section);
+			if (client->is_closed == true) {
+				LeaveCriticalSection(&client->msg_section);
+				LeaveCriticalSection(&msg_section);
+				return 1;
+			}
+			LeaveCriticalSection(&client->msg_section);
 			SleepConditionVariableCS(&msg_can_consume, &msg_section, INFINITE);
         }
         cur = cur->next;
@@ -83,6 +93,8 @@ DWORD WINAPI handle_client_write(LPVOID arg) {
             int n = write_message(client->sock, &cur->msg);
             if (n < 0) {
                 perror("ERROR: cannot write to client");
+				closesocket(client->sock);
+				client->is_closed = true;
 				LeaveCriticalSection(&msg_section);
 				return 1;
 			}

@@ -31,6 +31,7 @@ DWORD WINAPI reader(LPVOID arg) {
 		if (n < 0) {
 			free_vector(&msg);
 			EnterCriticalSection(&client->msg_section);
+			closesocket(client->sock);
 			client->is_closed = true;
 			LeaveCriticalSection(&client->msg_section);
 			return 1;
@@ -63,8 +64,10 @@ DWORD WINAPI writer(LPVOID arg) {
     int n = write_message(sock, &name);
     if (n < 0) {
         perror("ERROR: cannot write to socket");
+		closesocket(client->sock);
 		client->is_closed = true;
 		LeaveCriticalSection(&client->msg_section);
+		WakeConditionVariable(&client->msg_can_consume);
 		return 1;
     }
     mode = READ;
@@ -87,8 +90,10 @@ DWORD WINAPI writer(LPVOID arg) {
         int n = write_message(sock, &msg);
         if (n < 0) {
 			free_vector(&msg);
+			closesocket(client->sock);
 			client->is_closed = true;
 			LeaveCriticalSection(&client->msg_section);
+			WakeConditionVariable(&client->msg_can_consume);
 			return 1;
         }
 		LeaveCriticalSection(&client->msg_section);
