@@ -14,7 +14,7 @@ ssize_t send_data(int sock, void *data, size_t size) {
 	void *end = data + size;
 
 	while (ptr != end) {
-		ssize_t bytes_written = write(sock, ptr, end - ptr);
+		ssize_t bytes_written = send(sock, ptr, end - ptr, 0);
 		if (bytes_written < 0) {
 			return bytes_written;
 		}
@@ -51,7 +51,7 @@ ssize_t receive_data(int sock, void *data, size_t size) {
 	void *end = data + size;
 
 	while (ptr != end) {
-		ssize_t bytes_read = read(sock, ptr, end - ptr);
+		ssize_t bytes_read = recv(sock, ptr, end - ptr, 0);
 		if (bytes_read <= 0) {
 			return bytes_read;
 		}

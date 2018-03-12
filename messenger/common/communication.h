@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include <unistd.h>
+#include "../common/network.h"
 
 #define MAX_CHUNK_LEN (1000)
 

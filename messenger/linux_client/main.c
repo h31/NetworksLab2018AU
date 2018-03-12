@@ -1,14 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-
 #include <string.h>
 
+#include "../common/network.h"
 #include "../common/threads.h"
-
 #include "../common/communication.h"
 
 int connect_to_server(char *hostname, uint16_t portno) {
@@ -30,9 +26,10 @@ int connect_to_server(char *hostname, uint16_t portno) {
         exit(0);
     }
 
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+    memset((char *) &serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    bcopy(server->h_addr, (char *) &serv_addr.sin_addr.s_addr, (size_t) server->h_length);
+
+    memcpy((char *) &serv_addr.sin_addr.s_addr, server->h_addr, (size_t)server->h_length);
     serv_addr.sin_port = htons(portno);
 
     if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
@@ -71,6 +68,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "usage %s host port nickname\n", argv[0]);
         exit(0);
     }
+
+    network_init();
 
     int server_socket = connect_to_server(argv[1], (uint16_t) atoi(argv[2]));
     char buffer[MAX_CHUNK_LEN + 1];

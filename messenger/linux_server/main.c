@@ -1,36 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-
 #include <signal.h>
 
 #include <string.h>
 
+#include "../common/network.h"
 #include "../common/communication.h"
-#include "clients.h"
 #include "../common/threads.h"
 
-void disable_broken_pipe() {
-	struct sigaction new_actn, old_actn;
-	new_actn.sa_handler = SIG_IGN;
-	sigemptyset(&new_actn.sa_mask);
-	new_actn.sa_flags = 0;
-	sigaction(SIGPIPE, &new_actn, &old_actn);
-}
+#include "clients.h"
 
 int create_server_socket(uint16_t portno) {
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (sockfd < 0) {
-		perror("ERROR opening socket");
+        perror("ERROR opening socket");
 		exit(1);
 	}
 
 	struct sockaddr_in serv_addr;
-	bzero((char *) &serv_addr, sizeof(serv_addr));
+	memset((char *) &serv_addr, 0, sizeof(serv_addr));
 
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -85,7 +75,7 @@ int main(int argc, char *argv[]) {
 		exit(0);
 	}
 
-    disable_broken_pipe();
+    network_init();
 
     lock_t *broadcast_lock = lock_create();
 

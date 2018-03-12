@@ -9,7 +9,7 @@ void* client_interaction_routine(void* arg) {
 	struct client_data *client_data = (struct client_data*)arg;
 
 	char *buffer = malloc(sizeof(char) * (MAX_CHUNK_LEN + 1));
-	bzero(buffer, sizeof(char) * (MAX_CHUNK_LEN + 1));
+	memset(buffer, 0, sizeof(char) * (MAX_CHUNK_LEN + 1));
 
 	if (receive_cstring(client_data->sock, buffer) > 0) {
 		client_data->nickname = malloc(strlen(buffer) + 1);
@@ -35,7 +35,8 @@ void* client_interaction_routine(void* arg) {
 }
 
 struct client_data* find_empty_client_cell() {
-	for (int i = 0; i < MAX_CLIENTS; ++i) {
+	int i;
+	for (i = 0; i < MAX_CLIENTS; ++i) {
 		if (clients[i].state != INITIALIZED) {
 			if (clients[i].state == REQUIRE_DELETION) {
 				thread_join(clients[i].thread);
@@ -52,7 +53,8 @@ struct client_data* find_empty_client_cell() {
 void broadcast_message(struct message msg, lock_t *broadcast_lock) {
 	lock(broadcast_lock);
 
-	for (int i = 0; i < MAX_CLIENTS; ++i) {
+    int i;
+	for (i = 0; i < MAX_CLIENTS; ++i) {
 		if (clients[i].state != INITIALIZED) {
 			continue;
 		}
