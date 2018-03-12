@@ -9,10 +9,9 @@
 
 #include <string.h>
 
-#include <pthread.h>
-
 #include "../common/communication.h"
 #include "clients.h"
+#include "../common/threads.h"
 
 void disable_broken_pipe() {
 	struct sigaction new_actn, old_actn;
@@ -61,7 +60,7 @@ int accept_client(int server_socket) {
 	return client_socket;
 }
 
-void run_server(int server_socket, pthread_mutex_t *broadcast_mutex) {
+void run_server(int server_socket, lock_t *broadcast_lock) {
 	// todo: add proper shutdown
 	while (1) {
 		int client_socket = accept_client(server_socket);
@@ -74,9 +73,9 @@ void run_server(int server_socket, pthread_mutex_t *broadcast_mutex) {
 
 		client_data->state = INITIALIZED;
 		client_data->sock = client_socket;
-		client_data->broadcast_mutex = broadcast_mutex;
+		client_data->broadcast_lock = broadcast_lock;
 
-		pthread_create(&client_data->thread, NULL, client_interaction_routine, client_data);
+		client_data->thread = thread_create(client_interaction_routine, client_data);
 	}
 }
 
@@ -88,15 +87,14 @@ int main(int argc, char *argv[]) {
 
     disable_broken_pipe();
 
-    pthread_mutex_t broadcast_mutex;
-    pthread_mutex_init(&broadcast_mutex, NULL);
+    lock_t *broadcast_lock = lock_create();
 
     int server_socket = create_server_socket((uint16_t) atoi(argv[1]));
 
-    run_server(server_socket, &broadcast_mutex);
+    run_server(server_socket, broadcast_lock);
 
     close(server_socket);
-    pthread_mutex_destroy(&broadcast_mutex);
+    lock_destroy(broadcast_lock);
 
     return 0;
 }

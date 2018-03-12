@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "clients.h"
 #include "../common/communication.h"
@@ -21,7 +22,7 @@ void* client_interaction_routine(void* arg) {
 			struct tm *timeinfo = localtime(&rawtime);
 
 			struct message msg = {timeinfo->tm_hour, timeinfo->tm_min, client_data->nickname, buffer};
-			broadcast_message(msg, client_data->broadcast_mutex);
+			broadcast_message(msg, client_data->broadcast_lock);
 		}
 	}
 
@@ -37,8 +38,7 @@ struct client_data* find_empty_client_cell() {
 	for (int i = 0; i < MAX_CLIENTS; ++i) {
 		if (clients[i].state != INITIALIZED) {
 			if (clients[i].state == REQUIRE_DELETION) {
-				pthread_join(clients[i].thread, NULL);
-				close(clients[i].sock);
+				thread_join(clients[i].thread);
 				clients[i].state = UNITIALIZED;
 			}
 
@@ -49,8 +49,8 @@ struct client_data* find_empty_client_cell() {
 	return NULL;
 }
 
-void broadcast_message(struct message msg, pthread_mutex_t *broadcast_mutex) {
-	pthread_mutex_lock(broadcast_mutex);
+void broadcast_message(struct message msg, lock_t *broadcast_lock) {
+	lock(broadcast_lock);
 
 	for (int i = 0; i < MAX_CLIENTS; ++i) {
 		if (clients[i].state != INITIALIZED) {
@@ -65,5 +65,5 @@ void broadcast_message(struct message msg, pthread_mutex_t *broadcast_mutex) {
 		}
 	}
 
-	pthread_mutex_unlock(broadcast_mutex);
+	unlock(broadcast_lock);
 }

@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-#include <pthread.h>
+#include "../common/threads.h"
 
 #include "../common/communication.h"
 
@@ -51,7 +51,7 @@ void* receiver_routine(void* arg) {
 	char text_buffer[MAX_CHUNK_LEN + 1];
 
 	while (1) {
-		pthread_testcancel();
+		thread_is_interrupted();
 
 		if (receive_uint16(server_socket, &hours) <= 0 ||
 			receive_uint16(server_socket, &minutes) <= 0 ||
@@ -75,16 +75,15 @@ int main(int argc, char *argv[]) {
     int server_socket = connect_to_server(argv[1], (uint16_t) atoi(argv[2]));
     char buffer[MAX_CHUNK_LEN + 1];
 
-    pthread_t receiver_thread;
-    pthread_create(&receiver_thread, NULL, receiver_routine, &server_socket);
+    thread_t *receiver_thread = thread_create(receiver_routine, &server_socket);
 
     send_cstring(server_socket, argv[3]);
     while (feof(stdin) || fgets(buffer, MAX_CHUNK_LEN, stdin) != 0) {
     	send_cstring(server_socket, buffer);
     }
 
-    pthread_cancel(receiver_thread);
-    pthread_join(receiver_thread, NULL);
+    thread_interrupt(receiver_thread);
+    thread_join(receiver_thread);
     close(server_socket);
 
     return 0;
