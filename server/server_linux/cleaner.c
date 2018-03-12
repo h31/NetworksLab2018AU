@@ -20,10 +20,10 @@ void free_all(void *arg) {
     free(thread_head);
     while (cur_thread != NULL) {
         struct thread_list* temp = cur_thread->next;
-        pthread_cancel(cur_thread->client.writer);
-        pthread_cancel(cur_thread->client.reader);
-        pthread_join(cur_thread->client.writer, NULL);
-        pthread_join(cur_thread->client.reader, NULL);
+        pthread_cancel(cur_thread->writer);
+        pthread_cancel(cur_thread->reader);
+        pthread_join(cur_thread->writer, NULL);
+        pthread_join(cur_thread->reader, NULL);
         free_thread(cur_thread);
         cur_thread = temp;
     }

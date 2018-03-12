@@ -12,6 +12,8 @@ struct msg_list {
 
 struct thread_list {
     client_t client;
+    pthread_t reader;
+    pthread_t writer;
     struct thread_list* next;
 };
 
