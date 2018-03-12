@@ -4,6 +4,7 @@
 #include <netdb.h>
 #include <pthread.h>
 #include <memory.h>
+#include <client.h>
 #include "common_cleaner.h"
 
 void get_options(int argc, char** argv, char** server_addr,
@@ -57,13 +58,16 @@ int main(int argc, char *argv[]) {
     client_t client;
     client.sockfd = sockfd;
     client.name = name;
+    client.is_closed = false;
     pthread_mutex_init(&client.mutex, NULL);
     pthread_cond_init(&client.can_consume, NULL);
-    pthread_create(&client.reader, NULL, reader, &client);
-    pthread_create(&client.writer, NULL, writer, &client);
 
-    pthread_join(client.reader, NULL);
-    pthread_join(client.writer, NULL);
+    pthread_t reader_t, writer_t;
+    pthread_create(&reader_t, NULL, reader, &client);
+    pthread_create(&writer_t, NULL, writer, &client);
+
+    pthread_join(reader_t, NULL);
+    pthread_join(writer_t, NULL);
     free(server_addr);
     free_client(&client);
 }

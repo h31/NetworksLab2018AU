@@ -17,7 +17,6 @@ static void append(vector_t* msg, char elem) {
     } else {
         char* temp = malloc(sizeof(char) * (msg->size) * 2);
 		memset(temp, '\0', msg->size * 2);
-		//strncpy_s(temp, msg->data, msg->size);
 		strncpy_s(temp, msg->size * 2, msg->data, msg->size);
 		temp[msg->size] = elem;
         free(msg->data);
