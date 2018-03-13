@@ -1,6 +1,7 @@
 #include "network.h"
 
 #include <stdio.h>
+#include <signal.h>
 
 void disable_broken_pipe() {
     #ifndef _WIN32
