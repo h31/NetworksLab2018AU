@@ -1,0 +1,8 @@
+linux_server_Debug/
+linux_client_Debug/
+.cproject
+.project
+.settings/
+*.cbp
+*.depend
+
