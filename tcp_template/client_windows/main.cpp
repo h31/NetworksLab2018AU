@@ -1,17 +1,14 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
+#include <thread>
 
-#include <pthread.h>
 #include <netdb.h>
 #include <unistd.h>
-
-#include <string.h>
 
 volatile int message_entering_mode = 0;
 volatile int should_finish = 0;
 
-void* server_updates_routine(void* arg) {
-    int socket_id = (int) arg;
+void server_updates_routine(int socket_id) {
     char message[256];
     char login[256];
     char time[9];
@@ -26,10 +23,10 @@ void* server_updates_routine(void* arg) {
                 break;
             }
             perror("ERROR reading from socket");
-            return (void*) 1;
+            return;
         }
-        uint8_t login_length = (uint8_t) message[0];
-        uint8_t message_length = (uint8_t) message[1];
+        auto login_length = (uint8_t) message[0];
+        auto message_length = (uint8_t) message[1];
         time[0] = message[2]; // H
         time[1] = message[3]; // H
         time[3] = message[4]; // M
@@ -42,32 +39,31 @@ void* server_updates_routine(void* arg) {
                 break;
             }
             perror("ERROR reading from socket");
-            return (void*) 1;
+            return;
         }
         if (read(socket_id, message, message_length) != message_length) {
             if (should_finish) {
                 break;
             }
             perror("ERROR reading from socket");
-            return (void*) 1;
+            return;
         }
         /* Waiting for the user to stop entering */
         while (message_entering_mode && !should_finish);
         printf("<%s> [%s] %s\n", time, login, message);
     }
-    return (void*) 0;
 }
 
 int main(int argc, char *argv[]) {
     uint16_t port_number;
-    struct sockaddr_in serv_addr;
+    struct sockaddr_in serv_addr {};
     struct hostent *server;
 
     if (argc < 4) {
         fprintf(stderr, "usage %s hostname port nickname\n", argv[0]);
         exit(0);
     }
-    port_number = (uint16_t) atoi(argv[2]);
+    port_number = (uint16_t) strtol(argv[2], nullptr, 10);
 
     /* Create a socket point */
     int socket_id = socket(AF_INET, SOCK_STREAM, 0);
@@ -77,7 +73,7 @@ int main(int argc, char *argv[]) {
     }
 
     server = gethostbyname(argv[1]);
-    if (server == NULL) {
+    if (server == nullptr) {
         fprintf(stderr, "ERROR, no such host\n");
         exit(0);
     }
@@ -96,7 +92,7 @@ int main(int argc, char *argv[]) {
     /* Sending login to the server */
     char buffer[256];
     bzero(buffer, 256);
-    uint8_t login_length = (uint8_t) strlen(argv[3]);
+    auto login_length = (uint8_t) strlen(argv[3]);
     buffer[0] = login_length;
     strcpy(buffer + 1, argv[3]);
     if (write(socket_id, buffer, strlen(buffer)) != 1 + login_length) {
@@ -104,12 +100,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    pthread_t updates_thread;
-    int code = pthread_create(&updates_thread, NULL, server_updates_routine, (void*) socket_id);
-    if (code < 0) {
-        perror("ERROR on creating a pthread");
-        exit(1);
-    }
+    std::thread updates_thread(server_updates_routine, socket_id);
     printf("Nice chatting! Enter:\n");
     printf("\t:m to not be interrupted while you write\n");
     printf("\t:q to quit\n");
@@ -131,7 +122,7 @@ int main(int argc, char *argv[]) {
         input[strlen(input) - 1] = 0;
 
         /* Send message to the server */
-        uint8_t message_length = (uint8_t) strlen(input);
+        auto message_length = (uint8_t) strlen(input);
         buffer[0] = message_length;
         strcpy(buffer + 1, input);
         if (write(socket_id, buffer, strlen(buffer)) != 1 + message_length) {
@@ -142,7 +133,7 @@ int main(int argc, char *argv[]) {
     }
     if (close(socket_id) < 0) {
         perror("ERROR on closing the socket");
-        exit(1);
     }
+    updates_thread.join();
     return 0;
 }

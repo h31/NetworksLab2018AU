@@ -1,72 +1,64 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
+#include <cstdio>
+#include <cstdlib>
+#include <thread>
+#include <vector>
 
 #include <netdb.h>
 #include <unistd.h>
 
-#include <string.h>
+std::mutex clients_mutex;
 
-pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-int* client_socket_ids;
-int clients_array_size, clients_count;
+std::vector<int> client_socket_ids;
 
 void send_message_to_everyone(char* login, char* message, char* time, int sender_socket_id) {
-    uint8_t login_length = (uint8_t) strlen(login);
-    uint8_t message_length = (uint8_t) strlen(message);
+    auto login_length = (uint8_t) strlen(login);
+    auto message_length = (uint8_t) strlen(message);
     char buffer[518];
     buffer[0] = login_length;
     buffer[1] = message_length;
     strncpy(buffer + 2, time, 6);
     strcpy(buffer + 8, login);
     strcpy(buffer + 8 + login_length, message);
-    pthread_mutex_lock(&clients_mutex);
+    clients_mutex.lock();
     printf("Sending message from %d\n", sender_socket_id);
-    for (int i = 0; i < clients_count; i++) {
-        int socket_id = client_socket_ids[i];
+    for (int socket_id : client_socket_ids) {
         ssize_t n = write(socket_id, buffer, strlen(buffer));
         if (n < 0) {
             printf("Could not write message to %d\n", socket_id);
         }
     }
-    pthread_mutex_unlock(&clients_mutex);
+    clients_mutex.unlock();
 }
 
 void register_client(int socket_id) {
-    pthread_mutex_lock(&clients_mutex);
-    if (clients_count == clients_array_size) {
-        clients_array_size *= 2;
-        client_socket_ids = realloc(client_socket_ids, sizeof(int) * clients_array_size);
-    }
-    client_socket_ids[clients_count] = socket_id;
-    clients_count += 1;
+    clients_mutex.lock();
+    client_socket_ids.push_back(socket_id);
     printf("Client with socket %d was registered\n", socket_id);
-    pthread_mutex_unlock(&clients_mutex);
+    clients_mutex.unlock();
 }
 
 void deregister_client(int socket_id) {
-    pthread_mutex_lock(&clients_mutex);
-    for (int i = 0; i < clients_count; i++) {
+    clients_mutex.lock();
+    for (size_t i = 0; i < client_socket_ids.size(); i++) {
         if (client_socket_ids[i] == socket_id) {
-            client_socket_ids[i] = client_socket_ids[clients_count - 1];
-            clients_count -= 1;
+            client_socket_ids[i] = client_socket_ids[client_socket_ids.size() - 1];
+            client_socket_ids.pop_back();
             break;
         }
     }
     printf("Client with socket %d was deregistered\n", socket_id);
-    pthread_mutex_unlock(&clients_mutex);
+    clients_mutex.unlock();
 }
 
 void inner_client_handling(int socket_id) {
     /* Reading login */
     char login[256];
-    bzero(login, 256);
+    memset(login, 0, sizeof(login));
     if (read(socket_id, login, 1) != 1) {
         printf("Connection with %d will be closed due to login failure\n", socket_id);
         return;
     }
-    uint8_t login_length = (uint8_t) login[0];
+    auto login_length = (uint8_t) login[0];
     login[0] = 0;
     if (read(socket_id, login, login_length) != login_length) {
         printf("Connection with %d will be closed due to login failure\n", socket_id);
@@ -75,13 +67,13 @@ void inner_client_handling(int socket_id) {
     /* If login is read then start communicating */
     printf("Socket id %d is %s\n", socket_id, login);
     char buffer[256];
-    while (1) {
-        bzero(buffer, 256);
+    while (true) {
+        memset(buffer, 0, sizeof(buffer));
         if (read(socket_id, buffer, 1) != 1) {
             printf("Connection with %d will be closed due to read() error\n", socket_id);
             return;
         }
-        uint8_t buffer_length = (uint8_t) buffer[0];
+        auto buffer_length = (uint8_t) buffer[0];
         buffer[0] = 0;
         if (read(socket_id, buffer, buffer_length) != buffer_length) {
             printf("Connection with %d will be closed due to read() error\n", socket_id);
@@ -98,23 +90,16 @@ void inner_client_handling(int socket_id) {
     }
 }
 
-void* client_handling_routine(void* arg) {
-    int socket_id = (int) arg;
+void client_handling_routine(int socket_id) {
     register_client(socket_id);
     inner_client_handling(socket_id);
     deregister_client(socket_id);
     if (close(socket_id) < 0) {
         printf("ERROR closing the socket %d\n", socket_id);
-        return (void*) 1;
     }
-    return (void*) 0;
 }
 
-int main(int argc, char *argv[]) {
-    clients_count = 0;
-    clients_array_size = 256;
-    client_socket_ids = malloc(sizeof(int) * clients_array_size);
-
+int main() {
     /* First call to socket() function */
     int listen_socket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -124,8 +109,8 @@ int main(int argc, char *argv[]) {
     }
 
     /* Initialize socket structure */
-    struct sockaddr_in serv_addr;
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+    struct sockaddr_in serv_addr = {};
+    memset(&serv_addr, 0, sizeof(serv_addr));
     uint16_t port_number = 5001;
 
     serv_addr.sin_family = AF_INET;
@@ -142,21 +127,17 @@ int main(int argc, char *argv[]) {
     * go in sleep mode and will wait for the incoming connection
     */
     listen(listen_socket, 5);
-    struct sockaddr_in cli_addr;
+    struct sockaddr_in cli_addr = {};
     unsigned int clilen = sizeof(cli_addr);
-    while (1) {
+    while (true) {
         /* Accept actual connection from the client */
         int client_socket = accept(listen_socket, (struct sockaddr *) &cli_addr, &clilen);
         if (client_socket < 0) {
             perror("ERROR on accept");
         }
         else {
-            pthread_t client_thread;
-            int client_thread_code = pthread_create(
-                &client_thread, NULL, client_handling_routine, (void*) client_socket);
-            if (client_thread_code < 0) {
-                perror("ERROR on starting a pthread");
-            }
+            std::thread client_thread(client_handling_routine, client_socket);
+            client_thread.detach();
         }
     }
 }
