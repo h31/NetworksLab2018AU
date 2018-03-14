@@ -10,8 +10,6 @@
 
 #include <string.h>
 
-#pragma comment(lib, "Ws2_32.lib")
-
 #define DEFAULT_PORT "5001"
 
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -124,7 +122,7 @@ void *client_handling_routine(void *arg) {
     return (void*) 0;
 }
 
-int main(int argc, char *argv[]) {
+int main() {
     clients_count = 0;
     clients_array_size = 256;
     client_sockets = malloc(sizeof(SOCKET) * clients_array_size);
@@ -139,7 +137,7 @@ int main(int argc, char *argv[]) {
     }
 
     /* Initialize socket structure */
-    struct addrinfo *result = NULL, *ptr = NULL, hints;
+    struct addrinfo *result = NULL, hints;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
@@ -157,7 +155,7 @@ int main(int argc, char *argv[]) {
     SOCKET listen_socket = INVALID_SOCKET;
     listen_socket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     if (listen_socket == INVALID_SOCKET) {
-        printf("Error at socket(): %ld\n", WSAGetLastError());
+        printf("Error at socket(): %d\n", WSAGetLastError());
         freeaddrinfo(result);
         WSACleanup();
         return 1;
@@ -179,7 +177,7 @@ int main(int argc, char *argv[]) {
     */
     result_code = listen(listen_socket, SOMAXCONN);
     if (result_code == SOCKET_ERROR) {
-        printf("Listen failed with error: %ld\n", WSAGetLastError());
+        printf("Listen failed with error: %d\n", WSAGetLastError());
         closesocket(listen_socket);
         WSACleanup();
         return 1;
