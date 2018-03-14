@@ -14,24 +14,53 @@ Socket::Socket(int fd, sockaddr cli_addr, unsigned int clilen)
 
 MessageWrapper Socket::read_message() {
     auto message = std::make_shared<Message>(MESSAGE_LENGTH);
-    auto message_ptr = &message->buffer[0];
-    bzero(message_ptr, MESSAGE_LENGTH);
-    ssize_t n = read(fd, message_ptr, MESSAGE_LENGTH - 1); // recv on Windows
-    if (n < 0) {
-        throw MessengerError("ERROR reading from socket");
+    std::uint32_t n32 = 0;
+    ssize_t nbytes = 0;
+    auto check_reading = [&]() {
+        if (nbytes < 0) {
+            throw MessengerError("ERROR reading from socket");
+        }
+    };
+    
+    while (nbytes < (int)sizeof(n32)) {
+        nbytes = read(fd, reinterpret_cast<char *>(&n32) + nbytes, sizeof(n32) - nbytes); // recv on Windows
+        check_reading();
     }
+    
+    size_t n = ntohl(n32);
     message->buffer.resize(n);
+    auto message_ptr = &message->buffer[0];
+    nbytes = 0;
+    while (nbytes < (ssize_t)n) {
+        nbytes = read(fd, message_ptr + nbytes, n - nbytes); // recv on Windows
+        check_reading();
+    }
     return message;
 }
 
 void Socket::write_message(MessageWrapper message) {
-    auto n = message->size();
-    if (n < 0 || n > std::numeric_limits<std::uint32_t>::max()) {
-        throw MessengerError("Invalid message size : " + std::to_string(n));
+    auto size = message->size();
+    if (size < 0 || size > std::numeric_limits<std::uint32_t>::max()) {
+        throw MessengerError("Invalid message size : " + std::to_string(size));
     }
-    n = ::write(fd, message->ptr(), n); // send on Windows
-    if (n < 0) {
-        throw MessengerError("ERROR writing to socket");
+    
+    ssize_t nbytes = 0;
+    auto check_reading = [&]() {
+        if (nbytes < 0) {
+            throw MessengerError("ERROR writing to socket");
+        }
+    };
+    
+    std::uint32_t n32 = htonl(size);
+    while (nbytes < sizeof(n32)) {
+        nbytes = ::write(fd, reinterpret_cast<char *>(&n32) + nbytes, sizeof(n32) - nbytes);
+        check_reading();
+    }
+    
+    nbytes = 0;
+    while (nbytes < size) {
+        nbytes = ::write(fd, message->ptr(), size - static_cast<size_t>(nbytes)); // send on Windows
+        check_reading();
     }
 }
 
