@@ -38,3 +38,9 @@ SocketWrapper ServerSocket::accept() {
     }
     return std::make_shared<Socket>(cli_fd, cli_addr, clilen);
 }
+
+ServerSocket::~ServerSocket() {
+    if (fd != 0) {
+        close(fd);
+    }
+}

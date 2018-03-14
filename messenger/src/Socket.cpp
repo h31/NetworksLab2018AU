@@ -90,3 +90,7 @@ Socket::Socket(const std::string &hostname, int portno) {
     clilen = sizeof(cli_addr);
     bcopy(&connect_addr, &cli_addr, clilen);
 }
+
+Socket::~Socket() {
+    close(fd);
+}

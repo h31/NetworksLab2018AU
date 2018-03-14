@@ -1,11 +1,8 @@
 #include <iostream>
 #include <cstring>
-#include <cassert>
 #include <cstddef>
 #include <limits>
 #include <algorithm>
-
-#include "MessengerError.h"
 #include "ElegramAll.h"
 
 int main(int argc, char **argv) {

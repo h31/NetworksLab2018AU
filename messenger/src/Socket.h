@@ -13,9 +13,9 @@ struct Socket {
     
     void write_message(MessageWrapper message);
     
-    ~Socket() {}
+    ~Socket();
     
-    int fd;
+    int fd = 0;
     sockaddr cli_addr;
     unsigned int clilen;
 };

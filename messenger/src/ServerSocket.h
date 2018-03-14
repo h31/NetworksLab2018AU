@@ -6,7 +6,7 @@
 struct ServerSocket {
     ServerSocket(int portno);
     
-    ~ServerSocket() {}
+    ~ServerSocket();
     
     /**
      * Now start listening for the clients, here process will
@@ -17,7 +17,7 @@ struct ServerSocket {
     
     SocketWrapper accept();
     
-    int fd;
+    int fd = 0;
 };
 
 
