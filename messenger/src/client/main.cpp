@@ -5,12 +5,15 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include <queue>
 #include <pthread.h>
 #include <cstdio>
+#include <cstring>
+#include <iomanip>
 #include <iostream>
 
 #include <utils/errors.h>
-#include <packets.h>
+#include <utils/packets.h>
 
 const uint BUFFER_SIZE = 256;
 
@@ -23,8 +26,8 @@ enum state {
 volatile state current_state;
 pthread_mutex_t state_mutex;
 
-void output_packet(packet p) {
-    std::cout << "<" << std::put_time(std::localtime(p.time_received), ""R(%R)"") << ">"
+void output_packet(server_packet p) {
+    std::cout << "<" << std::put_time(std::localtime(&p.time_received), "%R") << ">"
               << " "
               << "[" << p.sender_nickname << "]"
               << " "
@@ -52,8 +55,9 @@ void* message_reader_routine(void* arg) {
         }
 
         // read new packet and push to queue
-        server_packet incoming_packet = std::static_cast<server_packet>(read_packet(sockfd));
-        new_messages.push(incoming_packet);
+        server_packet *incoming_packet = read_packet<server_packet>(sockfd);
+        new_messages.push(*incoming_packet);
+        delete incoming_packet;
     }
 
     return NULL;
@@ -67,12 +71,12 @@ void main_loop(int sockfd) {
 
         pthread_mutex_lock(&state_mutex);
 
-        client_packet p;
+        client_packet *p = NULL;
 
         if (line == ":q") {
             current_state = QUIT;
 
-            p = logout_client_packet {};
+            p = new logout_client_packet;
         } else if (line == ":m") {
             current_state = INPUT;
 
@@ -86,7 +90,7 @@ void main_loop(int sockfd) {
 
             pthread_mutex_unlock(&state_mutex);
 
-            p = message_client_packet {line};
+            p = new message_client_packet(line);
             
             pthread_mutex_lock(&state_mutex);
         } else {
@@ -97,13 +101,15 @@ void main_loop(int sockfd) {
         pthread_mutex_unlock(&state_mutex);
 
         /* Send message to the server */
-        write_packet(sockfd, &p);
+        write_packet(sockfd, p);
+
+        delete p;
     }
 }
 
 
 int main(int argc, char *argv[]) {
-    int sockfd, n;
+    int sockfd;
     uint16_t portno;
     struct sockaddr_in serv_addr;
     struct hostent *server;
@@ -144,7 +150,9 @@ int main(int argc, char *argv[]) {
     );
 
     // send nickname to server
-    write_client_packet(sockfd, login_client_packet {argv[3]} );
+    client_packet *p = new login_client_packet(argv[3]);
+    write_packet(sockfd, p);
+    delete p;
 
     // initialize threads
     state_mutex = PTHREAD_MUTEX_INITIALIZER;

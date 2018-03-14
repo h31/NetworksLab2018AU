@@ -1,9 +1,20 @@
 #include <cstdio>
-#include <errors.h>
+#include <cstdlib>
+#include <utils/errors.h>
 
-void check_error(int n, char *str) {
+const std::string ACCEPT_ERROR         = "ERROR on accept";
+const std::string SOCKET_OPEN_ERROR    = "ERROR opening socket";
+const std::string SOCKET_BIND_ERROR    = "ERROR binding socket";
+const std::string SOCKET_WRITE_ERROR   = "ERROR writing to socket";
+const std::string SOCKET_READ_ERROR    = "ERROR reading from socket";
+const std::string CONNECT_ERROR        = "ERROR could not connect";
+const std::string DISCONNECT_ERROR     = "ERROR closing socket";
+const std::string UNKNOWN_PACKET_ERROR = "ERROR unknown packet type";
+const std::string NOT_LOGGED_IN_ERROR  = "ERROR not logged in";
+
+void check_error(int n, const std::string str) {
     if (n < 0) {
-        perror(str);
+        perror(str.c_str());
         exit(1);
     }
 }

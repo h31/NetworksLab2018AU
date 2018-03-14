@@ -1,29 +1,30 @@
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <iostream>
 
 #include <netdb.h>
 #include <netinet/in.h>
 #include <unistd.h>
 
 #include <pthread.h>
-#include <cstring>
 
-#include <errors.h>
-#include <packets.h>
+#include <utils/errors.h>
+#include <utils/packets.h>
 
 int client_delta;
 pthread_mutex_t client_changes_mutex;
-pthread_condition_t client_changes_condition;
+pthread_cond_t client_changes_condition;
 
 server_packet new_packet;
 pthread_mutex_t new_packet_mutex;
-pthread_condition_t new_packet_condition;
+pthread_cond_t new_packet_condition;
 
-pthread_condition_t ready_to_read_condition;
+pthread_cond_t ready_to_read_condition;
 
 pthread_barrier_t ready_clients_barrier;
 
-void *client_coordinator_routine(void *arg) {
+void *client_coordinator_routine(void *) {
     client_changes_mutex = PTHREAD_MUTEX_INITIALIZER;
     client_changes_condition = PTHREAD_COND_INITIALIZER;
 
@@ -40,7 +41,7 @@ void *client_coordinator_routine(void *arg) {
         client_count += client_delta;
         
         // update barrier to hold new client count + coordinator
-        pthread_barrier_init(&ready_clients_barrier, client_count + 1);
+        pthread_barrier_init(&ready_clients_barrier, NULL, client_count + 1);
 
         // wake up changed clients
         pthread_cond_broadcast(&client_changes_condition);
@@ -57,7 +58,7 @@ void *client_coordinator_routine(void *arg) {
 
 struct client_shared_data {
     const int sockfd;
-    volatile std::string nickname;
+    std::string nickname;
     volatile bool is_finished;
 };
 
@@ -75,14 +76,14 @@ void *client_reader_routine(void *arg) {
     // once coordinator acknowledged our presence we start iteration
     while (!data->is_finished) {
         // read packet
-        client_packet p = read_client_packet(data->sockfd);
+        client_packet *p = read_packet<client_packet>(data->sockfd);
 
-        switch (p.type) {
-            LOGIN:
+        switch (p->get_type()) {
+            case LOGIN:
                 // update login
-                data->nickname = std::static_cast<login_client_packet>(p).nickname;
+                data->nickname = static_cast<login_client_packet*>(p)->nickname;
                 break;
-            MESSAGE:
+            case MESSAGE:
                 // check logged in
                 if (data->nickname.empty()) {
                     std::cerr << NOT_LOGGED_IN_ERROR << "\n";
@@ -92,23 +93,27 @@ void *client_reader_routine(void *arg) {
     
                     // wait to be given word and then send packet
                     pthread_cond_wait(&new_packet_condition, &new_packet_mutex);
-                    new_packet = { 
+                    new_packet = server_packet( 
                         std::time(NULL), 
                         data->nickname,  
-                        std::static_cast<login_client_packet>(p).message
-                    };
+                        static_cast<message_client_packet*>(p)->message
+                    );
 
                     pthread_mutex_unlock(&new_packet_mutex);
                 }
                 break;
-            LOGOUT:
+            case LOGOUT:
                 // finish iteration
                 data->is_finished = true;
                 break;
             default:
                 std::cerr << UNKNOWN_PACKET_ERROR << "\n";
         }
+
+        delete p;
     }
+
+    return NULL;
 }
 
 void *client_writer_routine(void *arg) {
@@ -121,8 +126,8 @@ void *client_writer_routine(void *arg) {
         pthread_cond_wait(&new_packet_condition, &new_packet_mutex);
 
         // check that we don't send our packet to ourselves
-        if (new_packet.nickname != data->nickname) {
-            write_packet(data->sockfd, new_packet);
+        if (new_packet.sender_nickname != data->nickname) {
+            write_packet<server_packet>(data->sockfd, &new_packet);
         }
 
         pthread_mutex_unlock(&new_packet_mutex);
@@ -142,16 +147,16 @@ void *client_writer_routine(void *arg) {
     pthread_cond_wait(&client_changes_condition, &client_changes_mutex);
 
     pthread_mutex_unlock(&client_changes_mutex);
+
+    return NULL;
 }
 
 int main(int argc, char *argv[]) {
     int sockfd, newsockfd;
     uint16_t portno;
     unsigned int clilen;
-    char buffer[256];
     struct sockaddr_in serv_addr, cli_addr;
-    ssize_t n;
-
+    
     if (argc < 2) {
         fprintf(stderr, "usage: %s port\n", argv[0]);
         exit(0);
@@ -164,7 +169,7 @@ int main(int argc, char *argv[]) {
 
     /* Initialize socket structure */
     bzero((char *) &serv_addr, sizeof(serv_addr));
-    portno = argv[1];
+    portno = std::stoi(argv[1]);
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -183,7 +188,7 @@ int main(int argc, char *argv[]) {
     clilen = sizeof(cli_addr);
 
     // start coordinator
-    thread_t coordinator;
+    pthread_t coordinator;
 
     pthread_create(
         &coordinator, 

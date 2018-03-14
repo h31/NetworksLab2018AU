@@ -7,6 +7,6 @@ target_include_directories(client
 )
 
 target_link_libraries(client
-    utils
+    PRIVATE utils
     pthread
 )
