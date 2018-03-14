@@ -4,11 +4,10 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
+#include <string.h>
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
-
-#include <string.h>
 
 #define DEFAULT_PORT "5001"
 
@@ -152,8 +151,7 @@ int main() {
         return 1;
     }
 
-    SOCKET listen_socket = INVALID_SOCKET;
-    listen_socket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    SOCKET listen_socket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     if (listen_socket == INVALID_SOCKET) {
         printf("Error at socket(): %d\n", WSAGetLastError());
         freeaddrinfo(result);
