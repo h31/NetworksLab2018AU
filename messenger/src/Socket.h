@@ -5,13 +5,12 @@
 #include "ElegramFwd.h"
 #include "Date.h"
 
-#define DEBUG_PROTOCOL 0
+#define DEBUG_PROTOCOL 1
 
 struct Socket {
     Socket(int fd, sockaddr cli_addr, unsigned int clilen, const std::string &username);
     
     Socket(const std::string &hostname, int port, const std::string &username);
-    
     
     void write_string(const std::string &str);
     
@@ -22,7 +21,6 @@ struct Socket {
     std::string read_string();
     
     void write_uint(std::uint32_t n);
-    
     
     MessageWrapper read_message();
     

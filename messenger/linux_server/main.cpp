@@ -20,6 +20,7 @@ static void *client_session(void *data) {
             break;
         }
         auto message = acceptSocket->read_message();
+        
         std::cout << "Here is date: " << message->date.pretty_string()
                   << ", Here is the message: " + message->buffer
                   << ", Here is the username: " + message->username
@@ -33,7 +34,11 @@ static void *client_session(void *data) {
 }
 
 int main(int argc, char **argv) {
-    int port = argc < 2 ? 5001 : stoi(static_cast<std::string>(argv[1]));
+    if (argc != 2) {
+        std::cerr << "USAGE: " << argv[0] << " port" << std::endl;
+        exit(1);
+    }
+    auto const port = stoi(static_cast<std::string>(argv[1]));
     auto serverSocket = std::make_shared<ServerSocket>(port);
     serverSocket->listen();
     while (!is_finished) {

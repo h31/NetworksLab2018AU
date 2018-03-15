@@ -5,6 +5,8 @@
 #include <ctime>
 
 struct Date final {
+    Date(const Date &rhs);
+    
     static Date now();
     
     static Date from_string(const std::string &date_string);
@@ -17,8 +19,7 @@ struct Date final {
 
 private:
     tm global_time;
-    bool is_tm_from_now = false;
-    Date(tm global_time, bool is_tm_from_now);
+    explicit Date(tm new_global_time);
 };
 
 #endif //MESSENGER_DATE_H

@@ -161,12 +161,12 @@ MessageWrapper Socket::read_message() {
 
 void Socket::write_message(const std::string &buffer, const Date &date) {
 #if DEBUG_PROTOCOL
-    std::cout << "Writing message: " << date.to_string() << ": " << buffer << std::endl;
+    std::cout << "Writing message: " << date.pretty_string() << ": " << buffer << std::endl;
 #endif
     write_uint(static_cast<uint32_t>(MessageType::MESSAGE));
     write_string(buffer);
 #if DEBUG_PROTOCOL
-    std::cout << "Writing date: " << date.to_string() << std::endl;
+    std::cout << "Writing date: " << date.pretty_string() << std::endl;
 #endif
     write_string(date.to_string());
 }
