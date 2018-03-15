@@ -5,21 +5,31 @@
 #include <ctime>
 
 struct Date final {
-    Date(const Date &rhs);
-    
     static Date now();
     
     static Date from_string(const std::string &date_string);
     
-    std::string pretty_string() const;
-    
     std::string to_string() const;
     
-    ~Date();
+    std::string pretty_string() const;
+    
+    struct tm *get_local_time() const;
+    
+    int hours() const {
+        return get_local_time()->tm_hour;
+    }
 
+    int minutes() const {
+        return get_local_time()->tm_min;
+    }
+
+    int seconds() const {
+        return get_local_time()->tm_sec;
+    }
+    
 private:
-    tm global_time;
-    explicit Date(tm new_global_time);
+    std::time_t ltimer;
+    explicit Date(const std::time_t &local_timer);
 };
 
 #endif //MESSENGER_DATE_H

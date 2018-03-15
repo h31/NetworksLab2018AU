@@ -5,7 +5,7 @@
 #include "ElegramFwd.h"
 #include "Date.h"
 
-#define DEBUG_PROTOCOL 1
+#define DEBUG_PROTOCOL 0
 
 struct Socket {
     Socket(int fd, sockaddr cli_addr, unsigned int clilen, const std::string &username);

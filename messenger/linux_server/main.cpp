@@ -12,6 +12,16 @@ volatile bool is_finished = false;
 
 static std::vector<pthread_t> acceptor_threads;
 
+static void print_message(const MessageWrapper &message) {
+    auto const &date = message->date;
+    printf("<%02d:%02d:%02d> [%s] %s\n",
+           date.hours(),
+           date.minutes(),
+           date.seconds(),
+           message->username.c_str(),
+           message->buffer.c_str());
+}
+
 static void *client_session(void *data) {
     auto acceptSocket = reinterpret_cast<Socket *>(data);
     while (!is_finished) {
@@ -20,12 +30,7 @@ static void *client_session(void *data) {
             break;
         }
         auto message = acceptSocket->read_message();
-        
-        std::cout << "Here is date: " << message->date.pretty_string()
-                  << ", Here is the message: " + message->buffer
-                  << ", Here is the username: " + message->username
-                  << std::endl;
-        // TODO full address.
+        print_message(message);
         acceptSocket->write_message("I got your message: " + message->buffer, Date::now());
     }
     std::cout << "Finished session with client: " << acceptSocket->other_username << std::endl;
