@@ -7,9 +7,9 @@
 #include <cassert>
 #include "Date.h"
 
-// Locks not needed (Are not needed as client is single-threaded):
 // TODO locks on concurrent (from different clients) calls to gmtime, localtime
 // TODO locks on concurrent (from different clients) calls to ctime, asctime.
+// client is multithreaded and callback has incoming messages with dates.
 
 static const int BIT_SHIFT = 7;
 static const int BIT_SHIFT_MASK  = (1 << BIT_SHIFT) - 1;

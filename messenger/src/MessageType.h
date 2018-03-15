@@ -4,6 +4,7 @@
 enum struct MessageType {
     FINISH = 0,
     MESSAGE,
+    BROADCAST,
     INIT_FROM_CLIENT,
     INIT_FROM_SERVER
 };

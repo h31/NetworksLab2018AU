@@ -112,7 +112,7 @@ Socket::~Socket() {
 
 void Socket::check_reading(ssize_t nbytes) {
     if (nbytes < 0) {
-        throw MessengerError("ERROR writing to socket");
+        throw MessengerError("Error writing to socket");
     }
 }
 
@@ -145,16 +145,16 @@ void Socket::write_uint(std::uint32_t n) {
     }
 }
 
-MessageWrapper Socket::read_message() {
+Message Socket::read_message() {
 #if DEBUG_PROTOCOL
     std::cout << "Reading message" << std::endl;
 #endif
     auto buffer = read_string();
     auto date_string = read_string();
     auto date = Date::from_string(date_string);
-    auto message = std::make_shared<Message>(buffer, other_username, date);
+    Message message{buffer, other_username, date};
 #if DEBUG_PROTOCOL
-    std::cout << "Read message: " << message->to_string() << std::endl;
+    std::cout << "Read message: " << message.to_string() << std::endl;
 #endif
     return message;
 }
@@ -169,6 +169,34 @@ void Socket::write_message(const std::string &buffer, const Date &date) {
     std::cout << "Writing date: " << date.pretty_string() << std::endl;
 #endif
     write_string(date.to_string());
+}
+
+Message Socket::read_broadcast() {
+#if DEBUG_PROTOCOL
+    std::cout << "Reading message" << std::endl;
+#endif
+    auto username = read_string();
+    auto buffer = read_string();
+    auto date_string = read_string();
+    auto date = Date::from_string(date_string);
+    Message message{buffer, username, date};
+#if DEBUG_PROTOCOL
+    std::cout << "Read message: " << message.to_string() << std::endl;
+#endif
+    return message;
+}
+
+void Socket::write_broadcast(const Message &message) {
+//#if DEBUG_PROTOCOL
+//    std::cout << "Writing message: " << date.pretty_string() << ": " << buffer << std::endl;
+//#endif
+    write_uint(static_cast<uint32_t>(MessageType::BROADCAST));
+    write_string(message.username);
+    write_string(message.buffer);
+//#if DEBUG_PROTOCOL
+//    std::cout << "Writing date: " << date.pretty_string() << std::endl;
+//#endif
+    write_string(message.date.to_string());
 }
 
 void Socket::finish() {

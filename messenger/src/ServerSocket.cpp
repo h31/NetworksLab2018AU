@@ -26,18 +26,16 @@ void ServerSocket::listen(int nrequests) {
     ::listen(fd, nrequests);
 }
 
-Socket *ServerSocket::accept() {
+SocketWrapper ServerSocket::accept() {
     struct sockaddr cli_addr = {};
     unsigned int clilen = sizeof(cli_addr);
-    
     /* Accept actual connection from the client */
     int cli_fd = ::accept(fd, &cli_addr, &clilen);
     
     if (fd < 0) {
         throw MessengerError("ERROR on accept: " + std::to_string(fd));
     }
-    auto socket = new Socket(cli_fd, cli_addr, clilen, "SERVER");
-    return socket;
+    return std::make_shared<Socket>(cli_fd, cli_addr, clilen, "SERVER");
 }
 
 ServerSocket::~ServerSocket() {

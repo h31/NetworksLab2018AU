@@ -12,6 +12,5 @@ struct Socket;
 using SocketWrapper = std::shared_ptr<Socket>;
 
 struct Message;
-using MessageWrapper = std::shared_ptr<Message>;
 
 #endif //MESSENGER_ELEGRAMFWD_H

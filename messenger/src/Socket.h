@@ -22,9 +22,13 @@ struct Socket {
     
     void write_uint(std::uint32_t n);
     
-    MessageWrapper read_message();
+    Message read_message();
     
     void write_message(const std::string &buffer, const Date &date);
+    
+    Message read_broadcast();
+    
+    void write_broadcast(const Message &message);
     
     ~Socket();
     

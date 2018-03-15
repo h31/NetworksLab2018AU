@@ -3,6 +3,10 @@
 
 #include "ElegramAll.h"
 
+void callback() {
+
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 3) {
         fprintf(stderr, "usage %s hostname port username\n", argv[0]);
@@ -19,11 +23,11 @@ int main(int argc, char *argv[]) {
     std::getline(std::cin, line);
     socket->write_message(line, Date::now());
     auto message_type = static_cast<MessageType>(socket->read_uint());
-    if (message_type != MessageType::MESSAGE) {
+    if (message_type != MessageType::BROADCAST) {
         throw ProtocolError("Expecting answer from server.");
     }
-    auto output_message = socket->read_message();
-    std::cout << "Received message: " + output_message->buffer << std::endl;
+    auto output_message = socket->read_broadcast();
+    std::cout << "Received message: \n" + output_message.to_string() << std::endl;
     
     socket->finish();
     return 0;

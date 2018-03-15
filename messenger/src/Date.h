@@ -5,6 +5,10 @@
 #include <ctime>
 
 struct Date final {
+    Date(const Date &) = default;
+    
+    Date(Date &&) = default;
+    
     static Date now();
     
     static Date from_string(const std::string &date_string);
@@ -25,6 +29,10 @@ struct Date final {
 
     int seconds() const {
         return get_local_time()->tm_sec;
+    }
+    
+    friend bool operator<(const Date &lhs, const Date &rhs) {
+        return lhs.ltimer < rhs.ltimer;
     }
     
 private:
