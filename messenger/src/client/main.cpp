@@ -9,7 +9,6 @@
 
 #include <netdb.h>
 #include <netinet/in.h>
-#include <sys/poll.h>
 #include <unistd.h>
 
 #include <utils/errors.h>
@@ -46,10 +45,6 @@ void output_packet(std::shared_ptr<server_packet> p) {
 void message_reader_routine(int sockfd) {
     std::queue<std::shared_ptr<server_packet>> new_messages;
 
-    pollfd poll_settings;
-    poll_settings.fd = sockfd;
-    poll_settings.events = POLLIN | POLLPRI;
-    
     while (get_state() != QUIT) {
         // print queue until input process begins
         while (!new_messages.empty()) {
@@ -63,17 +58,18 @@ void message_reader_routine(int sockfd) {
             }
         }
 
-        // poll whether new data is available
-        const int POLL_TIMEOUT = 10;
-        int poll_result = poll(&poll_settings, 1, POLL_TIMEOUT);
-        check_error(poll_result, POLL_ERROR);
-
-        if (poll_result > 0) {
+        if (ready_to_read(sockfd)) {
             // read new packet and push to queue
-            new_messages.push(read_packet<server_packet>(sockfd));
+            try {
+                new_messages.push(read_packet<server_packet>(sockfd));
+            } catch (std::string message) {
+                std::cerr << message << "\n";
+                update_state(QUIT);
+            }
         }
     }
 }
+
 
 void main_loop(int sockfd) {
     while (get_state() != QUIT) {
@@ -103,11 +99,15 @@ void main_loop(int sockfd) {
 
         /* Send message to the server */
         if (p) {
-            write_packet(sockfd, p);
+            try {
+                write_packet(sockfd, p);
+            } catch (std::string message) {
+                std::cerr << message << "\n";
+                update_state(QUIT);
+            }
         }
     }
 }
-
 
 int main(int argc, char *argv[]) {
     int sockfd;
@@ -151,12 +151,17 @@ int main(int argc, char *argv[]) {
     );
 
     // send nickname to server
-    write_packet(
-        sockfd, 
-        std::static_pointer_cast<client_packet>(
-            std::make_shared<login_client_packet>(argv[3])
-        )
-    );
+    try {
+        write_packet(
+            sockfd, 
+            std::static_pointer_cast<client_packet>(
+                std::make_shared<login_client_packet>(argv[3])
+            )
+        );
+    } catch (std::string message) {
+        std::cerr << message << "\n";
+        return 0;
+    }
 
     // create routine to read and output incoming messages
     std::thread message_reader(message_reader_routine, sockfd);
@@ -167,12 +172,4 @@ int main(int argc, char *argv[]) {
 
     // wait for message reader to finish
     message_reader.join();
-    
-    // finally close the socket
-    check_error(
-        close(sockfd),
-        DISCONNECT_ERROR
-    );
-
-    return 0;
 }

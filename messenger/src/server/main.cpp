@@ -49,7 +49,11 @@ void consumer_routine() {
 
         for (auto client_info: active_clients) {
             if (client_info.second != incoming_message->sender_nickname) {
-                write_packet(client_info.first, incoming_message);
+                try {
+                    write_packet(client_info.first, incoming_message);
+                } catch (std::string message) {
+                    // do nothing as it will be handled by producer
+                }
             }
         }
 
@@ -66,10 +70,23 @@ void producer_routine(int sockfd) {
     bool is_finished = false;
 
     std::string nickname;
-    
+
     while (!is_finished) {
+        // poll whether new data is available
+        if (!ready_to_read(sockfd)) {
+            continue;
+        }
+        
         // read new packet
-        std::shared_ptr<client_packet> p = read_packet<client_packet>(sockfd);
+        std::shared_ptr<client_packet> p;
+        try {
+            p = read_packet<client_packet>(sockfd);
+        } catch (std::string message) {
+            std::cerr << message << " on socket " << std::to_string(sockfd) << "." 
+                      << " Connection will be terminated\n";
+            is_finished = true;
+            continue;
+        }
 
         switch (p->get_type()) {
             case LOGIN: {

@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include <sys/poll.h>
 #include <utils/errors.h>
 #include <utils/packets.h>
 
@@ -42,8 +43,7 @@ void write_n_bytes(int sockfd, void *ptr, size_t n) {
         check_error(n, SOCKET_WRITE_ERROR);
 
         if (m == 0) {
-            std::cerr << "socket closed by server\n";
-            exit(0);
+            throw std::string("socket closed by remote side");
         }
 
         ptr = ((char *) ptr) + m;
@@ -102,8 +102,7 @@ void read_n_bytes(int sockfd, void *ptr, size_t n) {
         check_error(n, SOCKET_WRITE_ERROR);
 
         if (m == 0) {
-            std::cerr << "socket closed by server\n";
-            exit(0);
+            throw std::string("socket closed by remote side");
         }
 
         ptr = ((char *) ptr) - m;
@@ -117,7 +116,7 @@ std::string read_string(int sockfd) {
     
     char *c_str = new char[size];
     read_n_bytes(sockfd, c_str, sizeof(char) * size);
-    
+
     std::string str(c_str);
 
     delete [] c_str;
@@ -165,4 +164,17 @@ std::shared_ptr<server_packet> read_packet(int sockfd) {
     p->message = read_string(sockfd);
 
     return p;
+}
+
+const int POLL_TIMEOUT = 10;
+
+bool ready_to_read(int sockfd) {
+    pollfd poll_settings;
+    poll_settings.fd = sockfd;
+    poll_settings.events = POLLIN | POLLPRI;
+    
+    int poll_result = poll(&poll_settings, 1, POLL_TIMEOUT);
+    check_error(poll_result, POLL_ERROR);
+
+    return poll_result;
 }

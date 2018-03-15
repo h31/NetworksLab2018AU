@@ -56,3 +56,5 @@ void write_packet(int, std::shared_ptr<T>);
 
 template<typename T>
 std::shared_ptr<T> read_packet(int);
+
+bool ready_to_read(int);
