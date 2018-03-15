@@ -52,7 +52,7 @@ struct server_packet : packet {
 };
 
 template<typename T>
-void write_packet(int, T *);
+void write_packet(int, std::shared_ptr<T>);
 
 template<typename T>
-T *read_packet(int);
+std::shared_ptr<T> read_packet(int);

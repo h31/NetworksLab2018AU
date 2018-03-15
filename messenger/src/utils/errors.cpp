@@ -11,6 +11,7 @@ const std::string CONNECT_ERROR        = "ERROR could not connect";
 const std::string DISCONNECT_ERROR     = "ERROR closing socket";
 const std::string UNKNOWN_PACKET_ERROR = "ERROR unknown packet type";
 const std::string NOT_LOGGED_IN_ERROR  = "ERROR not logged in";
+const std::string POLL_ERROR           = "ERROR poll completed with an error";
 
 void check_error(int n, const std::string str) {
     if (n < 0) {

@@ -1,161 +1,164 @@
+#include <condition_variable>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <map>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 #include <netdb.h>
 #include <netinet/in.h>
 #include <unistd.h>
 
-#include <pthread.h>
-
 #include <utils/errors.h>
 #include <utils/packets.h>
 
-int client_delta;
-pthread_mutex_t client_changes_mutex;
-pthread_cond_t client_changes_condition;
+std::mutex incoming_message_mutex;
+std::condition_variable incoming_message_cv;
+std::condition_variable incoming_message_consumed_cv;
+std::shared_ptr<server_packet> incoming_message;
 
-server_packet new_packet;
-pthread_mutex_t new_packet_mutex;
-pthread_cond_t new_packet_condition;
+std::mutex active_clients_mutex;
+std::map<int,std::string> active_clients;
 
-pthread_cond_t ready_to_read_condition;
+void log(std::string str) {
+    std::cerr << str << "\n";
+}
 
-pthread_barrier_t ready_clients_barrier;
+void disconnect(int sockfd) {
+    active_clients_mutex.lock();
 
-void *client_coordinator_routine(void *) {
-    client_changes_mutex = PTHREAD_MUTEX_INITIALIZER;
-    client_changes_condition = PTHREAD_COND_INITIALIZER;
+    active_clients.erase(sockfd);
 
-    new_packet_mutex = PTHREAD_MUTEX_INITIALIZER;
-    new_packet_condition = PTHREAD_COND_INITIALIZER;
+    active_clients_mutex.unlock();
 
-    ready_to_read_condition = PTHREAD_COND_INITIALIZER;
+    close(sockfd);
+}
 
-    int client_count = 0;
-
+void consumer_routine() {
     while (true) {
-        // process client count changes
-        pthread_mutex_lock(&client_changes_mutex);
-        client_count += client_delta;
-        
-        // update barrier to hold new client count + coordinator
-        pthread_barrier_init(&ready_clients_barrier, NULL, client_count + 1);
+        std::unique_lock incoming_message_lock(incoming_message_mutex);
 
-        // wake up changed clients
-        pthread_cond_broadcast(&client_changes_condition);
+        while (!incoming_message) {
+            incoming_message_cv.wait(incoming_message_lock);
+        }
 
-        pthread_mutex_unlock(&client_changes_mutex);
+        active_clients_mutex.lock();
 
-        // allow one client to introduce its message to everyone
-        pthread_cond_signal(&ready_to_read_condition);
+        for (auto client_info: active_clients) {
+            if (client_info.second != incoming_message->sender_nickname) {
+                write_packet(client_info.first, incoming_message);
+            }
+        }
 
-        // wait for new packet a to be sent to each active client
-        pthread_barrier_wait(&ready_clients_barrier);
+        active_clients_mutex.unlock();
+
+        incoming_message.reset();
+        incoming_message_consumed_cv.notify_one();
+
+        incoming_message_lock.unlock();
     }
 }
 
-struct client_shared_data {
-    const int sockfd;
+void producer_routine(int sockfd) {
+    bool is_finished = false;
+
     std::string nickname;
-    volatile bool is_finished;
-};
-
-void *client_reader_routine(void *arg) {
-    client_shared_data *data = (client_shared_data *) arg;
-
-    // we are a new client
-    pthread_mutex_lock(&client_changes_mutex);
     
-    ++client_delta;
-    pthread_cond_wait(&client_changes_condition, &client_changes_mutex);
-
-    pthread_mutex_unlock(&client_changes_mutex);
-
-    // once coordinator acknowledged our presence we start iteration
-    while (!data->is_finished) {
-        // read packet
-        client_packet *p = read_packet<client_packet>(data->sockfd);
+    while (!is_finished) {
+        // read new packet
+        std::shared_ptr<client_packet> p = read_packet<client_packet>(sockfd);
 
         switch (p->get_type()) {
-            case LOGIN:
+            case LOGIN: {
                 // update login
-                data->nickname = static_cast<login_client_packet*>(p)->nickname;
+                std::string new_nickname = std::static_pointer_cast<login_client_packet>(p)->nickname;
+                log("login from socket " + std::to_string(sockfd) + " -- \"" + new_nickname + "\"");
+                
+                if (nickname.empty() && !new_nickname.empty()) { // i.e. it's being initialized
+                    nickname = new_nickname;
+
+                    active_clients_mutex.lock();
+
+                    active_clients[sockfd] = nickname;
+
+                    active_clients_mutex.unlock();
+                }
                 break;
-            case MESSAGE:
-                // check logged in
-                if (data->nickname.empty()) {
+            }
+            case MESSAGE: {
+                std::string message = std::static_pointer_cast<message_client_packet>(p)->message;
+                log("message from socket " + std::to_string(sockfd) + " -- \"" + message + "\"");
+
+                // check that logged in
+                if (nickname.empty()) {
                     std::cerr << NOT_LOGGED_IN_ERROR << "\n";
                 } else {
                     // logged in -- make new server_packet to send to other clients
-                    pthread_mutex_lock(&new_packet_mutex);
-    
-                    // wait to be given word and then send packet
-                    pthread_cond_wait(&new_packet_condition, &new_packet_mutex);
-                    new_packet = server_packet( 
-                        std::time(NULL), 
-                        data->nickname,  
-                        static_cast<message_client_packet*>(p)->message
-                    );
+                    std::unique_lock lock(incoming_message_mutex);
 
-                    pthread_mutex_unlock(&new_packet_mutex);
+                    while (incoming_message) {
+                        incoming_message_consumed_cv.wait(lock);
+                    }
+                    
+                    incoming_message.reset(new server_packet( 
+                        std::time(NULL), 
+                        nickname,
+                        message
+                    ));
+
+                    incoming_message_cv.notify_all();
                 }
                 break;
+            }
             case LOGOUT:
-                // finish iteration
-                data->is_finished = true;
+                log("logout from socket " + std::to_string(sockfd));
+                is_finished = true;
                 break;
             default:
                 std::cerr << UNKNOWN_PACKET_ERROR << "\n";
         }
-
-        delete p;
     }
 
-    return NULL;
+    disconnect(sockfd);
 }
 
-void *client_writer_routine(void *arg) {
-    client_shared_data *data = (client_shared_data *) arg;
-    
-    while (!data->is_finished) {
-        pthread_mutex_lock(&new_packet_mutex);
+void new_connections_listener_routine(
+    int sockfd, 
+    sockaddr_in cli_addr, 
+    unsigned int clilen
+) {
+    std::vector<std::thread> producers;
 
-        // wait for new packet to send
-        pthread_cond_wait(&new_packet_condition, &new_packet_mutex);
+    while (true) {
+        /* Accept actual connection from the client */
+        int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        check_error(newsockfd, ACCEPT_ERROR);
 
-        // check that we don't send our packet to ourselves
-        if (new_packet.sender_nickname != data->nickname) {
-            write_packet<server_packet>(data->sockfd, &new_packet);
-        }
+        log("new connection on socket " + std::to_string(newsockfd));
 
-        pthread_mutex_unlock(&new_packet_mutex);
-
-        // wait for other clients to send the packet
-        pthread_barrier_wait(&ready_clients_barrier);
+        // If connection is established then start communicating in new threads
+        producers.push_back(std::thread(producer_routine, newsockfd));
     }
-
-    // finalizing procedure
-    pthread_mutex_lock(&client_changes_mutex);
-    
-    // clear shared data
-    delete data;
-
-    // tell coordinator we are retiring and wait until it allows us to leave
-    --client_delta;
-    pthread_cond_wait(&client_changes_condition, &client_changes_mutex);
-
-    pthread_mutex_unlock(&client_changes_mutex);
-
-    return NULL;
 }
+
+class socket_closer {
+    int sockfd;
+
+public:
+    socket_closer(int _sockfd): sockfd(_sockfd) {}
+    ~socket_closer() {
+        close(sockfd);
+    }
+};
 
 int main(int argc, char *argv[]) {
-    int sockfd, newsockfd;
+    int sockfd;
     uint16_t portno;
     unsigned int clilen;
-    struct sockaddr_in serv_addr, cli_addr;
+    sockaddr_in serv_addr, cli_addr;
     
     if (argc < 2) {
         fprintf(stderr, "usage: %s port\n", argv[0]);
@@ -188,37 +191,17 @@ int main(int argc, char *argv[]) {
     clilen = sizeof(cli_addr);
 
     // start coordinator
-    pthread_t coordinator;
-
-    pthread_create(
-        &coordinator, 
-        NULL, 
-        client_coordinator_routine,
-        NULL
+    std::thread consumer(consumer_routine);
+    std::thread new_connections_listener(
+        new_connections_listener_routine,
+        sockfd,
+        cli_addr,
+        clilen
     );
 
-    while (true) {
-        /* Accept actual connection from the client */
-        newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-        check_error(newsockfd, ACCEPT_ERROR);
+    // just in case program finishes
+    socket_closer sc(sockfd);
 
-        // If connection is established then start communicating in new threads
-        client_shared_data *shared_data = new client_shared_data { newsockfd, "", false };
-
-        pthread_create(
-            new pthread_t,
-            NULL,
-            client_reader_routine,
-            shared_data
-        );
-
-        pthread_create(
-            new pthread_t,
-            NULL,
-            client_writer_routine,
-            shared_data
-        );
-    }
-
-    return 0;
+    new_connections_listener.join();
+    consumer.join();
 }

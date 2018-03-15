@@ -11,5 +11,6 @@ extern const std::string CONNECT_ERROR;
 extern const std::string DISCONNECT_ERROR;
 extern const std::string UNKNOWN_PACKET_ERROR;
 extern const std::string NOT_LOGGED_IN_ERROR;
+extern const std::string POLL_ERROR;
 
 void check_error(int, const std::string);

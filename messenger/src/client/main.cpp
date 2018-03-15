@@ -1,21 +1,19 @@
 #include <cstdio>
 #include <cstdlib>
-
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-
-#include <queue>
-#include <pthread.h>
-#include <cstdio>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <mutex>
+#include <queue>
+#include <thread>
+
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/poll.h>
+#include <unistd.h>
 
 #include <utils/errors.h>
 #include <utils/packets.h>
-
-const uint BUFFER_SIZE = 256;
 
 enum state {
     IDLE,
@@ -23,87 +21,90 @@ enum state {
     QUIT
 };
 
-volatile state current_state;
-pthread_mutex_t state_mutex;
+state current_state = IDLE;
+std::mutex state_mutex;
 
-void output_packet(server_packet p) {
-    std::cout << "<" << std::put_time(std::localtime(&p.time_received), "%R") << ">"
+state get_state() {
+    std::lock_guard lock(state_mutex);
+    return current_state;
+}
+
+void update_state(state new_state) {
+    std::lock_guard lock(state_mutex);
+    current_state = new_state;
+}
+
+void output_packet(std::shared_ptr<server_packet> p) {
+    std::cout << "<" << std::put_time(std::localtime(&p->time_received), "%R") << ">"
               << " "
-              << "[" << p.sender_nickname << "]"
+              << "[" << p->sender_nickname << "]"
               << " "
-              << p.message 
+              << p->message 
               << "\n";
 }
 
-void* message_reader_routine(void* arg) {
-    int sockfd = *((int *) arg);
-    std::queue<server_packet> new_messages;
+void message_reader_routine(int sockfd) {
+    std::queue<std::shared_ptr<server_packet>> new_messages;
+
+    pollfd poll_settings;
+    poll_settings.fd = sockfd;
+    poll_settings.events = POLLIN | POLLPRI;
     
-    while (current_state != QUIT) {
+    while (get_state() != QUIT) {
         // print queue until input process begins
         while (!new_messages.empty()) {
-            pthread_mutex_lock(&state_mutex);
+            std::lock_guard lock(state_mutex);
             
             if (current_state == IDLE) {
                 output_packet(new_messages.front());
                 new_messages.pop();
-                pthread_mutex_unlock(&state_mutex);
             } else {
-                pthread_mutex_unlock(&state_mutex);
                 break;
             }
         }
 
-        // read new packet and push to queue
-        server_packet *incoming_packet = read_packet<server_packet>(sockfd);
-        new_messages.push(*incoming_packet);
-        delete incoming_packet;
-    }
+        // poll whether new data is available
+        const int POLL_TIMEOUT = 10;
+        int poll_result = poll(&poll_settings, 1, POLL_TIMEOUT);
+        check_error(poll_result, POLL_ERROR);
 
-    return NULL;
+        if (poll_result > 0) {
+            // read new packet and push to queue
+            new_messages.push(read_packet<server_packet>(sockfd));
+        }
+    }
 }
 
 void main_loop(int sockfd) {
-    while (current_state != QUIT) {
+    while (get_state() != QUIT) {
+        
         std::string line;
 
         std::getline(std::cin, line);
 
-        pthread_mutex_lock(&state_mutex);
-
-        client_packet *p = NULL;
+        std::shared_ptr<client_packet> p;
 
         if (line == ":q") {
-            current_state = QUIT;
+            update_state(QUIT);
 
-            p = new logout_client_packet;
+            p.reset(new logout_client_packet);
         } else if (line == ":m") {
-            current_state = INPUT;
-
-            pthread_mutex_unlock(&state_mutex);
+            update_state(INPUT);
 
             std::getline(std::cin, line);
-
-            pthread_mutex_lock(&state_mutex);
-
-            current_state = IDLE;
-
-            pthread_mutex_unlock(&state_mutex);
-
-            p = new message_client_packet(line);
             
-            pthread_mutex_lock(&state_mutex);
+            update_state(IDLE);
+            
+            p.reset(new message_client_packet(line));   
         } else {
             std::cerr << "\"" << line <<  "\" -- unknown command (:q, :m expected)\n";
             continue;
         }
 
-        pthread_mutex_unlock(&state_mutex);
-
         /* Send message to the server */
-        write_packet(sockfd, p);
-
-        delete p;
+        if (p) {
+            write_packet(sockfd, p);
+        }
     }
 }
 
@@ -150,31 +151,23 @@ int main(int argc, char *argv[]) {
     );
 
     // send nickname to server
-    client_packet *p = new login_client_packet(argv[3]);
-    write_packet(sockfd, p);
-    delete p;
-
-    // initialize threads
-    state_mutex = PTHREAD_MUTEX_INITIALIZER;
-    current_state = IDLE;
-
-    pthread_t message_reader;
-    
-    // create routine to read and output incoming messages
-    pthread_create(
-        &message_reader, 
-        NULL, 
-        message_reader_routine,
-        &sockfd
+    write_packet(
+        sockfd, 
+        std::static_pointer_cast<client_packet>(
+            std::make_shared<login_client_packet>(argv[3])
+        )
     );
+
+    // create routine to read and output incoming messages
+    std::thread message_reader(message_reader_routine, sockfd);
 
     // start main loop which executes commands and sends packets to server
     main_loop(sockfd);
-    // after it is done (:q got from standard input)
+    // after it is done (got :q from standard input)
 
     // wait for message reader to finish
-    pthread_join(message_reader, NULL);
-
+    message_reader.join();
+    
     // finally close the socket
     check_error(
         close(sockfd),
