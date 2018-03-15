@@ -26,7 +26,7 @@ void ServerSocket::listen(int nrequests) {
     ::listen(fd, nrequests);
 }
 
-SocketWrapper ServerSocket::accept() {
+Socket *ServerSocket::accept() {
     struct sockaddr cli_addr = {};
     unsigned int clilen = sizeof(cli_addr);
     
@@ -36,7 +36,8 @@ SocketWrapper ServerSocket::accept() {
     if (fd < 0) {
         throw MessengerError("ERROR on accept: " + std::to_string(fd));
     }
-    return std::make_shared<Socket>(cli_fd, cli_addr, clilen);
+    auto socket = new Socket(cli_fd, cli_addr, clilen, "SERVER");
+    return socket;
 }
 
 ServerSocket::~ServerSocket() {

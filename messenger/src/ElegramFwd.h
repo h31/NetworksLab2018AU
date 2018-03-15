@@ -3,6 +3,8 @@
 
 #include <memory>
 
+#include "MessageType.h"
+
 struct ServerSocket;
 using ServerSocketWrapper = std::shared_ptr<ServerSocket>;
 

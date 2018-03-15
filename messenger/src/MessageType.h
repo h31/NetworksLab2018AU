@@ -1,0 +1,11 @@
+#ifndef MESSENGER_MESSAGETYPE_H
+#define MESSENGER_MESSAGETYPE_H
+
+enum struct MessageType {
+    FINISH = 0,
+    MESSAGE,
+    INIT_FROM_CLIENT,
+    INIT_FROM_SERVER
+};
+
+#endif //MESSENGER_MESSAGETYPE_H

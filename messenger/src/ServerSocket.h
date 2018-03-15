@@ -15,7 +15,7 @@ struct ServerSocket {
      */
     void listen(int nrequests=5);
     
-    SocketWrapper accept();
+    Socket *accept();
     
     int fd = 0;
 };

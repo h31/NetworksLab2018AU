@@ -1,18 +1,23 @@
 #ifndef MESSENGER_MESSAGE_H
 #define MESSENGER_MESSAGE_H
 
+#include "Date.h"
 #include <string>
 
 struct Message {
-    explicit Message(size_t length);
+    Message(const std::string &message, const std::string &username, const Date &date);
     
-    explicit Message(const std::string &message);
-    
+//    Message(const std::string &message, const Date &date);
+
     char *ptr();
     
     ssize_t size() const;
+    
+    std::string to_string() const;
 
     std::string buffer;
+    std::string username; // from.
+    Date date;
 };
 
 #endif //MESSENGER_MESSAGE_H
