@@ -1,9 +1,14 @@
+#include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <memory>
+#include <mutex>
 
 #include <network.h>
 #include <utils/errors.h>
 #include <utils/packets.h>
+
+std::mutex time_io_mutex;
 
 client_packet::~client_packet() = default;
 
@@ -87,9 +92,17 @@ void write_packet(SOCKET sockfd, std::shared_ptr<client_packet> p) {
 template<>
 void write_packet(SOCKET sockfd, std::shared_ptr<server_packet> p) {
     write_string(sockfd, p->sender_nickname);
-    
-    struct tm *time = std::gmtime(&p->time_received);
-    write_n_bytes(sockfd, time, sizeof(struct tm));
+
+    std::string time_string;
+    std::ostringstream time_string_ostream(time_string);
+
+    time_io_mutex.lock();
+    time_string_ostream << std::put_time(std::gmtime(&p->time_received), "%FT%TZ");
+    time_io_mutex.unlock();
+
+    time_string_ostream.flush();
+
+    write_string(sockfd, time_string);
 
     write_string(sockfd, p->message);
 }
@@ -154,11 +167,14 @@ std::shared_ptr<server_packet> read_packet(SOCKET sockfd) {
     std::shared_ptr<server_packet> p(new server_packet);
     
     p->sender_nickname = read_string(sockfd);
-    
-    struct tm time;
-    read_n_bytes(sockfd, &time, sizeof(struct tm));
-    
-    p->time_received = std::mktime(&time);
+
+    std::istringstream time_string_istream(read_string(sockfd));
+
+    time_io_mutex.lock();
+    std::tm time_struct;
+    time_string_istream >> std::get_time(&time_struct, "%FT%TZ");
+    p->time_received = mktime(&time_struct);
+    time_io_mutex.unlock();
 
     p->message = read_string(sockfd);
 

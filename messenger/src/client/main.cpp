@@ -107,6 +107,10 @@ void main_loop(SOCKET sockfd) {
 }
 
 int main(int argc, char *argv[]) {
+#ifdef WIN32
+    WSADATA _WSAData {};
+    WSAStartup(MAKEWORD(2, 2), &_WSAData);
+#endif
     SOCKET sockfd;
     ADDRINFOA *server_info = NULL;
     
@@ -138,7 +142,7 @@ int main(int argc, char *argv[]) {
 
     /* Now connect to the server */
     check_error(
-        connect(sockfd, server_info->ai_addr, server_info->ai_addrlen),
+        connect(sockfd, server_info->ai_addr, (int) server_info->ai_addrlen),
         CONNECT_ERROR
     );
 

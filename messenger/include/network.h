@@ -3,6 +3,7 @@
 #ifdef WIN32
     #include <winsock2.h>
     #include <windows.h>
+    #include <ws2tcpip.h>
 
     #define poll WSAPoll
     #define POLLFD WSAPOLLFD

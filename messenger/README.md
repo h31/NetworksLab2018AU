@@ -41,6 +41,6 @@ After client logout server will ignore any incoming messages from it and close t
 Server sends a single type of packet to clients representing messages:
 - server packet -- [server received time, sender nickname size in characters + 1 for `\0`, sender nickname, message size in characters + 1 for `\0`, message]
 
-Server received time is an instance of `tm struct` converted to UTC time.
+Server received time is UTC and is represented by a string in ISO 8061 format (`2018-03-16T16:49:25Z`).
 
 Strings and its sizes are the same way as in client messages.

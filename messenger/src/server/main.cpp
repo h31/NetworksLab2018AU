@@ -43,6 +43,8 @@ void consumer_routine() {
             incoming_message_cv.wait(incoming_message_lock);
         }
 
+        std::cerr << "Writing message \"" << incoming_message->message << "\" from " << incoming_message->sender_nickname << " got on " << incoming_message->time_received << "\n";
+
         active_clients_mutex.lock();
 
         for (auto client_info: active_clients) {
