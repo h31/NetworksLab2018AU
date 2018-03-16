@@ -31,6 +31,7 @@ int server_init(struct server* server, uint16_t port) {
   *server = (struct server) {
       .clients_list = LIST_HEAD_INITIALIZER(server->clients_list),
       .sock_fd = socket(AF_INET, SOCK_STREAM, 0),
+      .rwlock = PTHREAD_RWLOCK_INITIALIZER,
   };
 
   if (server->sock_fd < 0) {
@@ -54,6 +55,8 @@ int server_init(struct server* server, uint16_t port) {
 int server_broadcast_message(struct server* server, elegram_msg_header header,
                                      void* data, size_t data_length) {
   struct list_head* pos;
+  pthread_rwlock_rdlock(&server->rwlock);
+  pthread_cleanup_push(cleanup_rwlock_unlock, &server->rwlock);
   list_for_each(pos, &server->clients_list) {
     struct client* client = list_entry(pos, struct client, lnode);
     pthread_mutex_lock(&client->mutex);
@@ -62,6 +65,7 @@ int server_broadcast_message(struct server* server, elegram_msg_header header,
     write(client->sock_fd, data, data_length);
     pthread_cleanup_pop(true);
   }
+  pthread_cleanup_pop(true);
   return 0;
 }
 
@@ -77,10 +81,10 @@ int server_serve(struct server* server) {
       continue;
     }
 
-    pthread_t client_thread;
     struct client* new_client = malloc(sizeof(struct client));
     client_init(new_client, server, client_sock_fd);
 
+    pthread_t client_thread;
     pthread_create(&client_thread, NULL, client_routine, new_client);
   }
 
@@ -91,10 +95,12 @@ int server_serve(struct server* server) {
 void client_init(struct client* client, struct server* server, int sock_fd) {
   *client = (struct client) {
       .sock_fd = sock_fd,
-      .mutex = PTHREAD_MUTEX_INITIALIZER,
       .server = server,
   };
+  pthread_rwlock_wrlock(&server->rwlock);
+  pthread_cleanup_push(cleanup_rwlock_unlock, &server->rwlock);
   list_push_back(&server->clients_list, &client->lnode);
+  pthread_cleanup_pop(true);
 }
 
 void* client_routine(void* arg_raw) {

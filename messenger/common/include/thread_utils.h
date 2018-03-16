@@ -3,12 +3,16 @@
 
 #include <unistd.h>
 
-void cleanup_close(int* arg) {
+static inline void cleanup_close(int* arg) {
   close(*arg);
 }
 
-void cleanup_mutex_unlock(void* mutex) {
+static inline void cleanup_mutex_unlock(void* mutex) {
   pthread_mutex_unlock((pthread_mutex_t*) mutex);
+}
+
+static inline void cleanup_rwlock_unlock(void* rwlock) {
+  pthread_rwlock_unlock((pthread_rwlock_t*) rwlock);
 }
 
 #endif  // ELEGRAM_THREAD_UTILS_H
