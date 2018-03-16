@@ -1,6 +1,4 @@
 #include <condition_variable>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <map>
@@ -8,12 +6,12 @@
 #include <thread>
 #include <vector>
 
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
+#include <network.h>
 
 #include <utils/errors.h>
 #include <utils/packets.h>
+
+bool is_server_active = true;
 
 std::mutex incoming_message_mutex;
 std::condition_variable incoming_message_cv;
@@ -21,24 +19,24 @@ std::condition_variable incoming_message_consumed_cv;
 std::shared_ptr<server_packet> incoming_message;
 
 std::mutex active_clients_mutex;
-std::map<int,std::string> active_clients;
+std::map<SOCKET,std::string> active_clients;
 
 void log(std::string str) {
     std::cerr << str << "\n";
 }
 
-void disconnect(int sockfd) {
+void disconnect(SOCKET sockfd) {
     active_clients_mutex.lock();
 
     active_clients.erase(sockfd);
 
     active_clients_mutex.unlock();
 
-    close(sockfd);
+    check_error(close(sockfd), SOCKET_CLOSE_ERROR);
 }
 
 void consumer_routine() {
-    while (true) {
+    while (is_server_active) {
         std::unique_lock incoming_message_lock(incoming_message_mutex);
 
         while (!incoming_message) {
@@ -66,7 +64,7 @@ void consumer_routine() {
     }
 }
 
-void producer_routine(int sockfd) {
+void producer_routine(SOCKET sockfd) {
     bool is_finished = false;
 
     std::string nickname;
@@ -143,15 +141,15 @@ void producer_routine(int sockfd) {
 }
 
 void new_connections_listener_routine(
-    int sockfd, 
+    SOCKET sockfd,
     sockaddr_in cli_addr, 
-    unsigned int clilen
+    int clilen
 ) {
     std::vector<std::thread> producers;
 
-    while (true) {
+    while (is_server_active) {
         /* Accept actual connection from the client */
-        int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        SOCKET newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
         check_error(newsockfd, ACCEPT_ERROR);
 
         log("new connection on socket " + std::to_string(newsockfd));
@@ -162,20 +160,25 @@ void new_connections_listener_routine(
 }
 
 class socket_closer {
-    int sockfd;
+    SOCKET sockfd;
 
 public:
-    socket_closer(int _sockfd): sockfd(_sockfd) {}
-    ~socket_closer() {
+    explicit socket_closer(SOCKET _sockfd): sockfd(_sockfd) {}
+    ~socket_closer() { // NOLINT
         close(sockfd);
     }
 };
 
 int main(int argc, char *argv[]) {
-    int sockfd;
+#ifdef WIN32
+    WSADATA WSAData {};
+    WSAStartup(MAKEWORD(2, 2), &WSAData);
+#endif
+    SOCKET sockfd;
     uint16_t portno;
     unsigned int clilen;
-    sockaddr_in serv_addr, cli_addr;
+    sockaddr_in serv_addr {};
+    sockaddr_in cli_addr {};
     
     if (argc < 2) {
         fprintf(stderr, "usage: %s port\n", argv[0]);
@@ -188,18 +191,16 @@ int main(int argc, char *argv[]) {
     check_error(sockfd, SOCKET_OPEN_ERROR);
 
     /* Initialize socket structure */
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    portno = std::stoi(argv[1]);
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    portno = (uint16_t) std::stoi(argv[1]);
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(portno);
 
     /* Now bind the host address using bind() call.*/
-    check_error(
-        bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)),
-        SOCKET_BIND_ERROR
-    );
+    int result = bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+    check_error(result, SOCKET_BIND_ERROR);
 
     /* Now start listening for the clients, here process will
      * go in sleep mode and will wait for the incoming connection

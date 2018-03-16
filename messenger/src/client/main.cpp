@@ -7,20 +7,17 @@
 #include <queue>
 #include <thread>
 
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-
+#include <network.h>
 #include <utils/errors.h>
 #include <utils/packets.h>
 
 enum state {
-    IDLE,
-    INPUT,
-    QUIT
+    STATE_IDLE,
+    STATE_INPUT,
+    STATE_QUIT
 };
 
-state current_state = IDLE;
+state current_state = STATE_IDLE;
 std::mutex state_mutex;
 
 state get_state() {
@@ -42,15 +39,15 @@ void output_packet(std::shared_ptr<server_packet> p) {
               << "\n";
 }
 
-void message_reader_routine(int sockfd) {
+void message_reader_routine(SOCKET sockfd) {
     std::queue<std::shared_ptr<server_packet>> new_messages;
 
-    while (get_state() != QUIT) {
+    while (get_state() != STATE_QUIT) {
         // print queue until input process begins
         while (!new_messages.empty()) {
             std::lock_guard lock(state_mutex);
             
-            if (current_state == IDLE) {
+            if (current_state == STATE_IDLE) {
                 output_packet(new_messages.front());
                 new_messages.pop();
             } else {
@@ -64,15 +61,15 @@ void message_reader_routine(int sockfd) {
                 new_messages.push(read_packet<server_packet>(sockfd));
             } catch (std::string message) {
                 std::cerr << message << "\n";
-                update_state(QUIT);
+                update_state(STATE_QUIT);
             }
         }
     }
 }
 
 
-void main_loop(int sockfd) {
-    while (get_state() != QUIT) {
+void main_loop(SOCKET sockfd) {
+    while (get_state() != STATE_QUIT) {
         
         std::string line;
 
@@ -81,15 +78,15 @@ void main_loop(int sockfd) {
         std::shared_ptr<client_packet> p;
 
         if (line == ":q") {
-            update_state(QUIT);
+            update_state(STATE_QUIT);
 
             p.reset(new logout_client_packet);
         } else if (line == ":m") {
-            update_state(INPUT);
+            update_state(STATE_INPUT);
 
             std::getline(std::cin, line);
             
-            update_state(IDLE);
+            update_state(STATE_IDLE);
             
             p.reset(new message_client_packet(line));   
         } else {
@@ -103,14 +100,14 @@ void main_loop(int sockfd) {
                 write_packet(sockfd, p);
             } catch (std::string message) {
                 std::cerr << message << "\n";
-                update_state(QUIT);
+                update_state(STATE_QUIT);
             }
         }
     }
 }
 
 int main(int argc, char *argv[]) {
-    int sockfd;
+    SOCKET sockfd;
     uint16_t portno;
     struct sockaddr_in serv_addr;
     struct hostent *server;
@@ -130,7 +127,9 @@ int main(int argc, char *argv[]) {
     /* Create a socket point */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
+#ifndef WIN32
     check_error(sockfd, SOCKET_OPEN_ERROR);
+#endif
 
     server = gethostbyname(argv[1]);
 
@@ -139,9 +138,9 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+    memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    bcopy(server->h_addr, (char *) &serv_addr.sin_addr.s_addr, (size_t) server->h_length);
+    memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, (size_t) server->h_length);
     serv_addr.sin_port = htons(portno);
 
     /* Now connect to the server */

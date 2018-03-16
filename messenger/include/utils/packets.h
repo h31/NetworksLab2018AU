@@ -52,9 +52,9 @@ struct server_packet : packet {
 };
 
 template<typename T>
-void write_packet(int, std::shared_ptr<T>);
+void write_packet(SOCKET, std::shared_ptr<T>);
 
 template<typename T>
-std::shared_ptr<T> read_packet(int);
+std::shared_ptr<T> read_packet(SOCKET);
 
-bool ready_to_read(int);
+bool ready_to_read(SOCKET);

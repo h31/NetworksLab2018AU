@@ -6,3 +6,9 @@ add_library(utils STATIC
 target_include_directories(utils
     PUBLIC include
 )
+
+if (WIN32)
+    target_link_libraries(utils
+            Ws2_32
+    )
+endif()

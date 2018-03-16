@@ -1,29 +1,28 @@
 #include <iostream>
 #include <memory>
 
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-
-#include <sys/poll.h>
+#include <network.h>
 #include <utils/errors.h>
 #include <utils/packets.h>
 
-client_packet::~client_packet() {}
+client_packet::~client_packet() = default;
 
 login_client_packet::login_client_packet(std::string _nickname) : nickname(_nickname) {}
-login_client_packet::~login_client_packet() {}
+login_client_packet::~login_client_packet() = default;
+
 client_packet_type login_client_packet::get_type() {
     return LOGIN;
 }
 
 message_client_packet::message_client_packet(std::string _message) : message(_message) {}
-message_client_packet::~message_client_packet() {}
+message_client_packet::~message_client_packet() = default;
+
 client_packet_type message_client_packet::get_type() {
     return MESSAGE;
 }
 
-logout_client_packet::~logout_client_packet() {}
+logout_client_packet::~logout_client_packet() = default;
+
 client_packet_type logout_client_packet::get_type() {
     return LOGOUT;
 }
@@ -36,10 +35,10 @@ server_packet::server_packet(
     std::string _message
 ) : time_received(_time_received), sender_nickname(_sender_nickname), message(_message) {}
 
-void write_n_bytes(int sockfd, void *ptr, size_t n) {
+void write_n_bytes(SOCKET sockfd, void *ptr, int n) {
     int m;
-    while (n) {
-        m = write(sockfd, ptr, n);
+    while (n > 0) {
+        m = send(sockfd, (char *) ptr, n, 0);
         check_error(n, SOCKET_WRITE_ERROR);
 
         if (m == 0) {
@@ -51,7 +50,7 @@ void write_n_bytes(int sockfd, void *ptr, size_t n) {
     }
 }
 
-void write_string(int sockfd, std::string string) {
+void write_string(SOCKET sockfd, std::string string) {
     size_t size = string.size() + 1;
 
     write_n_bytes(sockfd, &size, sizeof(size));
@@ -59,7 +58,7 @@ void write_string(int sockfd, std::string string) {
 }
 
 template<>
-void write_packet(int sockfd, std::shared_ptr<client_packet> p) {
+void write_packet(SOCKET sockfd, std::shared_ptr<client_packet> p) {
     client_packet_type type = p->get_type();
 
     write_n_bytes(sockfd, &type, sizeof(type));
@@ -86,7 +85,7 @@ void write_packet(int sockfd, std::shared_ptr<client_packet> p) {
 }
 
 template<>
-void write_packet(int sockfd, std::shared_ptr<server_packet> p) {
+void write_packet(SOCKET sockfd, std::shared_ptr<server_packet> p) {
     write_string(sockfd, p->sender_nickname);
     
     struct tm *time = std::gmtime(&p->time_received);
@@ -95,11 +94,11 @@ void write_packet(int sockfd, std::shared_ptr<server_packet> p) {
     write_string(sockfd, p->message);
 }
 
-void read_n_bytes(int sockfd, void *ptr, size_t n) {
+void read_n_bytes(SOCKET sockfd, void *ptr, int n) {
     int m;
-    while (n) {
-        m = read(sockfd, ptr, n);
-        check_error(n, SOCKET_WRITE_ERROR);
+    while (n > 0) {
+        m = recv(sockfd, (char *) ptr, n, 0);
+        check_error(n, SOCKET_READ_ERROR);
 
         if (m == 0) {
             throw std::string("socket closed by remote side");
@@ -110,11 +109,11 @@ void read_n_bytes(int sockfd, void *ptr, size_t n) {
     }
 }
 
-std::string read_string(int sockfd) {
+std::string read_string(SOCKET sockfd) {
     size_t size;
     read_n_bytes(sockfd, &size, sizeof(size));
     
-    char *c_str = new char[size];
+    auto c_str = new char[size];
     read_n_bytes(sockfd, c_str, sizeof(char) * size);
 
     std::string str(c_str);
@@ -125,7 +124,7 @@ std::string read_string(int sockfd) {
 }
 
 template<>
-std::shared_ptr<client_packet> read_packet(int sockfd) {
+std::shared_ptr<client_packet> read_packet(SOCKET sockfd) {
     client_packet_type type;
 
     read_n_bytes(sockfd, &type, sizeof(type));
@@ -151,7 +150,7 @@ std::shared_ptr<client_packet> read_packet(int sockfd) {
 }
 
 template<>
-std::shared_ptr<server_packet> read_packet(int sockfd) {
+std::shared_ptr<server_packet> read_packet(SOCKET sockfd) {
     std::shared_ptr<server_packet> p(new server_packet);
     
     p->sender_nickname = read_string(sockfd);
@@ -168,13 +167,13 @@ std::shared_ptr<server_packet> read_packet(int sockfd) {
 
 const int POLL_TIMEOUT = 10;
 
-bool ready_to_read(int sockfd) {
-    pollfd poll_settings;
+bool ready_to_read(SOCKET sockfd) {
+    POLLFD poll_settings {};
     poll_settings.fd = sockfd;
-    poll_settings.events = POLLIN | POLLPRI;
+    poll_settings.events = POLLIN;
     
     int poll_result = poll(&poll_settings, 1, POLL_TIMEOUT);
     check_error(poll_result, POLL_ERROR);
 
-    return poll_result;
+    return poll_result > 0;
 }
