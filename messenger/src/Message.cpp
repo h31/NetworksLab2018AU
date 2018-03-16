@@ -31,6 +31,16 @@ bool operator<(const Message &lhs, const Message &rhs) {
     return lhs.date < rhs.date;
 }
 
+bool operator==(const Message &lhs, const Message &rhs) {
+    return lhs.buffer == rhs.buffer &&
+           lhs.username == rhs.username &&
+           lhs.date == rhs.date;
+}
+
+bool operator!=(const Message &lhs, const Message &rhs) {
+    return !(lhs == rhs);
+}
+
 std::ostream &operator<<(std::ostream &os, const Message &lhs) {    
     auto &date = lhs.date;
     os << "<" << std::setfill('0') << std::setw(2) << date.hours() << ":";

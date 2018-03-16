@@ -12,9 +12,6 @@ Socket::Socket(int fd, sockaddr cli_addr, unsigned int clilen, const std::string
 {
     std::cout << "Creating socket on server: " << fd << std::endl;
 
-#if DEBUG_PROTOCOL
-    std::cout << "Initializing new outcoming connection..." << std::endl;
-#endif
     auto message_type = static_cast<MessageType>(read_uint());
     if (message_type != MessageType::INIT_FROM_CLIENT) {
         throw ProtocolError("Error with init while creating socket on server.");
@@ -22,9 +19,6 @@ Socket::Socket(int fd, sockaddr cli_addr, unsigned int clilen, const std::string
     other_username = read_string();
     write_uint(static_cast<uint32_t>(MessageType::INIT_FROM_SERVER));
     write_string(this_username);
-#if DEBUG_PROTOCOL
-    std::cout << "...finished: other name: " << other_username << std::endl;
-#endif
 }
 
 Socket::Socket(const std::string &hostname, int portno, const std::string &username)
@@ -55,9 +49,6 @@ Socket::Socket(const std::string &hostname, int portno, const std::string &usern
     clilen = sizeof(cli_addr);
     bcopy(&connect_addr, &cli_addr, clilen);
 
-#if DEBUG_PROTOCOL
-    std::cout << "Initializing new incoming connection..." << std::endl;
-#endif
     write_uint(static_cast<uint32_t>(MessageType::INIT_FROM_CLIENT));
     write_string(username);
     auto message_type = static_cast<MessageType>(read_uint());
@@ -65,15 +56,9 @@ Socket::Socket(const std::string &hostname, int portno, const std::string &usern
         throw ProtocolError("Error with init while creating socket on client.");
     }
     other_username = read_string();
-#if DEBUG_PROTOCOL
-    std::cout << "finished. Other name: " << other_username << std::endl;
-#endif
 }
 
-std::string Socket::read_string() {
-#if DEBUG_PROTOCOL
-    std::cout << "Reading string" << std::endl;
-#endif
+std::string Socket::read_string() const {
     size_t n = read_uint();
     std::string buffer;
     buffer.resize(n);
@@ -81,18 +66,12 @@ std::string Socket::read_string() {
     ssize_t nbytes = 0;
     while (nbytes < (ssize_t)n) {
         nbytes = read(fd, message_ptr + nbytes, n - nbytes); // recv on Windows
-        check_reading(nbytes);
+        check_io(nbytes, "reading");
     }
-#if DEBUG_PROTOCOL
-    std::cout << "Read string: " << buffer << std::endl;
-#endif
     return buffer;
 }
 
-void Socket::write_string(const std::string &str) {
-#if DEBUG_PROTOCOL
-    std::cout << "Writing string: " << str << std::endl;
-#endif
+void Socket::write_string(const std::string &str) const {
     auto size = str.size();
     if (size > std::numeric_limits<std::uint32_t>::max()) {
         throw MessengerError("Invalid message size : " + std::to_string(size));
@@ -102,103 +81,73 @@ void Socket::write_string(const std::string &str) {
     ssize_t nbytes = 0;
     while (nbytes < static_cast<ssize_t>(size)) {
         nbytes = ::write(fd, &str[0], size - static_cast<size_t>(nbytes)); // send on Windows
-        check_reading(nbytes);
+        check_io(nbytes, "writing");
     }
 }
 
-Socket::~Socket() {
-    close(fd);
-}
+Socket::~Socket() = default;
 
-void Socket::check_reading(ssize_t nbytes) {
+void Socket::check_io(ssize_t nbytes, const std::string &process) {
     if (nbytes < 0) {
-        throw MessengerError("Error writing to socket");
+        throw MessengerError("Error " + process + " socket");
     }
 }
 
-std::uint32_t Socket::read_uint() {
-#if DEBUG_PROTOCOL
-    std::cout << "Reading uint" << std::endl;
-#endif
+std::uint32_t Socket::read_uint() const {
     ssize_t nbytes = 0;
     std::uint32_t n32;
     while (nbytes < (int)sizeof(n32)) {
         nbytes = read(fd, reinterpret_cast<char *>(&n32) + nbytes, sizeof(n32) - nbytes); // recv on Windows
-        check_reading(nbytes);
+        check_io(nbytes, "reading");
     }
     auto result = ntohl(n32);
-#if DEBUG_PROTOCOL
-    std::cout << "Read uint: " << result << std::endl;
-#endif
     return result;
 }
 
-void Socket::write_uint(std::uint32_t n) {
-#if DEBUG_PROTOCOL
-    std::cout << "Writing uint: " << n << std::endl;
-#endif
+void Socket::write_uint(std::uint32_t n) const {
     ssize_t nbytes = 0;
     std::uint32_t n32 = htonl(n);
     while (nbytes < (ssize_t)sizeof(n32)) {
         nbytes = ::write(fd, reinterpret_cast<char *>(&n32) + nbytes, sizeof(n32) - nbytes);
-        check_reading(nbytes);
+        check_io(nbytes, "writing");
     }
 }
 
-Message Socket::read_message() {
-#if DEBUG_PROTOCOL
-    std::cout << "Reading message" << std::endl;
-#endif
+Message Socket::read_message() const {
     auto buffer = read_string();
     auto date_string = read_string();
     auto date = Date::from_string(date_string);
     Message message{buffer, other_username, date};
-#if DEBUG_PROTOCOL
-    std::cout << "Read message: " << message.to_string() << std::endl;
-#endif
     return message;
 }
 
-void Socket::write_message(const std::string &buffer, const Date &date) {
-#if DEBUG_PROTOCOL
-    std::cout << "Writing message: " << date.pretty_string() << ": " << buffer << std::endl;
-#endif
+void Socket::write_message(const std::string &buffer, const Date &date) const {
     write_uint(static_cast<uint32_t>(MessageType::MESSAGE));
     write_string(buffer);
-#if DEBUG_PROTOCOL
-    std::cout << "Writing date: " << date.pretty_string() << std::endl;
-#endif
     write_string(date.to_string());
 }
 
-Message Socket::read_broadcast() {
-#if DEBUG_PROTOCOL
-    std::cout << "Reading message" << std::endl;
-#endif
+Message Socket::read_broadcast() const {
     auto username = read_string();
     auto buffer = read_string();
     auto date_string = read_string();
     auto date = Date::from_string(date_string);
     Message message{buffer, username, date};
-#if DEBUG_PROTOCOL
-    std::cout << "Read message: " << message.to_string() << std::endl;
-#endif
     return message;
 }
 
-void Socket::write_broadcast(const Message &message) {
-//#if DEBUG_PROTOCOL
-//    std::cout << "Writing message: " << date.pretty_string() << ": " << buffer << std::endl;
-//#endif
+void Socket::write_broadcast(const Message &message) const {
     write_uint(static_cast<uint32_t>(MessageType::BROADCAST));
     write_string(message.username);
     write_string(message.buffer);
-//#if DEBUG_PROTOCOL
-//    std::cout << "Writing date: " << date.pretty_string() << std::endl;
-//#endif
     write_string(message.date.to_string());
 }
 
 void Socket::finish() {
     write_uint(static_cast<std::uint32_t>(MessageType::FINISH));
+    close(fd);
+//    int shutdown_result = shutdown(fd, SHUT_RDWR);
+//    if (shutdown_result < 0) {
+//        std::cerr << "Warning: failed to shutdown socket" << std::endl;
+//    }
 }

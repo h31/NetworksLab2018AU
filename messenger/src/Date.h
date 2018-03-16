@@ -5,13 +5,17 @@
 #include <ctime>
 
 struct Date final {
-    Date(const Date &) = default;
+//    Date(const Date &) = default;
     
-    Date(Date &&) = default;
+//    Date(Date &&) = default;
     
     static Date now();
     
     static Date from_string(const std::string &date_string);
+    
+    static Date invalid() {
+        return Date(0);
+    }
     
     std::string to_string() const;
     
@@ -35,8 +39,13 @@ struct Date final {
         return lhs.ltimer < rhs.ltimer;
     }
     
+    friend bool operator==(const Date &lhs, const Date &rhs) {
+        return lhs.ltimer == rhs.ltimer;
+    }
+    
 private:
     std::time_t ltimer;
+    
     explicit Date(const std::time_t &local_timer);
 };
 
