@@ -108,10 +108,8 @@ void main_loop(SOCKET sockfd) {
 
 int main(int argc, char *argv[]) {
     SOCKET sockfd;
-    uint16_t portno;
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
-
+    ADDRINFOA *server_info = NULL;
+    
     if (argc < 4) {
         fprintf(stderr, "usage: %s hostname port nickname\n", argv[0]);
         exit(0);
@@ -122,30 +120,25 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    portno = (uint16_t) atoi(argv[2]);
+    // retrieve information about server
+    ADDRINFOA hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
 
-    /* Create a socket point */
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-#ifndef WIN32
-    check_error(sockfd, SOCKET_OPEN_ERROR);
-#endif
-
-    server = gethostbyname(argv[1]);
-
-    if (server == NULL) {
-        fprintf(stderr, "ERROR, no such host\n");
-        exit(0);
+    int n = getaddrinfo(argv[1], argv[2], &hints, &server_info);
+    if (n != 0) {
+        fprintf(stderr, "%s: %s\n", gai_strerror(n), ADDRINFO_ERROR.c_str());
     }
 
-    memset(&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, (size_t) server->h_length);
-    serv_addr.sin_port = htons(portno);
+    /* Create a socket point */
+    sockfd = socket(server_info->ai_family, server_info->ai_socktype, 0);
+    check_error(sockfd, SOCKET_OPEN_ERROR);
 
     /* Now connect to the server */
     check_error(
-        connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)),
+        connect(sockfd, server_info->ai_addr, server_info->ai_addrlen),
         CONNECT_ERROR
     );
 

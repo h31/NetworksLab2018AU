@@ -143,13 +143,13 @@ void producer_routine(SOCKET sockfd) {
 void new_connections_listener_routine(
     SOCKET sockfd,
     sockaddr_in cli_addr, 
-    int clilen
+    socklen_t clilen
 ) {
     std::vector<std::thread> producers;
 
     while (is_server_active) {
         /* Accept actual connection from the client */
-        SOCKET newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        SOCKET newsockfd = accept(sockfd, (sockaddr *) &cli_addr, &clilen);
         check_error(newsockfd, ACCEPT_ERROR);
 
         log("new connection on socket " + std::to_string(newsockfd));
@@ -171,8 +171,8 @@ public:
 
 int main(int argc, char *argv[]) {
 #ifdef WIN32
-    WSADATA WSAData {};
-    WSAStartup(MAKEWORD(2, 2), &WSAData);
+    WSADATA _WSAData {};
+    WSAStartup(MAKEWORD(2, 2), &_WSAData);
 #endif
     SOCKET sockfd;
     uint16_t portno;

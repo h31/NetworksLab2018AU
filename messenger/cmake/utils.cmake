@@ -9,6 +9,10 @@ target_include_directories(utils
 
 if (WIN32)
     target_link_libraries(utils
-            Ws2_32
+        Ws2_32
+    )
+else()
+    target_link_libraries(utils
+        pthread
     )
 endif()

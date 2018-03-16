@@ -2,6 +2,7 @@
 
 #include <string>
 
+extern const std::string ADDRINFO_ERROR;
 extern const std::string ACCEPT_ERROR;
 extern const std::string SOCKET_OPEN_ERROR;
 extern const std::string SOCKET_CLOSE_ERROR;
@@ -16,5 +17,6 @@ extern const std::string POLL_ERROR;
 void check_error(int, const std::string);
 
 #ifdef WIN32
+std::string get_last_error_as_string();
 void check_error(SOCKET, const std::string);
 #endif
