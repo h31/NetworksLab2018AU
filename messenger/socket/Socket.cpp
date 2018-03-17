@@ -9,6 +9,10 @@
 
 #include <vector>
 #include <iostream>
+#include <csignal>
+
+
+const uint32_t MAGIC = 0xDEADBEEF;
 
 Socket::Socket() : socketDescriptor(socket(AF_INET, SOCK_STREAM, 0)) {}
 
@@ -19,9 +23,7 @@ Socket::Socket(Socket &&other) noexcept : socketDescriptor(other.socketDescripto
 }
 
 Socket::~Socket() {
-    if (socketDescriptor != -1) {
-        close(socketDescriptor);
-    }
+    close();
 }
 
 void readString(std::vector<char> & buffer, int fd) {
@@ -43,6 +45,12 @@ Message Socket::read() {
 
     std::vector<char> buffer(256);
 
+    uint32_t magic;
+    ::read(socketDescriptor, &magic, sizeof(magic));
+    if (magic != MAGIC) {
+        throw FailedToReadMessageException();
+    }
+
     readString(buffer, socketDescriptor);
     std::string text(buffer.data());
 
@@ -55,8 +63,38 @@ Message Socket::read() {
     return Message{text, time, nickname};
 }
 
+void brokenPipeHandler(int signal) {
+    std::cout << "broken pipe ignored" << std::endl;
+}
+
 void Socket::write(const Message &message) {
+    signal(SIGPIPE, brokenPipeHandler);
+    ::write(socketDescriptor, &MAGIC, sizeof(MAGIC));
     writeString(message.text, socketDescriptor);
     writeString(message.time, socketDescriptor);
     writeString(message.nickname, socketDescriptor);
+}
+
+void Socket::close() {
+    if (socketDescriptor != -1) {
+        ::close(socketDescriptor);
+        socketDescriptor = -1;
+    }
+}
+
+bool Socket::interesting() {
+    fd_set iset;
+    FD_ZERO(&iset);
+    FD_SET(socketDescriptor, &iset);
+
+    struct timeval tv;
+    tv.tv_sec = (long) 1;
+    tv.tv_usec = 0;
+
+    int interestSetSize = select(socketDescriptor + 1, &iset, nullptr, nullptr, &tv);
+    return interestSetSize > 0;
+}
+
+const char *FailedToReadMessageException::what() const noexcept {
+    return "could not parse message: did not receive magic number";
 }

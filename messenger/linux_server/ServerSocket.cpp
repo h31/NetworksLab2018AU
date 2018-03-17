@@ -25,12 +25,12 @@ ServerSocket::ServerSocket(uint16_t port) : Socket() {
     if (bind(socketDescriptor, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0) {
         throw std::runtime_error("ERROR on binding");
     }
+
+    // todo what is this
+    listen(socketDescriptor, 5);
 }
 
 Socket ServerSocket::accept() {
-    // todo what is this
-    listen(socketDescriptor, 5);
-
     struct sockaddr_in clientAddress;
     unsigned int clilen = sizeof(clientAddress);
     int newSocketDescriptor = ::accept(socketDescriptor, (struct sockaddr *) &clientAddress, &clilen);

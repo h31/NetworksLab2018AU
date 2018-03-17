@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Client.h"
 
+// бага: запускаем клиент, отправляем сообщение, запускаем клиент вновь, снова отправляем, сообщение пприходит два раза
 int main(int argc, char ** argv) {
     if (argc != 4) {
         std::cout << "expected 3 arguments in format: <server ip>, <server port>, <user nickname>" << std::endl;
@@ -13,9 +14,10 @@ int main(int argc, char ** argv) {
 
     Client client(address, port, nickname);
 
-    while (true) {
+    while (client.isAlive()) {
         int c = getchar();
         if (c == 'm') {
+            getchar();
             client.mute();
             std::string message;
             std::getline(std::cin, message);

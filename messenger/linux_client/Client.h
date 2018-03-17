@@ -17,6 +17,7 @@ struct Client {
     void mute();
     void unmute();
     void send(const std::string & message);
+    bool isAlive() const;
 
 private:
     using guard = std::lock_guard<std::mutex>;
