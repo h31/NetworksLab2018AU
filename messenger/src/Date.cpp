@@ -1,16 +1,14 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <algorithm>
 #include <stdexcept>
-//#include <sstream>
+#include <mutex>
 #include <cstring>
 #include <ctime>
 #include <cctype>
 #include <cassert>
 #include "Date.h"
 
-// TODO locks on concurrent (from different clients) calls to gmtime, localtime
-// TODO locks on concurrent (from different clients) calls to ctime, asctime.
-// client is multithreaded and callback has incoming messages with dates.
+static std::mutex ctime_mutex;
 
 static const int BIT_SHIFT = 7;
 static const int BIT_SHIFT_MASK  = (1 << BIT_SHIFT) - 1;
@@ -50,6 +48,7 @@ static int64_t number_from_string(const std::string &num_string) {
 static inline int64_t local_time_offset() {
     static int64_t result = -1;
     if (result == -1) {
+        std::unique_lock<std::mutex> lock(ctime_mutex);
         std::time_t local_timer;
         time(&local_timer);
         auto global_time = gmtime(&local_timer);
@@ -65,6 +64,10 @@ Date Date::from_string(const std::string &date_string) {
     return Date{local_timer};
 }
 
+Date Date::invalid() {
+    return Date(0);
+}
+
 std::string Date::to_string() const {
     std::string result;
     result += number_to_string(static_cast<int64_t>(ltimer - local_time_offset()));
@@ -72,6 +75,7 @@ std::string Date::to_string() const {
 }
 
 std::string Date::pretty_string() const {
+    std::unique_lock<std::mutex> lock(ctime_mutex);
     std::string result = ctime(&ltimer);
     while (!result.empty() && isspace(result.back())) {
         result.pop_back();
@@ -85,5 +89,6 @@ Date::Date(const std::time_t &local_timer)
 
 
 struct tm *Date::get_local_time() const {
+    std::unique_lock<std::mutex> lock(ctime_mutex);
     return ::localtime(&ltimer);
 }

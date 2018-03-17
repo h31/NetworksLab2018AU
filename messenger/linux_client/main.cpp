@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
             } else {
                 auto date = Date::now();
                 clientSocket->write_message(line, date);
-                last_message = Message(line, clientSocket->this_username, date);
+                last_message = Message(line, clientSocket->get_this_username(), date);
                 if (!broadcast_on) {
                     broadcast_on = true;
                     print_mutex.unlock();

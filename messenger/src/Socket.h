@@ -44,14 +44,22 @@ struct Socket {
     ~Socket();
     
     static void init();
+    
+    std::string get_this_username() const {
+        return this_username;
+    }
+    
+    std::string get_other_username() const {
+        return other_username;
+    }
 
+private:
     socket_t fd;
     sockaddr cli_addr;
     std::string this_username = "INVALID_THIS";
     std::string other_username = "INVALID_OTHER";
 private:
     static void check_io(ssize_t nbytes, const std::string &process);
-
     static ssize_t read(socket_t fd, char *buf, size_t size);
     static ssize_t write(socket_t fd, const char *buf, size_t size);
 };

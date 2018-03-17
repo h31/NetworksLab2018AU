@@ -5,17 +5,11 @@
 #include <ctime>
 
 struct Date final {
-//    Date(const Date &) = default;
-    
-//    Date(Date &&) = default;
-    
     static Date now();
     
     static Date from_string(const std::string &date_string);
     
-    static Date invalid() {
-        return Date(0);
-    }
+    static Date invalid();
     
     std::string to_string() const;
     

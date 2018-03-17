@@ -45,7 +45,7 @@ static void client_session(const SocketWrapper &acceptSocket) {
             message_type = acceptSocket->read_uint();
         }
         catch (std::exception &e) {
-            std::cerr << "Exiting client session [" << acceptSocket->other_username << "] with error: " << e.what() << std::endl;
+            std::cerr << "Exiting client session [" << acceptSocket->get_other_username() << "] with error: " << e.what() << std::endl;
             break;
         }
         if (message_type == static_cast<uint32_t>(MessageType::FINISH)) {
@@ -55,7 +55,7 @@ static void client_session(const SocketWrapper &acceptSocket) {
         // TODO priority queue.
         broadcast_message(message);
     }
-    std::cout << "Finished session with client: " << acceptSocket->other_username << std::endl;
+    std::cout << "Finished session with client: " << acceptSocket->get_other_username() << std::endl;
 }
 
 int main(int argc, char **argv) {

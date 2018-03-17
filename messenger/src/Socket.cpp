@@ -4,8 +4,9 @@
 #include "Socket.h"
 #include "ElegramAll.h"
 
-
+#if _WIN32
 static u_long zero = 0;
+#endif
 
 Socket::Socket(socket_t fd, sockaddr cli_addr, const std::string &username)
         : fd(fd)
@@ -193,7 +194,7 @@ Message Socket::read_broadcast() const {
 
 void Socket::write_broadcast(const Message &message) const {
     write_uint(static_cast<uint32_t>(MessageType::BROADCAST));
-    write_string(message.username);
-    write_string(message.buffer);
-    write_string(message.date.to_string());
+    write_string(message.get_username());
+    write_string(message.get_buffer());
+    write_string(message.get_date().to_string());
 }
