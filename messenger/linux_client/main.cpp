@@ -8,7 +8,7 @@ int main(int argc, char ** argv) {
     }
 
     std::string address = argv[1];
-    int port = atoi(argv[2]);
+    auto port = (uint16_t) atoi(argv[2]);
     std::string nickname = argv[3];
 
     Client client(address, port, nickname);

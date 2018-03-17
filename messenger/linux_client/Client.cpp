@@ -1,7 +1,7 @@
 #include <iostream>
 #include "Client.h"
 
-Client::Client(const std::string &address, int port, const std::string &nickname) :
+Client::Client(const std::string &address, uint16_t port, const std::string &nickname) :
         socket(address, port),
         reader(&Client::readerRoutine, this),
         printer(&Client::printerRoutine, this),

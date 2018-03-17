@@ -11,7 +11,7 @@
 
 
 struct Client {
-    Client(const std::string &address, int port, const std::string & nickname);
+    Client(const std::string &address, uint16_t port, const std::string & nickname);
 
     void mute();
     void unmute();
