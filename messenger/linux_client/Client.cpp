@@ -38,7 +38,7 @@ void Client::readerRoutine() {
 void Client::printerRoutine() {
     while (true) {
         unique_lock lk(queueLock);
-        queueCond.wait(lk, [](){return !muted && !messageQueue.empty();});
+        queueCond.wait(lk, [this](){return !muted && !messageQueue.empty();});
 
         for (const Message & message : messageQueue) {
             std::cout << "<" << message.time << "> [" << message.nickname << "] " << message.text << std::endl;

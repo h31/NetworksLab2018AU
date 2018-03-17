@@ -2,15 +2,17 @@ project(linux_client)
 
 set(HEADERS
         Client.h
-        Socket.h
-        Message.h
         )
 
 set(SOURCES
         Client.cpp
-        Socket.cpp
-        Message.cpp
         main.cpp
         )
 
+set(LIBRARIES
+        socket
+        pthread
+        )
+
 add_executable(${PROJECT_NAME} ${SOURCES})
+target_link_libraries(${PROJECT_NAME} ${LIBRARIES})

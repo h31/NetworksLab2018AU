@@ -3,7 +3,7 @@
 #include <string>
 
 struct Message {
-    inline bool operator<(const Message & other);
+    bool operator<(const Message & other) const;
 
     std::string text;
     std::string time;
