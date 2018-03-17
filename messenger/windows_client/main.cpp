@@ -50,6 +50,7 @@ int main(int argc, char *argv[]) {
         Socket::init();
         clientSocket = std::make_shared<Socket>(hostname, portno, username);
         std::thread broadcast_thread{ broadcast_callback };
+        bool broadcast_on = true;
         while (!is_finished) {
             std::cout << "Please enter the message: " << std::endl;
             std::string line;
@@ -62,10 +63,19 @@ int main(int argc, char *argv[]) {
 #endif
                 is_finished = true;
                 break;
+            }
+            else if (line == "m" && broadcast_on) {
+                print_mutex.lock();
+                broadcast_on = false;
+                std::cout << "Muting other clients..." << std::endl;
             } else {
                 auto date = Date::now();
                 clientSocket->write_message(line, date);
                 last_message = Message(line, clientSocket->this_username, date);
+                if (!broadcast_on) {
+                    broadcast_on = true;
+                    print_mutex.unlock();
+                }
             }
         }
         broadcast_thread.detach();

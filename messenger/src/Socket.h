@@ -25,8 +25,6 @@ struct Socket {
     
     Socket(const std::string &hostname, int port, const std::string &username);
     
-    //void finish();
-    
     std::uint32_t read_uint() const;
     
     void write_uint(std::uint32_t n) const;
