@@ -4,9 +4,7 @@
 #include <iostream>
 #include <netdb.h>
 #include <memory.h>
-#include <pthread.h>
 #include <getopt.h>
-#include <unistd.h>
 #include <ctime>
 #include <vector>
 #include <algorithm>
@@ -18,7 +16,6 @@ pthread_mutex_t mutex_client = PTHREAD_MUTEX_INITIALIZER;
 std::vector<int> socket_idx;
 int count_client = 0;
 
-#define SET_THIS_FILE_NAME()
 static const char *const THIS_FILE_NAME = \
         strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__;
 
@@ -30,11 +27,9 @@ void print_error(int line, const std::string &mess) {
 }
 
 void add_new_client(int id_socket) {
-    std::cout << "add new client " << std::endl;
     pthread_mutex_lock(&mutex_client);
     count_client++;
     socket_idx.push_back(id_socket);
-    std::cout << " add client with id " << id_socket << std::endl;
     pthread_mutex_unlock(&mutex_client);
 }
 
@@ -70,20 +65,18 @@ int read_message(int id_socket, clien &clien_data) {
 }
 
 void *handle_client(void *client_socket) {
-    std::cout << "run handle_client " << std::endl;
 
     uint16_t id_socket = *(uint16_t *) client_socket;
 
     add_new_client(id_socket);
 
     clien clien_data;
-    std::cout << " wait nick name " << std::endl;
     if (read_message(id_socket, clien_data) < 0) {
         print_error(__LINE__, " can not read login client; connection "
                 "failed");
-        return NULL;
+        return nullptr;
     }
-    std::cout << "get client " << clien_data << std::endl;
+
     while (true) {
         int res = read_message(id_socket, clien_data);
         if (res < 0) {
@@ -91,26 +84,22 @@ void *handle_client(void *client_socket) {
             continue;
         }
         if (res == 1) {
-            std::cout << "exit client \n";
             // exit mess
             remove_client(id_socket);
-            std::cout << " return NULL \n";
-            return NULL;
+            return nullptr;
         } else {
             std::cout << clien_data << std::endl;
-            if (write_message(clien_data) != 0) {
-                std::cout << " not write mess \n";
-            }
+            write_message(clien_data);
         }
     }
 
 }
 
-int run_server(int64_t port) {
+int run_server(int port) {
 
 
     int id_socket;
-    struct sockaddr_in address;
+    struct sockaddr_in address{};
 
     if ((id_socket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         print_error(__LINE__, "can not open socket ");
@@ -120,7 +109,7 @@ int run_server(int64_t port) {
 
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(port);
+    address.sin_port = htons(static_cast<uint16_t>(port));
 
     if (bind(id_socket, (struct sockaddr *) &address, sizeof(address)) < 0) {
         print_error(__LINE__, "can not bind socket ");
@@ -128,7 +117,7 @@ int run_server(int64_t port) {
     }
 
     listen(id_socket, 5);
-    struct sockaddr_in cli_addr;
+    struct sockaddr_in cli_addr{};
     unsigned int clilen = sizeof(cli_addr);
 
 
@@ -141,7 +130,6 @@ int run_server(int64_t port) {
             continue;
         }
 
-//        std::cout << " accept new client " << client_socket << std::endl;
         pthread_t client_thread;
         int id_thread = pthread_create(&client_thread, NULL, handle_client,
                                        &client_socket);
@@ -164,10 +152,10 @@ int main(int argc, char *argv[]) {
     }
 
     int port;
-    size_t server_port = 0;
+    int server_port = 0;
     while ((port = getopt(argc, argv, "p:")) != -1) {
         if (port == 'p') {
-            server_port = static_cast<size_t>(atoi(optarg));
+            server_port = atoi(optarg);
         }
     }
 

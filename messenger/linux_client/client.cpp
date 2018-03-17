@@ -14,7 +14,6 @@
 bool is_exited_client = false;
 bool is_mode_read = false;
 
-#define SET_THIS_FILE_NAME()
 static const char *const THIS_FILE_NAME = \
         strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__;
 
@@ -25,6 +24,7 @@ void print_error(int line, const std::string &mess) {
 }
 
 int send_login_to_server(int id_socket, const clien &data_client) {
+    write()
     return sender(id_socket, data_client, true,
                   std::bind(print_error, __LINE__, std::placeholders::_1));
 }
@@ -43,26 +43,20 @@ void *reader_message(void *id_server) {
         int n = reader(id_socket, date_client,
                        std::bind(print_error, __LINE__, std::placeholders::_1));
         if (n == 0) {
-//            std::cout << "wait mode reader_message " << std::endl;
             while (is_mode_read);
             std::cout << date_client << std::endl;
-
         }
     }
 }
 
 
 void set_line(clien &data_client, char *mess) {
-    std::cout << "get mess " << mess << " size=" << strlen(mess) << std::endl;
     data_client.mess.size = strlen(mess);
     data_client.mess.cap = strlen(mess) + 1;
     data_client.mess.mess = new char[sizeof(char) * data_client.mess.cap];
-    std::cout << " set val to client_data\n";
     memcpy(data_client.mess.mess, mess, data_client.mess.size);
     data_client.mess.mess[data_client.mess.size] = '\0';
-
     get_current_time(data_client.time);
-    std::cout << "send: " << data_client << std::endl;
 }
 
 void get_argv(int argc, char **argv, char **address_server,
@@ -101,7 +95,9 @@ int main(int argc, char *argv[]) {
 
     using namespace std;
     if (argc < 3) {
-//        std::cout << " " << std::endl;
+        std::cout << " put param -s server_adde -p port_server -n nick_name"
+                  << std::endl;
+        return 1;
     }
 
     char *address_server;
@@ -111,11 +107,8 @@ int main(int argc, char *argv[]) {
     get_argv(argc, argv, &address_server, port_server, &nick_name);
 
     clien data_client(nick_name);
-    std::cout << " get client nick " << nick_name << std::endl;
-    std::cout << data_client << std::endl;
 
     /* Create a socket point */
-    std::cout << "create conntection " << std::endl;
     int id_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (id_socket < 0) {
         print_error(__LINE__, " opening socket");
@@ -143,13 +136,12 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    std::cout << "create connection to server " << id_socket << std::endl;
     int res = send_login_to_server(id_socket, data_client.nick);
     if (res != 0) {
         exit(1);
     }
     pthread_t updates_thread;
-    int code = pthread_create(&updates_thread, NULL, reader_message,
+    int code = pthread_create(&updates_thread, nullptr, reader_message,
                               &id_socket);
     if (code < 0) {
         print_error(__LINE__, "on creating reader thread");

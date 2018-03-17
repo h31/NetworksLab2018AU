@@ -8,45 +8,33 @@
 #include <cstring>
 #include <utility>
 #include <ostream>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <functional>
+#include <unistd.h>
 
 static const int TIME_SIZE = 80;
 
 struct message_data {
 
-    message_data(int size) : size(size), cap(size + 1) {}
+    explicit message_data(size_t size) : size(size), cap(size + 1) {}
 
-    message_data() : size(0) {}
+    message_data() : size(0), cap(0) {}
 
     size_t size;
     size_t cap;
     char *mess = nullptr;
-
-
-    void add_to_mess(char value) {
-        if (size < cap) {
-            mess[size++] = value;
-        } else {
-            char *temp = new char[sizeof(char) * (size) * 2];
-            bzero(temp, size * 2);
-            strncpy(temp, mess, size);
-            temp[size] = value;
-            free(mess);
-            mess = temp;
-            cap = size * 2;
-            ++size;
-        }
-    }
 };
 
 struct clien {
     char *nick = nullptr;
-    char time[TIME_SIZE];
+    char time[TIME_SIZE]{};
     message_data mess;
 
-    clien(char *nick) : nick(nick) {}
+    explicit clien(char *nick) : nick(nick), time() {}
 
-    clien() {}
+    clien() = default;
 
     void set_empty() {
         delete[] nick;
@@ -58,10 +46,9 @@ struct clien {
     }
 
     char *create_mess() const {
-//        std::cout << " create mess from" << *this << "\n";
         size_t size_nick = get_len_login();
         size_t size_mess = mess.size;
-        char *m = new char[size_nick + TIME_SIZE + size_mess + 1];
+        auto *m = new char[size_nick + TIME_SIZE + size_mess + 1];
 
 
         memcpy(m, nick, size_nick);
@@ -174,19 +161,13 @@ int reader(int id_socket, clien &clien_data,
         return 1;
     }
 
-    std::cout << " size_nick " << nick_size << " size_mess " << mess_size <<
-              "" " time_size " << time_size << std::endl;
-
-
     size_t size = nick_size + time_size + mess_size + 1;
-    std::cout << " get size n=" << size << std::endl;
 
     auto *message = new char[size + 1];
     uint32_t read_size = 0;
     ssize_t n = 0;
     while (read_size < size - 1) {
         n = read(id_socket, message + read_size, size - read_size);
-//        std::cout << " readed =" << n << std::endl;
         if (n <= 0) {
             print_error("read from socket ");
             return -1;
@@ -196,15 +177,12 @@ int reader(int id_socket, clien &clien_data,
 
 
     message[nick_size + time_size + mess_size] = '\0';
-    std::cout << " read text " << message << " size_text=" << strlen(message)
-              << std::endl;
 
     clien_data.set_nick(message, nick_size);
     if (time_size != 0 && mess_size != 0) {
         clien_data.set_time(message + nick_size, time_size);
         clien_data.set_mess(message + nick_size + time_size, mess_size);
     }
-    std::cout << " read from client " << clien_data << std::endl;
     return 0;
 }
 
