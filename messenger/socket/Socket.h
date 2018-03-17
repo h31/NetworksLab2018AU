@@ -5,6 +5,7 @@
 
 struct Socket {
     Socket(const std::string &host, uint16_t port);
+    ~Socket();
     Message read();
     void write(const Message & message);
 

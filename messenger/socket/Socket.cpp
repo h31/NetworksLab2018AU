@@ -66,3 +66,7 @@ void Socket::write(const Message &message) {
     writeString(message.time, socketDescriptor);
     writeString(message.nickname, socketDescriptor);
 }
+
+Socket::~Socket() {
+    close(socketDescriptor);
+}
