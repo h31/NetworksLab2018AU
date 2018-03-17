@@ -17,7 +17,7 @@ char *Message::ptr() {
     return &buffer[0];
 }
 
-ssize_t Message::size() const {
+std::size_t Message::size() const {
     return buffer.size();
 }
 

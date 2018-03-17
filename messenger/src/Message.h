@@ -25,7 +25,7 @@ struct Message {
 
     char *ptr();
     
-    ssize_t size() const;
+    std::size_t size() const;
     
     std::string to_string() const;
     

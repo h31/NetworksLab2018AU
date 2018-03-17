@@ -4,14 +4,21 @@
 #include "Socket.h"
 #include "ElegramAll.h"
 
-Socket::Socket(int fd, sockaddr cli_addr, unsigned int clilen, const std::string &username)
+
+static u_long zero = 0;
+
+Socket::Socket(socket_t fd, sockaddr cli_addr, const std::string &username)
         : fd(fd)
         , cli_addr(cli_addr)
-        , clilen(clilen)
         , this_username(username)
 {
     std::cout << "Creating socket on server: " << fd << std::endl;
-
+#if _WIN32
+    auto ioctl_error = ioctlsocket(fd, FIONBIO, &zero);
+    if (ioctl_error == SOCKET_ERROR) {
+        throw MessengerError("Failed to turn on blocking mode for socket: " + std::to_string(WSAGetLastError()));
+    }
+#endif
     auto message_type = static_cast<MessageType>(read_uint());
     if (message_type != MessageType::INIT_FROM_CLIENT) {
         throw ProtocolError("Error with init while creating socket on server.");
@@ -24,30 +31,44 @@ Socket::Socket(int fd, sockaddr cli_addr, unsigned int clilen, const std::string
 Socket::Socket(const std::string &hostname, int portno, const std::string &username)
         : this_username(username)
 {
-    struct hostent *server;
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-    
+    auto protocol = 0;
+#if _WIN32
+    protocol = IPPROTO_TCP;
+#endif
+    fd = socket(AF_INET, SOCK_STREAM, protocol);
+
+#if _WIN32
+    auto ioctl_error = ioctlsocket(fd, FIONBIO, &zero);
+    if (ioctl_error == SOCKET_ERROR) {
+        throw MessengerError("Failed to turn on blocking mode for socket: " + std::to_string(WSAGetLastError()));
+    }
+    if (fd == INVALID_SOCKET) {
+#else
     if (fd < 0) {
+#endif
         throw MessengerError("ERROR opening socket");
     }
-    
-    server = gethostbyname(hostname.c_str());
+    struct hostent *server = gethostbyname(hostname.c_str());
     if (server == nullptr) {
         throw MessengerError("ERROR, no such host");
     }
     
     struct sockaddr_in connect_addr;
-    bzero((char *) &connect_addr, sizeof(connect_addr));
+    memset((char *)&connect_addr, 0, sizeof(connect_addr));
     connect_addr.sin_family = AF_INET;
-    bcopy(server->h_addr, (char *) &connect_addr.sin_addr.s_addr, (size_t) server->h_length);
+    memcpy((char *) &connect_addr.sin_addr.s_addr, server->h_addr, (size_t) server->h_length);
     connect_addr.sin_port = htons(portno);
     
-    if (connect(fd, (struct sockaddr *) &connect_addr, sizeof(connect_addr)) < 0) {
+    auto const connect_result = connect(fd, (struct sockaddr *) &connect_addr, sizeof(connect_addr));
+#if _WIN32
+    if (connect_result == SOCKET_ERROR) {
+#else
+    if (connect_result < 0) {
+#endif
         throw MessengerError("ERROR connecting");
     }
     
-    clilen = sizeof(cli_addr);
-    bcopy(&connect_addr, &cli_addr, clilen);
+    memcpy(&cli_addr, &connect_addr, sizeof(cli_addr));
 
     write_uint(static_cast<uint32_t>(MessageType::INIT_FROM_CLIENT));
     write_string(username);
@@ -65,7 +86,7 @@ std::string Socket::read_string() const {
     auto message_ptr = &buffer[0];
     ssize_t nbytes = 0;
     while (nbytes < (ssize_t)n) {
-        nbytes = read(fd, message_ptr + nbytes, n - nbytes); // recv on Windows
+        nbytes = read(fd, message_ptr + nbytes, n - static_cast<size_t>(nbytes)); // recv on Windows
         check_io(nbytes, "reading");
     }
     return buffer;
@@ -80,12 +101,26 @@ void Socket::write_string(const std::string &str) const {
     write_uint(size);
     ssize_t nbytes = 0;
     while (nbytes < static_cast<ssize_t>(size)) {
-        nbytes = ::write(fd, &str[0], size - static_cast<size_t>(nbytes)); // send on Windows
+        nbytes = write(fd, &str[0], size - static_cast<size_t>(nbytes)); // send on Windows
         check_io(nbytes, "writing");
     }
 }
 
-Socket::~Socket() = default;
+Socket::~Socket() {
+#if _WIN32
+    closesocket(fd);
+#else
+    close(fd);
+#endif
+}
+
+void Socket::init() {
+    WSADATA wsaData;
+    auto iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (iResult != NO_ERROR) {
+        throw MessengerError("WSAStartup failed with error: " + std::to_string(iResult));
+    }
+}
 
 void Socket::check_io(ssize_t nbytes, const std::string &process) {
     if (nbytes < 0) {
@@ -93,11 +128,29 @@ void Socket::check_io(ssize_t nbytes, const std::string &process) {
     }
 }
 
+ssize_t Socket::read(socket_t fd, char * buf, size_t size)
+{
+#if _WIN32
+    return recv(fd, buf, size, 0);
+#else
+    return ::read(fd, buf, size);
+#endif
+}
+
+ssize_t Socket::write(socket_t fd, const char * buf, size_t size)
+{
+#if _WIN32
+    return send(fd, buf, size, 0);
+#else
+    return ::write(fd, buf, size);
+#endif
+}
+
 std::uint32_t Socket::read_uint() const {
     ssize_t nbytes = 0;
     std::uint32_t n32;
     while (nbytes < (int)sizeof(n32)) {
-        nbytes = read(fd, reinterpret_cast<char *>(&n32) + nbytes, sizeof(n32) - nbytes); // recv on Windows
+        nbytes = read(fd, reinterpret_cast<char *>(&n32) + nbytes, sizeof(n32) - static_cast<size_t>(nbytes));
         check_io(nbytes, "reading");
     }
     auto result = ntohl(n32);
@@ -108,7 +161,7 @@ void Socket::write_uint(std::uint32_t n) const {
     ssize_t nbytes = 0;
     std::uint32_t n32 = htonl(n);
     while (nbytes < (ssize_t)sizeof(n32)) {
-        nbytes = ::write(fd, reinterpret_cast<char *>(&n32) + nbytes, sizeof(n32) - nbytes);
+        nbytes = write(fd, reinterpret_cast<char *>(&n32) + nbytes, sizeof(n32) - static_cast<size_t>(nbytes));
         check_io(nbytes, "writing");
     }
 }
@@ -141,13 +194,4 @@ void Socket::write_broadcast(const Message &message) const {
     write_string(message.username);
     write_string(message.buffer);
     write_string(message.date.to_string());
-}
-
-void Socket::finish() {
-    write_uint(static_cast<std::uint32_t>(MessageType::FINISH));
-    close(fd);
-//    int shutdown_result = shutdown(fd, SHUT_RDWR);
-//    if (shutdown_result < 0) {
-//        std::cerr << "Warning: failed to shutdown socket" << std::endl;
-//    }
 }

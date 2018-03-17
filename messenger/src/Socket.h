@@ -1,18 +1,31 @@
 #ifndef MESSENGER_SOCKET_H
 #define MESSENGER_SOCKET_H
 
+#include <string>
+#include <functional>
+#if _WIN32
+#include <Windows.h>
+#else
 #include <sys/socket.h>
+#endif
 #include "ElegramFwd.h"
 #include "Date.h"
+
 
 // I/O operations should come through buffer as TCP read/write operations can merge.
 
 struct Socket {
-    Socket(int fd, sockaddr cli_addr, unsigned int clilen, const std::string &username);
+#if _WIN32
+    using socket_t = SOCKET;
+#else
+    using socket_t = int;
+#endif
+
+    Socket(socket_t fd, sockaddr cli_addr, const std::string &username);
     
     Socket(const std::string &hostname, int port, const std::string &username);
     
-    void finish();
+    //void finish();
     
     std::uint32_t read_uint() const;
     
@@ -32,14 +45,17 @@ struct Socket {
     
     ~Socket();
     
-    int fd = 0;
+    static void init();
+
+    socket_t fd;
     sockaddr cli_addr;
-    unsigned int clilen;
     std::string this_username = "INVALID_THIS";
     std::string other_username = "INVALID_OTHER";
-
 private:
     static void check_io(ssize_t nbytes, const std::string &process);
+
+    static ssize_t read(socket_t fd, char *buf, size_t size);
+    static ssize_t write(socket_t fd, const char *buf, size_t size);
 };
 
 #endif //MESSENGER_SOCKET_H

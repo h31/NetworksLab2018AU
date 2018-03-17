@@ -10,13 +10,16 @@ file(GLOB COMMON_SOURCE_FILES
         ${COMMON_SOURCE_DIR}/*.cpp
         ${COMMON_SOURCE_DIR}/*.h)
 
-#set(COMMON_SOURCE_FILES
-#        src/ElegramAll.h src/ElegramFwd.h
-#        )
+if(UNIX)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -O0 -ggdb")
+set(SERVER_PROJECT "linux_server")
+set(CLIENT_PROJECT "linux_client")
+else()
+set(SERVER_PROJECT "windows_server")
+set(CLIENT_PROJECT "windows_client")
+endif()
 
-#set(CMAKE_BUILD_TYPE DEBUG)
-add_subdirectory(linux_server)
-add_subdirectory(linux_client)
+add_subdirectory(${SERVER_PROJECT})
+add_subdirectory(${CLIENT_PROJECT})
 

@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 2.8)
+project(client_windows)
+
+set(SOURCE_FILES main.cpp ${COMMON_SOURCE_FILES})
+add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+
+if(UNIX)
+find_package(Threads REQUIRED)
+if(THREADS_HAVE_PTHREAD_ARG)
+    target_compile_options(${PROJECT_NAME} PUBLIC "-pthread")
+endif()
+if(CMAKE_THREAD_LIBS_INIT)
+    target_link_libraries(${PROJECT_NAME} "${CMAKE_THREAD_LIBS_INIT}")
+endif()
+else()
+endif()

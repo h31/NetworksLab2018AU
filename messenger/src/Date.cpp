@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <algorithm>
 #include <stdexcept>
 //#include <sstream>
@@ -49,10 +50,13 @@ static int64_t number_from_string(const std::string &num_string) {
 static inline int64_t local_time_offset() {
     static int64_t result = -1;
     if (result == -1) {
-        std::time_t timer;
-        time(&timer);
-        auto local_time = localtime(&timer);
-        result = static_cast<int64_t>(local_time->tm_gmtoff);
+        std::time_t local_timer;
+        time(&local_timer);
+        auto local_time = localtime(&local_timer);
+
+        auto global_time = gmtime(&local_timer);
+        auto global_timer = mktime(global_time);
+        result = static_cast<int64_t>(local_timer - global_timer);
     }
     return result;
 }
