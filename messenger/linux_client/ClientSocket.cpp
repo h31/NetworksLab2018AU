@@ -8,11 +8,14 @@
 #include <stdexcept>
 
 #include <vector>
+#include <iostream>
 
 ClientSocket::ClientSocket(const std::string &host, uint16_t port) : Socket() {
     if (socketDescriptor < 0) {
         throw std::runtime_error("ERROR opening socket");
     }
+
+    std::cout << "starting client at socket " << socketDescriptor << std::endl;
 
     // todo fix memory leak
     struct hostent *server = gethostbyname(host.c_str());

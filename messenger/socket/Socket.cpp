@@ -14,6 +14,16 @@ Socket::Socket() : socketDescriptor(socket(AF_INET, SOCK_STREAM, 0)) {}
 
 Socket::Socket(int socketDescriptor) : socketDescriptor(socketDescriptor) {}
 
+Socket::Socket(Socket &&other) noexcept : socketDescriptor(other.socketDescriptor) {
+    other.socketDescriptor = -1;
+}
+
+Socket::~Socket() {
+    if (socketDescriptor != -1) {
+        close(socketDescriptor);
+    }
+}
+
 void readString(std::vector<char> & buffer, int fd) {
     size_t length;
     read(fd, &length, sizeof(length));
@@ -49,9 +59,4 @@ void Socket::write(const Message &message) {
     writeString(message.text, socketDescriptor);
     writeString(message.time, socketDescriptor);
     writeString(message.nickname, socketDescriptor);
-}
-
-Socket::~Socket() {
-    close(socketDescriptor);
-    std::cout << "socket closed!" << std::endl;
 }

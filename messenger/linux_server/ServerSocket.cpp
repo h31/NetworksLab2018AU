@@ -6,11 +6,14 @@
 
 #include <stdexcept>
 #include <cstring>
+#include <iostream>
 
 ServerSocket::ServerSocket(uint16_t port) : Socket() {
     if (socketDescriptor < 0) {
         throw std::runtime_error("ERROR opening socket");
     }
+
+    std::cout << "starting server at socket " << socketDescriptor << std::endl;
 
     struct sockaddr_in serverAddress;
     bzero((char *) &serverAddress, sizeof(serverAddress));
