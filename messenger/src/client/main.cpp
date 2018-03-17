@@ -30,8 +30,12 @@ void update_state(state new_state) {
     current_state = new_state;
 }
 
+std::mutex time_conversion_mutex;
+
 void output_packet(std::shared_ptr<server_packet> p) {
-    std::cout << "<" << std::put_time(std::localtime(&p->time_received), "%R") << ">"
+    std::lock_guard lock(time_conversion_mutex);
+
+    std::cout << std::put_time(std::localtime(&p->time_received), "<%H:%M>")
               << " "
               << "[" << p->sender_nickname << "]"
               << " "

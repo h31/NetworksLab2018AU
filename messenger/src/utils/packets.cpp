@@ -169,7 +169,8 @@ std::shared_ptr<server_packet> read_packet(SOCKET sockfd) {
     
     p->sender_nickname = read_string(sockfd);
 
-    std::istringstream time_string_istream(read_string(sockfd));
+    std::string time_string = read_string(sockfd);
+    std::istringstream time_string_istream(time_string);
 
     time_io_mutex.lock();
     std::tm time_struct;
