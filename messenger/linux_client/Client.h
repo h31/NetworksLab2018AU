@@ -7,11 +7,12 @@
 #include <atomic>
 #include <queue>
 #include <set>
-#include "Socket.h"
+#include "ClientSocket.h"
 
 
 struct Client {
     Client(const std::string &address, uint16_t port, const std::string & nickname);
+    ~Client();
 
     void mute();
     void unmute();
@@ -23,7 +24,7 @@ private:
 
     void readerRoutine();
     void printerRoutine();
-    Socket socket;
+    ClientSocket socket;
     std::thread reader;
     std::thread printer;
     const std::string nickname;

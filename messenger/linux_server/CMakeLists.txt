@@ -1,7 +1,20 @@
 project(linux_server)
 
-set(SOURCES
-        main.cpp
+set(HEADERS
+        Server.h
+        ServerSocket.h
         )
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+set(SOURCES
+        main.cpp
+        Server.cpp
+        ServerSocket.cpp
+        )
+
+set(LIBRARIES
+        socket
+        pthread
+        )
+
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
+target_link_libraries(${PROJECT_NAME} ${LIBRARIES})

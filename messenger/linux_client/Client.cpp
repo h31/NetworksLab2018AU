@@ -18,8 +18,7 @@ void Client::unmute() {
 }
 
 void Client::send(const std::string &messageText) {
-    std::string time = "12:04";
-    Message message{messageText, time, nickname};
+    Message message{messageText, "", nickname};
     socket.write(message);
 }
 
@@ -37,6 +36,9 @@ void Client::readerRoutine() {
 
 void Client::printerRoutine() {
     while (true) {
+        if (stopped) {
+            break;
+        }
         unique_lock lk(queueLock);
         queueCond.wait(lk, [this](){return !muted && !messageQueue.empty();});
 
@@ -46,9 +48,16 @@ void Client::printerRoutine() {
         messageQueue.clear();
 
         lk.unlock();
+    }
+}
 
-        if (stopped) {
-            break;
-        }
+Client::~Client() {
+    stopped = true;
+    if (reader.joinable()) {
+        reader.join();
+    }
+
+    if (printer.joinable()) {
+        printer.join();
     }
 }

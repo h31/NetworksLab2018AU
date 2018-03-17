@@ -4,31 +4,15 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#include <string.h>
+#include <cstring>
 #include <stdexcept>
 
 #include <vector>
+#include <iostream>
 
-Socket::Socket(const std::string &host, uint16_t port) : host(host), port(port), socketDescriptor(socket(AF_INET, SOCK_STREAM, 0)) {
-    if (socketDescriptor < 0) {
-        throw std::runtime_error("ERROR opening socket");
-    }
+Socket::Socket() : socketDescriptor(socket(AF_INET, SOCK_STREAM, 0)) {}
 
-    struct hostent *server = gethostbyname(host.c_str());
-    if (server == nullptr) {
-        throw std::runtime_error("ERROR, no such host\n");
-    }
-
-    struct sockaddr_in serverAddress;
-    bzero((char *) &serverAddress, sizeof(serverAddress));
-    serverAddress.sin_family = AF_INET;
-    bcopy(server->h_addr, (char *) &serverAddress.sin_addr.s_addr, (size_t) server->h_length);
-    serverAddress.sin_port = htons(port);
-
-    if (connect(socketDescriptor, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0) {
-        throw std::runtime_error("ERROR connecting");
-    }
-}
+Socket::Socket(int socketDescriptor) : socketDescriptor(socketDescriptor) {}
 
 void readString(std::vector<char> & buffer, int fd) {
     size_t length;
@@ -69,4 +53,5 @@ void Socket::write(const Message &message) {
 
 Socket::~Socket() {
     close(socketDescriptor);
+    std::cout << "socket closed!" << std::endl;
 }

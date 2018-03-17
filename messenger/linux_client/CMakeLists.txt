@@ -2,10 +2,12 @@ project(linux_client)
 
 set(HEADERS
         Client.h
+        ClientSocket.h
         )
 
 set(SOURCES
         Client.cpp
+        ClientSocket.cpp
         main.cpp
         )
 
