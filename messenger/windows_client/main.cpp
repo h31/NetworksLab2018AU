@@ -19,8 +19,7 @@ void broadcast_callback() {
         std::uint32_t itype;
         try {
             itype = clientSocket->read_uint();
-        }
-        catch (std::exception &e) {
+        } catch (std::exception &e) {
             if (!is_finished) { // otherwise it's closed.
                 std::cerr << "Error while reading broadcast: " << e.what() << "\nExiting..." << std::endl;
             }
@@ -30,7 +29,7 @@ void broadcast_callback() {
         assert(mtype == MessageType::BROADCAST);
         auto message = clientSocket->read_broadcast();
         if (message != last_message) {
-            std::unique_lock<std::mutex> print_lock{ print_mutex };
+            std::unique_lock<std::mutex> print_lock{print_mutex};
             std::cout << message << std::endl;
         }
     }
@@ -52,7 +51,9 @@ int main(int argc, char *argv[]) {
         std::thread broadcast_thread{ broadcast_callback };
         bool broadcast_on = true;
         while (!is_finished) {
-            std::cout << "Please enter the message: " << std::endl;
+            if (broadcast_on) {
+                std::cout << "Please enter the message: " << std::endl;
+            }
             std::string line;
             std::getline(std::cin, line);
             if (line.empty()) {

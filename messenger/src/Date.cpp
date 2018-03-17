@@ -52,8 +52,6 @@ static inline int64_t local_time_offset() {
     if (result == -1) {
         std::time_t local_timer;
         time(&local_timer);
-        auto local_time = localtime(&local_timer);
-
         auto global_time = gmtime(&local_timer);
         auto global_timer = mktime(global_time);
         result = static_cast<int64_t>(local_timer - global_timer);

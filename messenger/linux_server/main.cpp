@@ -13,10 +13,8 @@
 #include <cassert>
 #include "ElegramAll.h"
 
-volatile bool is_finished = false;
-
-std::list<SocketWrapper> sockets;
-std::mutex sockets_mutex;
+static std::list<SocketWrapper> sockets;
+static std::mutex sockets_mutex;
 static std::mutex print_mutex;
 template<typename T>
 static void print_stdout(const T &arg) {
@@ -41,8 +39,15 @@ static void broadcast_message(const Message &message) {
 }
 
 static void client_session(const SocketWrapper &acceptSocket) {
-    while (!is_finished) {
-        auto message_type = acceptSocket->read_uint();
+    while (true) {
+        int message_type;
+        try {
+            message_type = acceptSocket->read_uint();
+        }
+        catch (std::exception &e) {
+            std::cerr << "Exiting client session [" << acceptSocket->other_username << "] with error: " << e.what() << std::endl;
+            break;
+        }
         if (message_type == static_cast<uint32_t>(MessageType::FINISH)) {
             break;
         }
@@ -51,7 +56,6 @@ static void client_session(const SocketWrapper &acceptSocket) {
         broadcast_message(message);
     }
     std::cout << "Finished session with client: " << acceptSocket->other_username << std::endl;
-    acceptSocket->finish();
 }
 
 int main(int argc, char **argv) {
@@ -59,15 +63,21 @@ int main(int argc, char **argv) {
         std::cerr << "USAGE: " << argv[0] << " port" << std::endl;
         exit(1);
     }
-    auto const port = stoi(static_cast<std::string>(argv[1]));
-    auto serverSocket = std::make_shared<ServerSocket>(port);
-    serverSocket->listen();
-    while (!is_finished) {
-        auto acceptSocket = serverSocket->accept();
-        std::unique_lock<std::mutex> sockets_lock{sockets_mutex};
-        sockets.push_back(acceptSocket);
-        std::thread client_thread{client_session, acceptSocket};
-        client_thread.detach();
+    try {
+        auto const port = stoi(static_cast<std::string>(argv[1]));
+        auto serverSocket = std::make_shared<ServerSocket>(port);
+        serverSocket->listen();
+        std::cout << "Listening for incoming connections..." << std::endl;
+        while (true) {
+            auto acceptSocket = serverSocket->accept();
+            std::unique_lock<std::mutex> sockets_lock{ sockets_mutex };
+            sockets.push_back(acceptSocket);
+            std::thread client_thread{ client_session, acceptSocket };
+            client_thread.detach();
+        }
+    }
+    catch (std::exception &e) {
+        std::cout << "ERROR: " << e.what() << std::endl;
     }
     return 0;
 }

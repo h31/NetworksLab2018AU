@@ -10,16 +10,15 @@ ServerSocket::ServerSocket(int portno) {
 #endif
     fd = socket(AF_INET, SOCK_STREAM, protocol);
 
+#if _WIN32
     static u_long zero = 0;
     auto ioctl_error = ioctlsocket(fd, FIONBIO, &zero);
     if (ioctl_error == SOCKET_ERROR) {
         throw MessengerError("Failed to turn on blocking mode for socket: " + std::to_string(WSAGetLastError()));
     }
-
-#if _WIN32
     if (fd == INVALID_SOCKET) {
 #else
-    if (sockfd < 0) {
+    if (fd < 0) {
 #endif
         throw MessengerError("ERROR opening socket");
     }
@@ -48,7 +47,11 @@ void ServerSocket::listen(int nrequests) {
 
 SocketWrapper ServerSocket::accept() {
     struct sockaddr cli_addr = {};
+#if _WIN32
     int clilen = sizeof(cli_addr);
+#else
+    unsigned int clilen = sizeof(cli_addr);
+#endif
     /* Accept actual connection from the client */
     auto cli_fd = ::accept(fd, &cli_addr, &clilen);
     

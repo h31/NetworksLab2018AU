@@ -30,8 +30,7 @@ static void broadcast_message(const Message &message) {
     for (auto ssit = sockets.begin(); ssit != sockets.end(); ) {
         if (ssit->unique()) {
             ssit = sockets.erase(ssit);
-        }
-        else {
+        } else {
             auto &socket = *ssit;
             socket->write_broadcast(message);
             ++ssit;

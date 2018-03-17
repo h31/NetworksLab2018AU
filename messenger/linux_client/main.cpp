@@ -8,6 +8,7 @@
 #include "ElegramAll.h"
 
 static SocketWrapper clientSocket;
+std::mutex socket_mutex;
 static auto last_message = Message::invalid_message();
 static std::mutex print_mutex;
 
@@ -44,22 +45,40 @@ int main(int argc, char *argv[]) {
     const std::string portstr = argv[2];
     const std::string username = argv[3];
     auto const portno = stoi(portstr);
-    clientSocket = std::make_shared<Socket>(hostname, portno, username);
-    std::thread broadcast_thread{broadcast_callback};
-    while (!is_finished) {
-        std::cout << "Please enter the message: " << std::endl;
-        std::string line;
-        std::getline(std::cin, line);
-        if (line.empty()) {
-            clientSocket->finish();
-            is_finished = true;
-            break;
-        } else {
-            auto date = Date::now();
-            clientSocket->write_message(line, date);
-            last_message = Message(line, clientSocket->this_username, date);
+    try {
+        Socket::init();
+        clientSocket = std::make_shared<Socket>(hostname, portno, username);
+        std::thread broadcast_thread{ broadcast_callback };
+        bool broadcast_on = true;
+        while (!is_finished) {
+            if (broadcast_on) {
+                std::cout << "Please enter the message: " << std::endl;
+            }
+            std::string line;
+            std::getline(std::cin, line);
+            if (line.empty()) {
+                clientSocket->write_uint(static_cast<int>(MessageType::FINISH));
+                is_finished = true;
+                break;
+            }
+            else if (line == "m" && broadcast_on) {
+                print_mutex.lock();
+                broadcast_on = false;
+                std::cout << "Muting other clients..." << std::endl;
+            } else {
+                auto date = Date::now();
+                clientSocket->write_message(line, date);
+                last_message = Message(line, clientSocket->this_username, date);
+                if (!broadcast_on) {
+                    broadcast_on = true;
+                    print_mutex.unlock();
+                }
+            }
         }
+        broadcast_thread.detach();
     }
-    broadcast_thread.detach();
+    catch (std::exception &e) {
+        std::cout << "ERROR: " << e.what() << std::endl;
+    }
     return 0;
 }

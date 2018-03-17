@@ -115,11 +115,13 @@ Socket::~Socket() {
 }
 
 void Socket::init() {
+#if _WIN32
     WSADATA wsaData;
     auto iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (iResult != NO_ERROR) {
         throw MessengerError("WSAStartup failed with error: " + std::to_string(iResult));
     }
+#endif
 }
 
 void Socket::check_io(ssize_t nbytes, const std::string &process) {
