@@ -89,20 +89,21 @@ void write_packet(SOCKET sockfd, std::shared_ptr<client_packet> p) {
     }
 }
 
+const char *TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ";
+
 template<>
 void write_packet(SOCKET sockfd, std::shared_ptr<server_packet> p) {
     write_string(sockfd, p->sender_nickname);
 
-    std::string time_string;
-    std::ostringstream time_string_ostream(time_string);
+    std::ostringstream time_string_ostream("");
 
     time_io_mutex.lock();
-    time_string_ostream << std::put_time(std::gmtime(&p->time_received), "%FT%TZ");
+    time_string_ostream << std::put_time(std::gmtime(&p->time_received), TIME_FORMAT);
     time_io_mutex.unlock();
 
     time_string_ostream.flush();
 
-    write_string(sockfd, time_string);
+    write_string(sockfd, time_string_ostream.str());
 
     write_string(sockfd, p->message);
 }
@@ -172,7 +173,7 @@ std::shared_ptr<server_packet> read_packet(SOCKET sockfd) {
 
     time_io_mutex.lock();
     std::tm time_struct;
-    time_string_istream >> std::get_time(&time_struct, "%FT%TZ");
+    time_string_istream >> std::get_time(&time_struct, TIME_FORMAT);
     p->time_received = mktime(&time_struct);
     time_io_mutex.unlock();
 
