@@ -3,9 +3,8 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include <message_format.h>
-#include <string_utils.h>
 
+#include "string_utils.h"
 #include "message_format.h"
 
 

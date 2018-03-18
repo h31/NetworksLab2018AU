@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <message_format.h>
 
 #include "thread_utils.h"
 #include "message_format.h"

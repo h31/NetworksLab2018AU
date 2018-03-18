@@ -1,21 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>
-#include <netinet/in.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
-#include <message_format.h>
 #include <errno.h>
 #include <pthread.h>
-#include <thread_utils.h>
+#include <zconf.h>
+#include <message_format.h>
 
+#include "thread_utils.h"
 #include "elegram_port.h"
 #include "message_format.h"
 
 
+static void printf_now(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  vprintf(format, args);
+  fflush(stdout);
+  va_end(args);
+}
+
 static int cli_get_message(elegram_msg_t* out, char* nickname) {
-  printf("Enter message: ");
+  printf_now("Enter message: ");
 
   char* line = NULL;
   size_t buf_len = 0;
@@ -65,11 +73,16 @@ static void* receiver_routine(void* arg) {
       return NULL;
     }
 
-    pthread_cleanup_push(free, message.data);
+    char str_time[256];
+    strftime(str_time, sizeof(str_time), "%x %H:%M", &message.header.timestamp);
+
+    pthread_cleanup_push(free, message.data) ;
         pthread_mutex_lock(&client->screen_mutex);
-        pthread_cleanup_push(cleanup_mutex_unlock, &client->screen_mutex) ;
-            printf("<TIME> [%s] %s", message.header.nickname,
-                   ((char*) message.data) + (message.header.text_offset));
+        pthread_cleanup_push(cleanup_mutex_unlock, &client->screen_mutex);
+            printf_now("<%s> [%s] %s",
+                       str_time,
+                       message.header.nickname,
+                       ((char*) message.data) + (message.header.text_offset));
         pthread_cleanup_pop(true);
     pthread_cleanup_pop(true);
   }
@@ -94,11 +107,17 @@ int cli(client_t* client) {
     pthread_mutex_lock(&client->screen_mutex);
     pthread_cleanup_push(cleanup_mutex_unlock, &client->screen_mutex) ;
         if (strcmp(line_buf, ":m\n") != 0) {
-          printf("Unknown command: %s", line_buf);
+          printf_now("Unknown command: %s", line_buf);
         } else {
           elegram_msg_t message;
           if (cli_get_message(&message, client->nickname) < 0) {
-            printf("\nOops: error reading your message\n");
+            if (errno == 0) {
+              // EOF
+              printf_now("\n");
+              fflush(stdout);
+            } else {
+              perror("ERROR reading your message\n");
+            }
           } else {
             send_message(client, &message);
           }

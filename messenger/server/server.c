@@ -48,10 +48,13 @@ void destroy_server(struct server* server) {
   pthread_rwlock_destroy(&server->rwlock);
 }
 
-int server_broadcast_message(struct server* server, const elegram_msg_t* message) {
+int server_broadcast_message(struct server* server, elegram_msg_t* message) {
   struct list_head* pos;
   pthread_rwlock_rdlock(&server->rwlock);
   pthread_cleanup_push(cleanup_rwlock_unlock, &server->rwlock) ;
+      time_t timestamp = time(NULL);
+      message->header.timestamp = *gmtime(&timestamp);
+
       list_for_each(pos, &server->clients_list) {
         struct client* client = list_entry(pos, struct client, lnode);
         pthread_mutex_lock(&client->mutex);
