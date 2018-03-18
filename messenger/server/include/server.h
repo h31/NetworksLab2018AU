@@ -7,10 +7,11 @@
 
 #include "list.h"
 #include "message_format.h"
+#include "socket_utils.h"
 
 struct server {
-  struct list_head clients_list;  // GUARDED_BY(mutex)
-  const int sock_fd;
+  struct list_head clients_list;  // GUARDED_BY(rwlock)
+  const socket_t socket;
   pthread_rwlock_t rwlock;
 };
 

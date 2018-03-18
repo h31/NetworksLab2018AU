@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 
+#include "socket_utils.h"
 #include "string_utils.h"
 #include "message_format.h"
 
@@ -20,33 +21,9 @@ uint32_t elegram_header_checksum(elegram_msg_header_t header) {
   return 123;
 }
 
-static ssize_t checked_read(int fd, void* buf, size_t buf_size) {
-  ssize_t read_res = read(fd, buf, buf_size);
-  if (read_res < 0) {
-    return -1;
-  }
-  if (read_res != buf_size) {
-    errno = EIO;
-    return -1;
-  }
-  return read_res;
-}
-
-static ssize_t checked_write(int fd, const void* buf, size_t buf_size) {
-  ssize_t write_res = write(fd, buf, buf_size);
-  if (write_res < 0) {
-    return -1;
-  }
-  if (write_res != buf_size) {
-    errno = EIO;
-    return -1;
-  }
-  return write_res;
-}
-
-int read_message(elegram_msg_t* out, int sock_fd) {
+int read_message(elegram_msg_t* out, socket_t socket) {
   elegram_msg_header_t header;
-  if (checked_read(sock_fd, &header, sizeof(header)) < 0) {
+  if (checked_socket_read(socket, &header, sizeof(header)) < 0) {
     return -1;
   }
 
@@ -64,7 +41,7 @@ int read_message(elegram_msg_t* out, int sock_fd) {
 
   ssize_t read_res;
   pthread_cleanup_push(free, data);
-      read_res = checked_read(sock_fd, data, data_length);
+      read_res = checked_socket_read(socket, data, data_length);
   pthread_cleanup_pop(false);
 
   if (read_res < 0) {
@@ -86,11 +63,11 @@ int read_message(elegram_msg_t* out, int sock_fd) {
   return 0;
 }
 
-int write_message(const elegram_msg_t* message, int sock_fd) {
-  if (checked_write(sock_fd, &message->header, sizeof(message->header)) < 0) {
+int write_message(const elegram_msg_t* message, socket_t socket) {
+  if (checked_socket_write(socket, &message->header, sizeof(message->header)) < 0) {
     return -1;
   }
-  if (checked_write(sock_fd, message->data, message_data_length(&message->header)) < 0) {
+  if (checked_socket_write(socket, message->data, message_data_length(&message->header)) < 0) {
     return -1;
   }
   return 0;

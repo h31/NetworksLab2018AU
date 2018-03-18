@@ -1,14 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>
-#include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
 #include <zconf.h>
-#include <message_format.h>
 
+#include "socket_utils.h"
 #include "thread_utils.h"
 #include "elegram_port.h"
 #include "message_format.h"
@@ -54,11 +52,11 @@ static int cli_get_message(elegram_msg_t* out, char* nickname) {
 typedef struct {
   pthread_mutex_t screen_mutex;
   char nickname[32];
-  int sock_fd;
+  socket_t socket;
 } client_t;
 
 static void send_message(client_t* client, const elegram_msg_t* message) {
-  write_message(message, client->sock_fd);
+  write_message(message, client->socket);
 }
 
 static void* receiver_routine(void* arg) {
@@ -68,7 +66,7 @@ static void* receiver_routine(void* arg) {
     pthread_testcancel();
 
     elegram_msg_t message;
-    if (read_message(&message, client->sock_fd) < 0) {
+    if (read_message(&message, client->socket) < 0) {
       perror("ERROR reading message");
       return NULL;
     }
@@ -126,11 +124,56 @@ int cli(client_t* client) {
   }
 }
 
+int run_client(const char* hostname, const char* nickname) {
+  struct hostent* server = gethostbyname(hostname);
+
+  if (server == NULL) {
+    fprintf(stderr, "ERROR, no such host\n");
+    return -1;
+  }
+
+  socket_t socket = create_tcp_socket();
+  if (socket < 0) {
+    perror("ERROR opening socket");
+    return -1;
+  }
+
+  int ret = 0;
+  pthread_cleanup_push(cleanup_close_socket, &socket);
+      struct sockaddr_in serv_addr = {
+          .sin_family = AF_INET,
+          .sin_port = htons(ELEGRAM_SERVER_PORT),
+          .sin_addr = *((struct in_addr*) server->h_addr),
+      };
+
+      /* Now connect to the server */
+      if ((ret = connect(socket, (struct sockaddr*) &serv_addr, sizeof(serv_addr)))) {
+        perror("ERROR connecting to the server");
+        goto cleanup;
+      }
+
+      client_t client = {
+          .screen_mutex = PTHREAD_MUTEX_INITIALIZER,
+          .socket = socket,
+      };
+      strcpy(client.nickname, nickname);
+
+      if ((ret = cli(&client))) {
+        perror("Oops");
+        goto cleanup;
+      }
+
+      cleanup:
+  pthread_cleanup_pop(true);
+
+  return ret;
+}
+
 // Use EOF (C-d) to stop the client
 int main(int argc, char* argv[]) {
   if (argc < 3) {
     fprintf(stderr, "usage %s hostname nickname\n", argv[0]);
-    exit(1);
+    return 1;
   }
 
   const char* hostname = argv[1];
@@ -138,48 +181,24 @@ int main(int argc, char* argv[]) {
 
   if (strlen(nickname) > 31) {
     fprintf(stderr, "nickname should not be longer than 31 symbol\n");
-    exit(1);
-  }
-
-  int sock_fd = socket(AF_INET, SOCK_STREAM, 0);
-
-  if (sock_fd < 0) {
-    perror("ERROR opening socket");
-    exit(1);
-  }
-
-  struct hostent* server = gethostbyname(hostname);
-
-  if (server == NULL) {
-    fprintf(stderr, "ERROR, no such host\n");
-    exit(0);
-  }
-
-  struct sockaddr_in serv_addr = {
-      .sin_family = AF_INET,
-      .sin_port = htons(ELEGRAM_SERVER_PORT),
-      .sin_addr = *((struct in_addr*) server->h_addr),
-  };
-
-  /* Now connect to the server */
-  if (connect(sock_fd, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0) {
-    perror("ERROR connecting to the server");
-    exit(1);
-  }
-
-  client_t client = {
-      .screen_mutex = PTHREAD_MUTEX_INITIALIZER,
-      .sock_fd = sock_fd,
-  };
-  strcpy(client.nickname, nickname);
-
-  int ret = cli(&client);
-  close(sock_fd);
-
-  if (ret < 0) {
-    perror("Oops");
     return 1;
   }
 
-  return 0;
+  if (socket_utils_init() != 0) {
+    perror("Error initializing sockets");
+    return 1;
+  }
+
+  int ret = 0;
+  if (run_client(hostname, nickname) != 0) {
+    // the error message is already printed
+    ret = 1;
+  }
+
+  if (socket_utils_cleanup() != 0) {
+    perror("Error in socket library cleanup");
+    ret = 1;
+  }
+
+  return ret;
 }

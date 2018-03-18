@@ -1,7 +1,5 @@
 #include <stdio.h>
-#include <unistd.h>
 #include <stdbool.h>
-#include <netdb.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <message_format.h>
@@ -14,11 +12,11 @@
 int server_init(struct server* server, uint16_t port) {
   *server = (struct server) {
       .clients_list = LIST_HEAD_INITIALIZER(server->clients_list),
-      .sock_fd = socket(AF_INET, SOCK_STREAM, 0),
+      .socket = create_tcp_socket(),
       .rwlock = PTHREAD_RWLOCK_INITIALIZER,
   };
 
-  if (server->sock_fd < 0) {
+  if (server->socket < 0) {
     return -1;
   }
 
@@ -29,7 +27,7 @@ int server_init(struct server* server, uint16_t port) {
   };
 
   /* Now bind the host address using bind() call.*/
-  if (bind(server->sock_fd, (struct sockaddr*) &server_addr, sizeof(server_addr)) < 0) {
+  if (bind(server->socket, (struct sockaddr*) &server_addr, sizeof(server_addr)) < 0) {
     return -1;
   }
 
@@ -46,7 +44,7 @@ void destroy_server(struct server* server) {
     pthread_join(client->receiver_thread, NULL);
     free(client);
   }
-  close(server->sock_fd);
+  close(server->socket);
   pthread_rwlock_destroy(&server->rwlock);
 }
 
@@ -61,7 +59,7 @@ int server_broadcast_message(struct server* server, elegram_msg_t* message) {
         struct client* client = list_entry(pos, struct client, lnode);
         pthread_mutex_lock(&client->mutex);
         pthread_cleanup_push(cleanup_mutex_unlock, &client->mutex) ;
-            write_message(message, client->sock_fd);
+            write_message(message, client->socket);
         pthread_cleanup_pop(true);
       }
   pthread_cleanup_pop(true);
@@ -69,19 +67,19 @@ int server_broadcast_message(struct server* server, elegram_msg_t* message) {
 }
 
 int server_serve(struct server* server) {
-  listen(server->sock_fd, 5);
+  listen(server->socket, 5);
 
   while (true) {
     pthread_testcancel();
 
-    int client_sock_fd = accept(server->sock_fd, NULL, NULL);
-    if (client_sock_fd < 0) {
+    socket_t client_socket = accept(server->socket, NULL, NULL);
+    if (client_socket < 0) {
       perror("ERROR on accept");
       continue;
     }
 
     struct client* new_client = malloc(sizeof(struct client));
-    client_init(new_client, server, client_sock_fd);
+    client_init(new_client, server, client_socket);
 
     pthread_create(&new_client->receiver_thread, NULL, client_routine, new_client);
   }

@@ -43,6 +43,11 @@ static void* server_routine(void* arg_raw) {
 
 // Use EOF (C-d) to stop the server
 int main(int argc, char* argv[]) {
+  if (socket_utils_init() != 0) {
+    perror("Error initializing sockets");
+    return 1;
+  }
+
   pthread_t server_thread;
   server_routine_arg_t arg = {
       .port = 5001,
@@ -52,10 +57,14 @@ int main(int argc, char* argv[]) {
   pthread_cancel(server_thread);
   pthread_join(server_thread, NULL);
 
+  int ret = 0;
   if (arg.ret != 0) {
     perror("Server error");
-    return 1;
-  } else {
-    return 0;
+    ret = 1;
   }
+  if (socket_utils_cleanup() != 0) {
+    perror("Error in socket library cleanup");
+    ret = 1;
+  }
+  return ret;
 }
