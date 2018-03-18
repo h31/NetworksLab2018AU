@@ -5,7 +5,9 @@ Client::Client(const std::string &address, uint16_t port, const std::string &nic
         socket(address, port),
         reader(&Client::readerRoutine, this),
         printer(&Client::printerRoutine, this),
-        nickname(nickname)
+        nickname(nickname),
+        muted(false),
+        stopped(false)
 {}
 
 void Client::mute() {
