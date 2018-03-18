@@ -11,16 +11,16 @@ client::client(std::string ip, int port_no, const std::string& name) {
 		MessageBoxA(NULL, "Winsock startup failed", "Error", MB_OK | MB_ICONERROR);
 		exit(1);
 	}
-	client_addr.sin_addr.s_addr = inet_addr(ip.c_str());
-	client_addr.sin_port = htons(port_no);
-	client_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = inet_addr(ip.c_str());
+	server_addr.sin_port = htons(port_no);
+	server_addr.sin_family = AF_INET;
 
 	clientptr = this;
 }
 
 bool client::connect_to_server() {
 	sock = socket(AF_INET, SOCK_STREAM, NULL);
-	if (connect(sock, (SOCKADDR*)&client_addr, sizeofaddr) != 0) {
+	if (connect(sock, (SOCKADDR*)&server_addr, sizeofaddr) != 0) {
 		MessageBoxA(NULL, "Failed to Connect..", "Error", MB_OK | MB_ICONERROR);
 		return false;
 	}
