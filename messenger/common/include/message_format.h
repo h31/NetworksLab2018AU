@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "socket_utils.h"
+
 // The structure of an elegram message:
 //
 // -----
@@ -42,9 +44,9 @@ extern const size_t MAX_MESSAGE_LENGTH;
 
 uint32_t elegram_header_checksum(elegram_msg_header_t header);
 
-int read_message(elegram_msg_t* out, int socket);
+int read_message(elegram_msg_t* out, socket_t socket);
 
-int write_message(const elegram_msg_t* message, int socket);
+int write_message(const elegram_msg_t* message, socket_t socket);
 
 static inline size_t message_data_length(const elegram_msg_header_t* header) {
   return header->text_offset + header->text_length;
