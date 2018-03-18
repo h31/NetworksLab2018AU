@@ -17,7 +17,7 @@ char* elegram::message::get_message() {
 bool elegram::message::has_next() {
     ssize_t n = read(_socket, _size.byte, 4);
     if (n < 0) {
-        throw std::runtime_error("ERROR can't read login size");
+        return false;
     }
     int login_size = _size.value;
     _login = _read_n(login_size);

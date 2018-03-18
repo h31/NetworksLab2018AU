@@ -28,9 +28,9 @@ void elegram::server::start() {
         sockaddr_in cli_addr{};
         clilen = sizeof(cli_addr);
         _newsockfd = accept(_sockfd, (sockaddr *) &cli_addr, &clilen);
-        _sockets_mutex.lock();
+        std::unique_lock<std::mutex> lock(_sockets_mutex);
         _sockets.push_back(_newsockfd);
-        _sockets_mutex.unlock();
+        lock.unlock();
         _client_routine.push_back(std::thread(&server::_client, this, _newsockfd));
     }
 }
@@ -93,17 +93,17 @@ void elegram::server::_client(int socket) {
         strcpy(msg_send + offset, msg);
 
         int n;
-        _sockets_mutex.lock();
+        std::unique_lock<std::mutex> lock(_sockets_mutex);
         for (int i = 0; i < _sockets.size(); ++i) {
             n = send(_sockets[i], msg_send, size_write_msg, 0);
         }
-        _sockets_mutex.unlock();
+        lock.unlock();
         if (n < 0) {
             throw std::runtime_error("ERROR writing to socket");
         }
         delete []msg_send;
     }
-    _sockets_mutex.lock();
+    std::unique_lock<std::mutex> lock(_sockets_mutex);
     _sockets.erase(_sockets.find(socket));
-    _sockets_mutex.unlock();
+    lock.unlock();
 }
