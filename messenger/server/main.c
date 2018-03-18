@@ -21,7 +21,7 @@ static void* server_routine(void* arg_raw) {
   struct server server;
   LOG("[Server] initializing...");
   if (server_init(&server, arg->port) != 0) {
-    perror("Error initializing server");
+    print_error("Error initializing server");
     arg->ret = -1;
     return NULL;
   }
@@ -30,7 +30,7 @@ static void* server_routine(void* arg_raw) {
   pthread_cleanup_push(cleanup_destroy_server, &server);
     LOG("[Server] working...");
     if (server_serve(&server) != 0)  {
-      perror("Server error");
+      print_error("Server error");
       arg->ret = -1;
     } else {
       arg->ret = 0;
@@ -44,7 +44,7 @@ static void* server_routine(void* arg_raw) {
 // Use EOF (C-d) to stop the server
 int main(int argc, char* argv[]) {
   if (socket_utils_init() != 0) {
-    perror("Error initializing sockets");
+    print_error("Error initializing sockets");
     return 1;
   }
 
@@ -59,11 +59,11 @@ int main(int argc, char* argv[]) {
 
   int ret = 0;
   if (arg.ret != 0) {
-    perror("Server error");
+    print_error("Server error");
     ret = 1;
   }
   if (socket_utils_cleanup() != 0) {
-    perror("Error in socket library cleanup");
+    print_error("Error in socket library cleanup");
     ret = 1;
   }
   return ret;

@@ -67,7 +67,7 @@ static void* receiver_routine(void* arg) {
 
     elegram_msg_t message;
     if (read_message(&message, client->socket) < 0) {
-      perror("ERROR reading message");
+      print_error("ERROR reading message");
       return NULL;
     }
 
@@ -114,7 +114,7 @@ int cli(client_t* client) {
               printf_now("\n");
               fflush(stdout);
             } else {
-              perror("ERROR reading your message\n");
+              print_error("ERROR reading your message\n");
             }
           } else {
             send_message(client, &message);
@@ -134,7 +134,7 @@ int run_client(const char* hostname, const char* nickname) {
 
   socket_t socket = create_tcp_socket();
   if (socket < 0) {
-    perror("ERROR opening socket");
+    print_error("ERROR opening socket");
     return -1;
   }
 
@@ -148,7 +148,7 @@ int run_client(const char* hostname, const char* nickname) {
 
       /* Now connect to the server */
       if ((ret = connect(socket, (struct sockaddr*) &serv_addr, sizeof(serv_addr)))) {
-        perror("ERROR connecting to the server");
+        print_error("ERROR connecting to the server");
         goto cleanup;
       }
 
@@ -159,7 +159,7 @@ int run_client(const char* hostname, const char* nickname) {
       strcpy(client.nickname, nickname);
 
       if ((ret = cli(&client))) {
-        perror("Oops");
+        print_error("Oops");
         goto cleanup;
       }
 
@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) {
   }
 
   if (socket_utils_init() != 0) {
-    perror("Error initializing sockets");
+    print_error("Error initializing sockets");
     return 1;
   }
 
@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
   }
 
   if (socket_utils_cleanup() != 0) {
-    perror("Error in socket library cleanup");
+    print_error("Error in socket library cleanup");
     ret = 1;
   }
 

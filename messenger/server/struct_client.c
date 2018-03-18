@@ -39,7 +39,7 @@ void* client_routine(void* arg_raw) {
 
         elegram_msg_t message;
         if (read_message(&message, client->socket) < 0) {
-          perror("ERROR reading message");
+          print_error("ERROR reading message");
           break;
         }
 

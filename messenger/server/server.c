@@ -74,7 +74,7 @@ int server_serve(struct server* server) {
 
     socket_t client_socket = accept(server->socket, NULL, NULL);
     if (client_socket < 0) {
-      perror("ERROR on accept");
+      print_error("ERROR on accept");
       continue;
     }
 

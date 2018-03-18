@@ -17,8 +17,9 @@
 #include "ssize_t.h"
 
 
-#ifndef EPROTO
-  #define EPROTO 1
+#ifdef _WIN32
+  #define EPROTO 100
+  #define EOVERFLOW E2BIG
 #endif
 
 #ifdef _WIN32
@@ -103,5 +104,16 @@ static inline socket_t create_tcp_socket() {
   return socket(AF_INET, SOCK_STREAM, 0);
 }
 
+static inline void print_error(const char* s) {
+  #ifdef _WIN32
+  if (errno == EPROTO) {
+    fprintf(stderr, "%s: Protocol error", s);
+  } else {
+    perror(s);
+  }
+  #else
+  perror(s);
+  #endif
+}
 
 #endif  // ELEGRAM_SOCKET_UTILS_H
