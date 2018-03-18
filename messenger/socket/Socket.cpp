@@ -28,11 +28,16 @@ Socket::~Socket() {
 
 void readString(std::vector<char> & buffer, int fd) {
     size_t length;
-    read(fd, &length, sizeof(length));
+    ssize_t r = 0;
+    
+    r = read(fd, &length, sizeof(length));
+    if (r == 0) throw SocketException();
+    
     if (buffer.size() < length + 1) {
         buffer.resize(length + 1);
     }
-    read(fd, buffer.data(), length + 1);
+    r = read(fd, buffer.data(), length + 1);
+    if (r == 0) throw SocketException();
 }
 
 void writeString(const std::string & str, int fd) {
@@ -46,9 +51,10 @@ Message Socket::read() {
     std::vector<char> buffer(256);
 
     uint32_t magic;
-    ::read(socketDescriptor, &magic, sizeof(magic));
-    if (magic != MAGIC) {
-        throw FailedToReadMessageException();
+    ssize_t r = 0;
+    r = ::read(socketDescriptor, &magic, sizeof(magic));
+    if (r == 0 || magic != MAGIC) {
+        throw SocketException();
     }
 
     readString(buffer, socketDescriptor);
@@ -95,6 +101,10 @@ bool Socket::interesting() {
     return interestSetSize > 0;
 }
 
-const char *FailedToReadMessageException::what() const noexcept {
+int Socket::descriptor() const {
+    return socketDescriptor;
+}
+
+const char *SocketException::what() const noexcept {
     return "could not parse message: did not receive magic number";
 }

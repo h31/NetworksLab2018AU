@@ -3,7 +3,7 @@
 #include <string>
 #include "Message.h"
 
-struct FailedToReadMessageException : std::exception {
+struct SocketException : std::exception {
     const char *what() const noexcept override;
 };
 
@@ -17,6 +17,7 @@ struct Socket {
     void write(const Message & message);
     bool interesting();
     void close();
+    int descriptor() const;
 
 protected:
     int socketDescriptor;

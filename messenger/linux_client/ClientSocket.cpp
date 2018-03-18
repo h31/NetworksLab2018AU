@@ -17,7 +17,6 @@ ClientSocket::ClientSocket(const std::string &host, uint16_t port) : Socket() {
 
     std::cout << "starting client at socket " << socketDescriptor << std::endl;
 
-    // todo fix memory leak
     struct hostent *server = gethostbyname(host.c_str());
     if (server == nullptr) {
         throw std::runtime_error("ERROR, no such host\n");

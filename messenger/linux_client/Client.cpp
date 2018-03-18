@@ -30,7 +30,7 @@ void Client::readerRoutine() {
                 guard lk(queueLock);
                 messageQueue.insert(message);
                 queueCond.notify_one();
-            } catch (const FailedToReadMessageException & ex) {
+            } catch (const SocketException & ex) {
                 std::cout << "connection with socket is dead" << std::endl;
                 stopped = true;
                 break;
@@ -38,7 +38,6 @@ void Client::readerRoutine() {
         } else {
             std::this_thread::yield();
         }
-
     }
 }
 
