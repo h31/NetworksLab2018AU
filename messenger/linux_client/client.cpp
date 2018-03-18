@@ -11,9 +11,8 @@ client::client(std::string ip, int port_no, const std::string& name) {
         exit(0);
     }
 
-    sockaddr_in serv_addr{};
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    bcopy(server->h_addr, (char *) &serv_addr.sin_addr.s_addr, (size_t) server->h_length);
+    bzero((char *) &server_addr, sizeofaddr);
+    bcopy(server->h_addr, (char *) &server_addr.sin_addr.s_addr, (size_t) server->h_length);
     server_addr.sin_port = htons(port_no);
     server_addr.sin_family = AF_INET;
 
@@ -22,7 +21,6 @@ client::client(std::string ip, int port_no, const std::string& name) {
 
 bool client::connect_to_server() {
     socket_fb = socket(AF_INET, SOCK_STREAM, NULL);
-    std::cout << socket_fb;
     if (connect(socket_fb, (sockaddr*)&server_addr, sizeofaddr) < 0) {
         std::cout << "Failed to Connect.." << std::endl;
 		return false;
