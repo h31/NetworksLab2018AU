@@ -50,7 +50,6 @@ struct clien {
         size_t size_mess = mess.size;
         auto *m = new char[size_nick + TIME_SIZE + size_mess + 1];
 
-
         memcpy(m, nick, size_nick);
         memcpy(m + size_nick, time, TIME_SIZE);
         memcpy(m + size_nick + TIME_SIZE, mess.mess, size_mess);
@@ -60,15 +59,12 @@ struct clien {
     }
 
     void set_nick(char *message, size_t size) {
-		std::cout << " set_nick size=" << size << " from byff " << message << std::endl;
         nick = new char[size + 1];
         strncpy(nick, message, size);
 		nick[size] = '\0';
     }
 
     void set_mess(char *message, size_t size) {
-
-		std::cout << " set_mess size=" << size << " from byff " << message << std::endl;
         mess.mess = new char[size + 1];
         mess.size = size;
         mess.cap = size + 1;
@@ -77,7 +73,6 @@ struct clien {
     }
 
     void set_time(char *message, size_t size = TIME_SIZE) {
-		std::cout << " set_time size=" << size << " from byff " << message << std::endl;
         strncpy(time, message, size);
     }
 
@@ -93,11 +88,11 @@ struct clien {
         //<%s> [%s] %s
         os << " <" << clien1.time << "> ";
         if (clien1.get_len_login() > 0) {
-            os << " [ " << /*clien1.get_len_login() << "    " << */clien1.nick << "] ";
+            os << " [" << clien1.nick << "] ";
         }
 
         if (clien1.get_len_mess() > 0) {
-            os << /*"(" << clien1.get_len_mess() << ") " << */ clien1.mess.mess;
+            os << clien1.mess.mess;
         }
         return os;
     }
@@ -121,15 +116,10 @@ int sender(int id_socket, const clien &data_client, bool only_nick,
         size_time = TIME_SIZE;
         size_mess = data_client.get_len_mess();
     }
-	std::cout << " send " << size_nick << " " << size_time << " " << size_mess << std::endl;
-
 
 	int n_nick = send(id_socket, (const char*)&size_nick, 4, 0);
 	int n_time = send(id_socket, (const char*)&size_time, 4, 0);
 	int n_mess = send(id_socket, (const char*)&size_mess, 4, 0);
-
-	std::cout << " send bytes " << n_nick << " " << n_time << " " << n_mess << std::endl;
-
 	
     if (n_nick != 4 || n_mess != 4 || n_time != 4) {
         print_error(" write size to socket");
@@ -164,9 +154,6 @@ int reader(int id_socket, clien &clien_data, bool &client_eixt,
 	int n_time = recv(id_socket, (char*)&time_size, 4, 0);
 	int n_mess = recv(id_socket, (char*)&mess_size, 4, 0);
 
-	std::cout << " read " << nick_size << " " << time_size << " " << mess_size << std::endl;
-	std::cout << " read bytes " << n_nick << " " << n_time << " " << n_mess << std::endl;
-
     if (n_nick != 4 || n_time != 4 || n_mess != 4) {
 		if (!client_eixt) {
 			print_error(" read mess_size from socket");
@@ -179,8 +166,6 @@ int reader(int id_socket, clien &clien_data, bool &client_eixt,
     }
 
     size_t size = nick_size + time_size + mess_size + 1;
-
-	std::cout << " alloc size " << size << std::endl;
 
     auto *message = new char[size + 1];
     uint32_t read_size = 0;
@@ -198,8 +183,6 @@ int reader(int id_socket, clien &clien_data, bool &client_eixt,
 
 
     message[nick_size + time_size + mess_size] = '\0';
-
-	std::cout << " read mess :" << message << std::endl;
 
     clien_data.set_nick(message, nick_size);
     if (time_size != 0 && mess_size != 0) {

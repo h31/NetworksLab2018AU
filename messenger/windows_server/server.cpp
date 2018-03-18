@@ -115,7 +115,6 @@ int run_server(int port) {
 	char server_port[6];
 	snprintf(server_port, 6, "%u", port);
 
-	std::cout << getaddrinfo(NULL, server_port, &hints, &result) << std::endl;
 	if (getaddrinfo(NULL, server_port, &hints, &result) != 0) {
 		print_error(__LINE__, "getaddrinfo failed");
 		WSACleanup();

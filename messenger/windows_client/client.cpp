@@ -29,7 +29,6 @@ int send_mess_to_server(int id_socket, const clien &data_client) {
                   std::bind(print_error, __LINE__, std::placeholders::_1));
 }
 
-
 void *reader_message(void *id_server) {
 
     while (!is_exited_client) {
@@ -98,7 +97,6 @@ void logic(int id_socket, clien & data_client) {
 		std::string m(line);
 		if (m.find(":m") == 0) {
 			is_mode_read = true;
-			std::cout << " get line " << line + 2 << "  " << strlen(line) << std::endl;
 			set_line(data_client, line + 2);
 			is_mode_read = false;
 			send_mess_to_server(id_socket, data_client);
@@ -133,7 +131,6 @@ int main(int argc, char *argv[]) {
     get_argv(argc, argv, &address_server, port_server, &nick_name);
 
     clien data_client(nick_name);
-	std::cout << " get client  " << data_client << std::endl;
 
 	// initialize winsock
 	WSADATA wsa;
