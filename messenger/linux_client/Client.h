@@ -40,85 +40,57 @@ public:
             exit(1);
         }
 
-        /* Send message to the server */
-        ssize_t n = write(client_socket, nick, strlen(nick));
+        Message nick_message(nick, "");
+        nick_message.write_to_socket(client_socket);
 
-        if (n < 0) {
-            perror("ERROR writing to socket");
-            exit(1);
-        }
-
-        auto * messages_queue = new MessagesQueue();
-        MessagesViewer messagesViewer(messages_queue, user_is_typing);
+        messages_queue = new Messages();
+        MessagesViewer messages_viewer(messages_queue, user_is_typing);
         std::thread user_input_reader(&Client::read_user_input, this, client_socket);
-        
 
-        while (true) {
-            while (!(*user_is_typing)) {
-                char buffer[1];
-                bzero(buffer, 1);
-                ssize_t n = read(client_socket, buffer, 1);
 
-                if (n < 0) {
-                    perror("ERROR reading from socket");
-                    exit(1);
-                }
-                int8_t nicklen = buffer[0];
-                char nick_buffer[nicklen];
-                n = read(client_socket, nick_buffer, nicklen);
-
-                if (n < 0) {
-                    perror("ERROR reading from socket");
-                    exit(1);
-                }
-                std::string nick;
-                for (unsigned int charno = 0; charno < nicklen; charno++) {
-                    nick.push_back(nick_buffer[charno]);
-                }
-                
-                char text_len_buffer[5];
-                /* If connection is established then start communicating */
-                bzero(text_len_buffer, 5);
-                n = read(client_socket, text_len_buffer, 5); // recv on Windows
-                uint32_t textlen = atoi(text_len_buffer);
-                char text_buffer[textlen + 1];
-                n = read(client_socket, text_buffer, textlen + 1); // recv on Windows
-                
-                MessagesQueue::Message new_message(nick, std::string(text_buffer));
-                messages_queue->push_new_message(new_message);
+        while (!stopped) {
+            while (!(*user_is_typing) && !stopped) {
+                messages_queue->read_and_push(client_socket);
             }
         }
+        
+        user_input_reader.join();
+        messages_viewer.stop();
+    }
+    
+    ~Client() {
+        delete messages_queue;
+        delete user_is_typing;
     }
 
 private:
     int client_socket;
+    Messages * messages_queue;
     char *hostname;
     uint16_t port;
     char * nick;
     bool * user_is_typing;
+    bool stopped = false;
 
 
     void read_user_input(int socket) {
         std::string input;
-        while(true) {
+        while(!stopped) {
             std::cin >> input;
             if (input == "m") {
                 *user_is_typing = true;
                 std::cout << "Please enter the message: ";
                 std::cin >> input;
-                uint32_t textlen = input.size();
-                auto len = std::to_string(textlen).c_str();
-                ssize_t n = write(socket, len, 4);
-                auto text = input.c_str();
-                /* Send message to the server */
-                n = write(socket, text, strlen(text) + 1);
-
-                if (n < 0) {
-                    perror("ERROR writing to socket");
-                    exit(1);
-                }
-                *user_is_typing = false;
+                Message new_message(nick, input);
+                new_message.write_to_socket(client_socket);
+            } else if (input == "s") {
+                stopped = true;
+                Message stop_message(nick, "#STOP");
+                stop_message.write_to_socket(client_socket);
+            } else {
+                std::cout << "Usage:\n m - new message \n s - stop chating" << std::endl;
             }
+            *user_is_typing = false;
         }
     }
 };

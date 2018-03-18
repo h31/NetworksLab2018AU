@@ -9,18 +9,13 @@
 #include <condition_variable>
 #include <thread>
 #include <strings.h>
-#include "../MessagesQueue.h"
+#include "../Messages.h"
 
 class ClientHandler {
 public:
-    ClientHandler(MessagesQueue * messages, int client_socket):
+    ClientHandler(Messages * messages, int client_socket):
             messages(messages),
             client_socket(client_socket) {
-        char buffer[256];
-        ssize_t n;
-        bzero(buffer, 256);
-        n = read(client_socket, buffer, 255);
-        nick = std::string(buffer);
     }
 
     void run() {
@@ -38,30 +33,16 @@ public:
         delete client_handler;
     }
 private:
-    MessagesQueue * messages;
+    Messages * messages;
     std::thread * client_handler;
     int client_socket;
-    std::string nick;
-    size_t buffer_size = 1024;
 
     void handle_client() {
-        char buffer[5];
-
-        while (true) {
-            /* If connection is established then start communicating */
-            bzero(buffer, buffer_size);
-            ssize_t n = read(client_socket, buffer, 5); // recv on Windows
-            uint32_t textlen = atoi(buffer);
-            char text_buffer[textlen + 1];
-            n = read(client_socket, text_buffer, textlen + 1); // recv on Windows
-            MessagesQueue::Message new_message(nick, std::string(text_buffer));
-            messages->push_new_message(new_message);
-            if (n < 0) {
-                perror("ERROR reading from socket");
-                exit(1);
-            }
-            printf("Here is the message: %s\n", text_buffer);
+        bool result = true;
+        while (result) {
+            result = messages->read_and_push(client_socket);
         }
+        close(client_socket);
     }
 };
 
