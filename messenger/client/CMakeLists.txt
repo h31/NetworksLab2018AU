@@ -9,6 +9,9 @@ endif()
 
 add_executable(${PROJECT_NAME} main.c)
 target_link_libraries(${PROJECT_NAME} elegram_common Threads::Threads)
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} wsock32 ws2_32)
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE ../common/include)
 target_include_directories(${PROJECT_NAME} PRIVATE include)

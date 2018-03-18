@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "string_utils.h"
 
 ssize_t safe_strlen(const char* str, size_t buf_size) {

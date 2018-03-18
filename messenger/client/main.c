@@ -23,13 +23,11 @@ static void printf_now(const char* format, ...) {
 static int cli_get_message(elegram_msg_t* out, char* nickname) {
   printf_now("Enter message: ");
 
-  char* line = NULL;
-  size_t buf_len = 0;
-  ssize_t text_length = getline(&line, &buf_len, stdin);
-  if (text_length < 0) {
+  char line[1024];
+  if (fgets(line, sizeof(line), stdin) == NULL) {
     return -1;
   }
-  text_length += 1; // null character should be counted
+  size_t text_length = strlen(line) + 1;  // null character should be counted
 
   if (text_length > MAX_MESSAGE_LENGTH) {
     return EOVERFLOW;
@@ -91,9 +89,8 @@ int cli(client_t* client) {
   pthread_create(&receiver_thread, NULL, receiver_routine, client);
 
   while (true) {
-    char* line_buf = NULL;
-    size_t buf_size = 0;
-    if (getline(&line_buf, &buf_size, stdin) < 0) {
+    char line_buf[1024];
+    if (fgets(line_buf, sizeof(line_buf), stdin) < 0) {
       pthread_cancel(receiver_thread);
       if (errno == 0) {
         return 0;  // end-of-file
