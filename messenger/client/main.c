@@ -4,7 +4,7 @@
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
-#include <zconf.h>
+#include <stdarg.h>
 
 #include "socket_utils.h"
 #include "thread_utils.h"
