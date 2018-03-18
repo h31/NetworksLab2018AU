@@ -41,7 +41,9 @@ void destroy_server(struct server* server) {
   struct list_head* tmp;
   list_for_each_safe(pos, tmp, &server->clients_list) {
     struct client* client = list_entry(pos, struct client, lnode);
-    destroy_client(client);
+    // `destroy_client` will be called by the client thread cleanup
+    pthread_cancel(client->receiver_thread);
+    pthread_join(client->receiver_thread, NULL);
     free(client);
   }
   close(server->sock_fd);

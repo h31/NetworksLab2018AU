@@ -20,27 +20,35 @@ void client_init(struct client* client, struct server* server, int sock_fd) {
 }
 
 void destroy_client(struct client* client) {
+  pthread_rwlock_wrlock(&client->server->rwlock);
   close(client->sock_fd);
   pthread_mutex_destroy(&client->mutex);
   list_del(&client->lnode);
-  pthread_cancel(client->receiver_thread);
-  pthread_join(client->receiver_thread, NULL);
+  pthread_rwlock_unlock(&client->server->rwlock);
+}
+
+static void cleanup_destroy_client(void* arg_raw) {
+  destroy_client((struct client*) arg_raw);
 }
 
 void* client_routine(void* arg_raw) {
   struct client* client = (struct client*) arg_raw;
 
-  while (true) {
-    pthread_testcancel();
+  pthread_cleanup_push(cleanup_destroy_client, client);
+      while (true) {
+        pthread_testcancel();
 
-    elegram_msg_t message;
-    if (read_message(&message, client->sock_fd) < 0) {
-      perror("ERROR reading message");
-      return NULL;
-    }
+        elegram_msg_t message;
+        if (read_message(&message, client->sock_fd) < 0) {
+          perror("ERROR reading message");
+          break;
+        }
 
-    pthread_cleanup_push(free, message.data) ;
-        server_broadcast_message(client->server, &message);
-    pthread_cleanup_pop(true);
-  }
+        pthread_cleanup_push(free, message.data) ;
+            server_broadcast_message(client->server, &message);
+        pthread_cleanup_pop(true);
+      }
+  pthread_cleanup_pop(true);
+
+  return NULL;
 };
