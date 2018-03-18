@@ -1,7 +1,5 @@
 #pragma once
 
-#define _WIN32
-
 #ifndef _WIN32
 #include <netdb.h>
 #include <netinet/in.h>
