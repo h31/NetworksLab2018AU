@@ -1,5 +1,7 @@
 #include <iostream>
 #include <csignal>
+#include <iomanip>
+#include <sstream>
 #include "Server.h"
 
 Server::Server(uint16_t port) :
@@ -51,7 +53,7 @@ void Server::insertClient(const Server::SocketPtr &socket) {
         clientHandles.erase(id);
     }
     deadHandles.clear();
-    
+
     if (clientHandles.find(clientDescriptor) != clientHandles.end()) {
         throw std::runtime_error("ERROR: trying to accept client with already existing socket");
     }
@@ -71,12 +73,21 @@ void Server::acceptorRoutine() {
     std::cout << "acceptor thread finished" << std::endl;
 }
 
+std::string getTime() {
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+    std::stringstream ss;
+    ss << std::put_time(&tm, "%H:%M");
+    std::string result = ss.str();
+    return result;
+}
+
 void Server::servingRoutine(SocketPtr socket) {
     while (!stopped) {
         if (socket->interesting()) {
             try {
                 Message msg = socket->read();
-                msg.time = "12:04";
+                msg.time = getTime();
                 guard lk(lock);
                 pendingMessages.push(msg);
                 cond.notify_one();
