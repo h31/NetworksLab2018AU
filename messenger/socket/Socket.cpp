@@ -9,12 +9,6 @@
 
 const uint32_t MAGIC = 0xDEADBEEF;
 
-#ifndef _WIN32
-Socket::Socket() : socketDescriptor(socket(AF_INET, SOCK_STREAM, 0)) {}
-#else
-Socket::Socket() : socketDescriptor(socket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP)) {}
-#endif
-
 Socket::Socket(int socketDescriptor) : socketDescriptor(socketDescriptor) {}
 
 Socket::Socket(Socket &&other) noexcept : socketDescriptor(other.socketDescriptor) {
@@ -40,7 +34,7 @@ void readString(std::vector<char> & buffer, int fd) {
 void writeString(const std::string & str, int fd) {
     size_t length = str.size();
     SOCKET_WRITE(fd, &length, sizeof(length));
-	SOCKET_WRITE(fd, str.c_str(), length + 1);
+    SOCKET_WRITE(fd, str.c_str(), length + 1);
 }
 
 Message Socket::read() {

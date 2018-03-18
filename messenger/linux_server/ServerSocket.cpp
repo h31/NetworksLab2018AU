@@ -4,13 +4,15 @@
 #include <cstring>
 #include <iostream>
 
-ServerSocket::ServerSocket(uint16_t port) : Socket() {
-    if (socketDescriptor < 0) {
-        throw std::runtime_error("ERROR opening socket");
-    }
+ServerSocket::ServerSocket(uint16_t port) : Socket(0) {
 
-    std::cout << "starting server at socket " << socketDescriptor << std::endl;
 #ifndef _WIN32
+	socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
+	if (socketDescriptor < 0) {
+		throw std::runtime_error("ERROR opening socket");
+	}
+
+	std::cout << "starting server at socket " << socketDescriptor << std::endl;
     struct sockaddr_in serverAddress;
     bzero((char *) &serverAddress, sizeof(serverAddress));
 
@@ -22,11 +24,23 @@ ServerSocket::ServerSocket(uint16_t port) : Socket() {
         throw std::runtime_error("ERROR on binding");
     }
 
-    // todo what is this
     listen(socketDescriptor, 5);
 
 #else
-	struct addrinfo *result = NULL, *ptr = NULL, hints;
+
+	WSADATA wsaData;
+	int iResult;
+
+	SOCKET ListenSocket = INVALID_SOCKET;
+
+	struct addrinfo *result = NULL;
+	struct addrinfo hints;
+
+	// Initialize Winsock
+	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != 0) {
+		throw std::runtime_error("WSAStartup failed with error");
+	}
 
 	ZeroMemory(&hints, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -34,36 +48,48 @@ ServerSocket::ServerSocket(uint16_t port) : Socket() {
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
 
-	// Resolve the local address and port to be used by the server
-	std::string strP = std::to_string(port);
-	auto iResult = getaddrinfo(NULL, strP.c_str(), &hints, &result);
+	// Resolve the server address and port
+	std::string portS = std::to_string(port);
+	iResult = getaddrinfo(NULL, portS.c_str(), &hints, &result);
 	if (iResult != 0) {
 		WSACleanup();
-		throw std::runtime_error("getaddrinfo failed");
+		throw std::runtime_error("getaddrinfo failed with error");
 	}
 
-	iResult = bind(socketDescriptor, result->ai_addr, (int)result->ai_addrlen);
+	// Create a SOCKET for connecting to server
+	ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+	if (ListenSocket == INVALID_SOCKET) {
+		freeaddrinfo(result);
+		WSACleanup();
+		throw std::runtime_error("socket failed with error");
+	}
+
+	// Setup the TCP listening socket
+	iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
 	if (iResult == SOCKET_ERROR) {
 		freeaddrinfo(result);
-		closesocket(socketDescriptor);
+		closesocket(ListenSocket);
 		WSACleanup();
 		throw std::runtime_error("bind failed with error");
 	}
 
 	freeaddrinfo(result);
 
-	if (listen(socketDescriptor, SOMAXCONN) == SOCKET_ERROR) {
-		closesocket(socketDescriptor);
+	iResult = listen(ListenSocket, SOMAXCONN);
+	if (iResult == SOCKET_ERROR) {
+		closesocket(ListenSocket);
 		WSACleanup();
-		throw std::runtime_error("Listen failed with error");
+		throw std::runtime_error("listen failed with error");
 	}
+
+	socketDescriptor = ListenSocket;
 #endif
 }
 
 Socket ServerSocket::accept() {
     struct sockaddr_in clientAddress;
-    socklen_t clilen = sizeof(clientAddress);
-    int newSocketDescriptor = ::accept(socketDescriptor, (struct sockaddr *) &clientAddress, &clilen);
+    socklen_t socklen = sizeof(clientAddress);
+    int newSocketDescriptor = ::accept(socketDescriptor, (struct sockaddr *) &clientAddress, &socklen);
 
     if (newSocketDescriptor < 0) {
         throw std::runtime_error("ERROR on accept");

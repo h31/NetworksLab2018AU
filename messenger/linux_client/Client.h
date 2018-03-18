@@ -25,13 +25,15 @@ private:
 
     void readerRoutine();
     void printerRoutine();
+
+	std::multiset<Message> messageQueue;
+	std::mutex queueLock;
+	std::condition_variable queueCond;
+
     ClientSocket socket;
+	std::atomic_bool muted;
+	std::atomic_bool stopped;
     std::thread reader;
     std::thread printer;
     const std::string nickname;
-    std::multiset<Message> messageQueue;
-    std::atomic_bool muted;
-    std::atomic_bool stopped;
-    std::mutex queueLock;
-    std::condition_variable queueCond;
 };

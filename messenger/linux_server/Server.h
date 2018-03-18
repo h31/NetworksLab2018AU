@@ -35,15 +35,15 @@ private:
         SocketPtr socket;
     };
 
+	std::unordered_map<int, ClientHandle> clientHandles;
+	std::unordered_set<int> deadHandles;
+	std::queue<Message> pendingMessages;
+	std::mutex lock;
+	std::condition_variable cond;
     std::atomic_bool stopped;
     ServerSocket serverSocket;
     std::thread acceptor;
     std::thread sender;
-    std::unordered_map<int, ClientHandle> clientHandles;
-    std::unordered_set<int> deadHandles;
-    std::queue<Message> pendingMessages;
-    std::mutex lock;
-    std::condition_variable cond;
 };
 
 

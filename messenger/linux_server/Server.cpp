@@ -18,15 +18,14 @@ Server::ClientHandle::ClientHandle(Server::ClientHandle &&other) noexcept : work
 Server::~Server() {
     std::cout << "server destructor called" << std::endl;
     stopped = true;
-
-    serverSocket.close();
+    
     if (acceptor.joinable()) {
         acceptor.join();
     }
     std::cout << "acceptor thread joined" << std::endl;
 
-    cond.notify_one();
-    if (sender.joinable()) {
+    while (sender.joinable()) {
+        cond.notify_one();
         sender.join();
     }
     std::cout << "sender thread joined" << std::endl;
@@ -64,7 +63,9 @@ void Server::insertClient(const Server::SocketPtr &socket) {
 void Server::acceptorRoutine() {
     while (!stopped) {
         if (serverSocket.interesting()) {
+			std::cout << "server: client is going to connect!" << std::endl;
             std::shared_ptr<Socket> client = std::make_shared<Socket>(serverSocket.accept());
+			std::cout << "server: client connected!" << std::endl;
             insertClient(client);
         } else {
             std::this_thread::yield();
@@ -86,7 +87,10 @@ void Server::servingRoutine(SocketPtr socket) {
     while (!stopped) {
         if (socket->interesting()) {
             try {
+				std::cout << "server: message is going to arrive!" << std::endl;
                 Message msg = socket->read();
+				std::cout << "server: message read!" << std::endl;
+				std::cout << "<" << msg.time << "> [" << msg.nickname << "] " << msg.text << std::endl;
                 msg.time = getTime();
                 guard lk(lock);
                 pendingMessages.push(msg);
@@ -109,13 +113,16 @@ void Server::senderRoutine() {
     while (!stopped) {
         unique_lock lk(lock);
         cond.wait(lk);
+		std::cout << "server: try send arrived messages!" << std::endl;
         while (!pendingMessages.empty()) {
             Message & msg = pendingMessages.front();
             for (auto & p : clientHandles) {
                 int descriptor = p.first;
                 ClientHandle & handle = p.second;
                 if (deadHandles.find(descriptor) == deadHandles.end()) {
+					std::cout << "server: sending message to client!" << std::endl;
                     handle.socket->write(msg);
+                    std::cout << "server: message sent!" << std::endl;
                 }
             }
             pendingMessages.pop();
