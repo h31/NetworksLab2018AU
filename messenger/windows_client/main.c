@@ -27,8 +27,8 @@ int read_from_socket(SOCKET sockfd, char *buffer, int len, int sz) {
 }
 
 int send_via_socket(SOCKET sockfd, char *buffer) {
-	int iResult = send(sockfd, buffer, strlen(buffer), 0);
-	if (iResult == SOCKET_ERROR) {
+    int iResult = send(sockfd, buffer, strlen(buffer), 0);
+    if (iResult == SOCKET_ERROR) {
         printf("send failed: %d\n", WSAGetLastError());
         closesocket(sockfd);
         WSACleanup();
@@ -59,16 +59,16 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "usage %s hostname port login\n", argv[0]);
         exit(0);
     }
-	uint16_t portno = (uint16_t) atoi(argv[2]);
+    uint16_t portno = (uint16_t) atoi(argv[2]);
 
- 	char login[MAX_LOGIN_LEN];
+    char login[MAX_LOGIN_LEN];
     strcpy(login, argv[3]);
 
     WSADATA wsaData;
     int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
     if (iResult != NO_ERROR) {
-      printf("WSAStartup failed: %d\n", iResult);
-      exit(0);
+        printf("WSAStartup failed: %d\n", iResult);
+        exit(0);
     }
 
     SOCKET sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     memcpy((char *) &serv_addr.sin_addr.s_addr, server->h_addr, (size_t) server->h_length);
     serv_addr.sin_port = htons(portno);
 
-   	iResult = connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)); 
+    iResult = connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)); 
     if (iResult == SOCKET_ERROR) {
         closesocket(sockfd);
         printf("Unable to connect to server: %d\n", WSAGetLastError());
@@ -120,8 +120,8 @@ int main(int argc, char *argv[]) {
             fgets(buffer, MAX_MSG_LEN - 1, stdin);    
             print_pause = 0;
             if (send_via_socket(sockfd, buffer) == SOCKET_ERROR) {
-        		exit(1);
-    		}
+                exit(1);
+            }
         } 
     }
 

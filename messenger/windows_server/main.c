@@ -113,15 +113,15 @@ int main(int argc, char *argv[]) {
     }
     uint16_t portno = atoi(argv[1]);
 
-	WSADATA wsaData;
-	int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+    WSADATA wsaData;
+    int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
     if (iResult != NO_ERROR) {
-    	printf("WSAStartup failed: %d\n", iResult);
-    	exit(1);
+        printf("WSAStartup failed: %d\n", iResult);
+        exit(1);
     }
 
     SOCKET sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd == INVALID_SOCKET) {
+    if (sockfd == INVALID_SOCKET) {
         printf("Error at socket(): %d\n", WSAGetLastError());
         WSACleanup();
         exit(1);
@@ -151,16 +151,15 @@ int main(int argc, char *argv[]) {
     while (1) {
         SOCKET newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
         if (newsockfd == INVALID_SOCKET) {
-        	printf("Error on acceot: %d\n", WSAGetLastError());
-        	WSACleanup();
-        	exit(1);
+            printf("Error on acceot: %d\n", WSAGetLastError());
+            WSACleanup();
+            exit(1);
         }
 
         add_socket_fd(newsockfd);
 
         pthread_t client;
         pthread_create(&client, NULL, connection_processing, (void *) &newsockfd);
-
     }
 
     closesocket(sockfd);
