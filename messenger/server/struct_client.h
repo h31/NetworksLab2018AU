@@ -8,9 +8,12 @@ struct client {
   pthread_mutex_t mutex;
   struct server* server;
   struct list_head lnode;
+  pthread_t receiver_thread;
 };
 
 void client_init(struct client* client, struct server* server, int sock_fd);
+
+void destroy_client(struct client* client);
 
 void* client_routine(void* arg_raw);
 

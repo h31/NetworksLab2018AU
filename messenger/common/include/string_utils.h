@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-bool check_strlen(const char* str, size_t len);
+/**
+ * Returns -1 if the string is not null terminated.
+ * Returns the length of the string otherwise
+ */
+ssize_t safe_strlen(const char* str, size_t buf_size);
 
 #endif  // PROJECT_STRING_UTILS_H

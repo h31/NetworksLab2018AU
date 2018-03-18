@@ -14,10 +14,11 @@ struct server {
   pthread_rwlock_t rwlock;
 };
 
+void destroy_server(struct server* server);
+
 int server_init(struct server* server, uint16_t port);
 
-int server_broadcast_message(struct server* server, elegram_msg_header header,
-                             void* data, size_t data_length);
+int server_broadcast_message(struct server* server, const elegram_msg_t* message);
 
 int server_serve(struct server* server);
 
