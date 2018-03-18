@@ -13,7 +13,6 @@ set(SOURCES
 
 set(LIBRARIES
         socket
-        pthread
         )
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})

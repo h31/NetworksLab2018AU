@@ -1,9 +1,5 @@
 #include "Socket.h"
 
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-
 #include <cstring>
 #include <stdexcept>
 
@@ -11,10 +7,13 @@
 #include <iostream>
 #include <csignal>
 
-
 const uint32_t MAGIC = 0xDEADBEEF;
 
+#ifndef _WIN32
 Socket::Socket() : socketDescriptor(socket(AF_INET, SOCK_STREAM, 0)) {}
+#else
+Socket::Socket() : socketDescriptor(socket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP)) {}
+#endif
 
 Socket::Socket(int socketDescriptor) : socketDescriptor(socketDescriptor) {}
 
@@ -28,22 +27,20 @@ Socket::~Socket() {
 
 void readString(std::vector<char> & buffer, int fd) {
     size_t length;
-    ssize_t r = 0;
-    
-    r = read(fd, &length, sizeof(length));
+    auto r = SOCKET_READ(fd, &length, sizeof(length));
     if (r == 0) throw SocketException();
     
     if (buffer.size() < length + 1) {
         buffer.resize(length + 1);
     }
-    r = read(fd, buffer.data(), length + 1);
+    r = SOCKET_READ(fd, buffer.data(), length + 1);
     if (r == 0) throw SocketException();
 }
 
 void writeString(const std::string & str, int fd) {
     size_t length = str.size();
-    write(fd, &length, sizeof(length));
-    write(fd, str.c_str(), length + 1);
+    SOCKET_WRITE(fd, &length, sizeof(length));
+	SOCKET_WRITE(fd, str.c_str(), length + 1);
 }
 
 Message Socket::read() {
@@ -51,8 +48,7 @@ Message Socket::read() {
     std::vector<char> buffer(256);
 
     uint32_t magic;
-    ssize_t r = 0;
-    r = ::read(socketDescriptor, &magic, sizeof(magic));
+    auto r = SOCKET_READ(socketDescriptor, &magic, sizeof(magic));
     if (r == 0 || magic != MAGIC) {
         throw SocketException();
     }
@@ -74,8 +70,8 @@ void brokenPipeHandler(int signal) {
 }
 
 void Socket::write(const Message &message) {
-    signal(SIGPIPE, brokenPipeHandler);
-    ::write(socketDescriptor, &MAGIC, sizeof(MAGIC));
+    signal(SOCKET_SIGPIPE, brokenPipeHandler);
+    SOCKET_WRITE(socketDescriptor, &MAGIC, sizeof(MAGIC));
     writeString(message.text, socketDescriptor);
     writeString(message.time, socketDescriptor);
     writeString(message.nickname, socketDescriptor);
@@ -83,7 +79,7 @@ void Socket::write(const Message &message) {
 
 void Socket::close() {
     if (socketDescriptor != -1) {
-        ::close(socketDescriptor);
+        SOCKET_CLOSE(socketDescriptor);
         socketDescriptor = -1;
     }
 }

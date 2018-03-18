@@ -92,6 +92,7 @@ void Server::servingRoutine(SocketPtr socket) {
                 pendingMessages.push(msg);
                 cond.notify_one();
             } catch (const SocketException & ex) {
+				(void) ex;
                 std::cout << "catched FailedToReadMessageException" << std::endl;
                 break;
             }
