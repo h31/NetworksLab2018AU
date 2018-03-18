@@ -3,6 +3,7 @@
 client::client(std::string ip, int port_no, const std::string& name) {
 	std::cout << "client " << name << " running..." << std::endl;
 	this->name = name;
+	message_queue = std::queue<std::string>();
 
 	WSAData wsa;
 	WORD dll_ver = MAKEWORD(2, 1);
@@ -31,7 +32,12 @@ bool client::process_message() {
 	std::string message;
 	if (!get_str(message)) return false;
 
-	std::cout << "Message: " << message << std::endl;
+	if (!is_input) {
+		std::cout << message << std::endl;
+	}
+	else {
+		message_queue.push(message);
+	}
 	return true;
 }
 
@@ -94,10 +100,20 @@ bool client::get_int(int32_t& value) {
 }
 
 bool client::send_str(const std::string& mess) {
-	auto message = "[" + name + "] " + mess;
+	std::string message = mess;
+	if (mess.find("NAME: ") == std::string::npos) {
+		message = "CHAT: [" + name + "] " + mess;
+	}
 	int bufferlen = message.size();
 	if (!send_int(bufferlen)) return false;
-	return sendall((char*)message.c_str(), bufferlen);
+	bool result = sendall((char*)message.c_str(), bufferlen);
+	is_input = false;
+	while (!message_queue.empty()) {
+		auto current = message_queue.front();
+		std::cout << current << std::endl;
+		message_queue.pop();
+	}
+	return result;
 }
 
 bool client::get_str(std::string& mess) {
@@ -115,4 +131,8 @@ bool client::get_str(std::string& mess) {
 	mess = buffer;
 	delete[] buffer;
 	return true;
+}
+
+void client::set_input_mode() {
+	is_input = true;
 }

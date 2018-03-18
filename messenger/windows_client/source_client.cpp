@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
 	while (true) {
 		getline(std::cin, input);
 		if (input.find("m:") == 0) {
+			me.set_input_mode();
 			getline(std::cin, input);
 			if (!me.send_str(input)) break;
 		}

@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <string>
+#include <queue>
 #include <WinSock2.h>
 
 class client {
@@ -17,6 +18,8 @@ class client {
 	SOCKADDR_IN client_addr;			
 	int sizeofaddr = sizeof(client_addr);
 	std::string name;
+	bool is_input = false;
+	std::queue<std::string> message_queue;
 
 	bool process_message();
 	static void client_handler();
@@ -33,6 +36,7 @@ public:
 	bool connect_to_server();
 	bool disconnet();
 	bool send_str(const std::string& mess);
+	void set_input_mode();
 };
 
 static client* clientptr;

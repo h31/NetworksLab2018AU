@@ -86,7 +86,8 @@ bool server::process_message(int id, const std::string& time) {
 void server::client_handler(int id) {
 	while (true) {
 		auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-		auto time = "<" + std::string(std::ctime(&now)) + ">";
+		auto time = "<" + std::string(std::ctime(&now));
+		time = time.replace(time.size() - 1, 1, "") + ">";
 		if (!serverptr->process_message(id, time)) break;
 	}
 	std::cout << "Lost connection to client id: " << id << std::endl;
