@@ -4,6 +4,11 @@
 #include <stdio.h>
 #include <errno.h>
 
+#ifndef EPROTO
+  #define EPROTO 1
+#endif
+
+
 #ifdef _WIN32
 #include <windows.h>
 #else
