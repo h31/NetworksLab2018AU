@@ -1,4 +1,4 @@
-project(linux_server)
+project(server)
 
 set(HEADERS
         Server.h

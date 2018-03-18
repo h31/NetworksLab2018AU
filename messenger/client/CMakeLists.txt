@@ -1,4 +1,4 @@
-project(linux_client)
+project(client)
 
 set(HEADERS
         Client.h
