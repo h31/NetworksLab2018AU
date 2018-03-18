@@ -107,7 +107,7 @@ static inline socket_t create_tcp_socket() {
 static inline void print_error(const char* s) {
   #ifdef _WIN32
   if (errno == EPROTO) {
-    fprintf(stderr, "%s: Protocol error", s);
+    fprintf(stderr, "%s: Protocol error\n", s);
   } else {
     perror(s);
   }
