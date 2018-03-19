@@ -24,7 +24,6 @@ void print_error(int line, const std::string &mess) {
 }
 
 int send_login_to_server(int id_socket, const clien &data_client) {
-    write()
     return sender(id_socket, data_client, true,
                   std::bind(print_error, __LINE__, std::placeholders::_1));
 }
@@ -136,7 +135,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    int res = send_login_to_server(id_socket, data_client.nick);
+    int res = send_login_to_server(id_socket, data_client);
     if (res != 0) {
         exit(1);
     }
