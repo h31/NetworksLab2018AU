@@ -1,41 +1,101 @@
 #ifndef SOCKET_HPP
 #define SOCKET_HPP
 
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <string.h>
+#ifdef _WIN32
+	#include <WinSock2.h>
+	#include <Windows.h>
+#else
+	#include <netdb.h>
+	#include <netinet/in.h>
+	#include <unistd.h>
+	#include <string.h>
+#endif
 
+#include <stddef.h>
 #include <algorithm>
 #include <exception>
+#include <memory>
 
 
 namespace net {
 
+#ifdef _WIN32
+	typedef int socklen_t;
 
-struct socket_ops
-{
-	static int send(int fd, const char *buf, size_t size)
+	struct socket_ops
 	{
-		return (int)::send(fd, buf, size, MSG_NOSIGNAL);
-	}
+		static void init()
+		{
+			WSADATA wsaData;
 
-	static int recv(int fd, char *buf, size_t size)
-	{
-		return (int)::recv(fd, buf, size, MSG_NOSIGNAL);
-	}
+			if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
+				std::cerr << "WSAStartup failed " << std::endl;
+				exit(1);
+			}
+		}
 
-	static int close(int fd)
-	{
-		::shutdown(fd, SHUT_RDWR);
-		::close(fd);
-	}
+		static int send(int fd, const char *buf, size_t size)
+		{
+			return (int)::send(fd, buf, size, 0);
+		}
 
-	static int create_inet()
+		static int recv(int fd, char *buf, size_t size)
+		{
+			return (int)::recv(fd, buf, size, 0);
+		}
+
+		static int close(int fd)
+		{
+			shutdown(fd);
+			return ::closesocket(fd);
+		}
+
+		static void shutdown(int fd)
+		{
+			::shutdown(fd, SD_BOTH);
+		}
+
+		static int create_inet()
+		{
+			return ::socket(AF_INET, SOCK_STREAM, 0);
+		}
+	};
+
+#else
+	struct socket_ops
 	{
-		return ::socket(AF_INET, SOCK_STREAM, 0);
-	}
-};
+		static void init()
+		{}
+
+		static int send(int fd, const char *buf, size_t size)
+		{
+			return (int)::send(fd, buf, size, MSG_NOSIGNAL);
+		}
+
+		static int recv(int fd, char *buf, size_t size)
+		{
+			return (int)::recv(fd, buf, size, MSG_NOSIGNAL);
+		}
+
+		static void shutdown(int fd)
+		{
+			::shutdown(fd, SHUT_RDWR);
+		}
+
+		static int close(int fd)
+		{
+			shutdown(fd);
+			return ::close(fd);
+		}
+
+		static int create_inet()
+		{
+			return ::socket(AF_INET, SOCK_STREAM, 0);
+		}
+	};
+#endif
+
+
 
 struct network_exception: public std::exception
 {
@@ -129,9 +189,9 @@ public:
 		return socket(client);
 	}
 
-	ssize_t send(const char *buffer, size_t size)
+	int send(const char *buffer, size_t size)
 	{
-		ssize_t n = socket_ops::send(sock, buffer, size);
+		int n = socket_ops::send(sock, buffer, size);
 		if (n <= 0)
 			throw network_exception();
 
@@ -146,9 +206,9 @@ public:
 			off += send(buffer + off, size - off);
 	}
 
-	ssize_t recv(char *buffer, size_t size)
+	int recv(char *buffer, size_t size)
 	{
-		ssize_t n = socket_ops::recv(sock, buffer, size);
+		int n = socket_ops::recv(sock, buffer, size);
 		if (n <= 0)
 			throw network_exception();
 
@@ -165,7 +225,7 @@ public:
 
 	void close()
 	{
-		::shutdown(sock, SHUT_RDWR);
+		socket_ops::shutdown(sock);
 	}
 
 	~socket()
@@ -178,6 +238,13 @@ public:
 	bool operator==(const socket& rhs) const
 	{
 		return sock == rhs.sock;
+	}
+
+	std::unique_ptr<char[]> read_alloc(int size)
+	{
+		std::unique_ptr<char[]> ptr(new char[size]);
+		recv_all(ptr.get(), size);
+		return std::move(ptr);
 	}
 };
 

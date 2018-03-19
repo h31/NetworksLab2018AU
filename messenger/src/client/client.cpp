@@ -1,40 +1,52 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
+#include <string>
+#include <memory>
+#include <time.h>
 
-#include <socket.hpp>
+#include "socket.hpp"
 
-void extract_name(net::socket& sock)
+void print_time()
 {
-	size_t size;
-	sock.recv_all((char *)&size, sizeof(size));
-
-	char name[size + 1];
-	sock.recv_all(name, size);
-	name[size] = 0;
-
-	std::cout << "[" << name << "]: ";
+	time_t t = time(0);
+	struct tm * now = localtime( & t );
+	std::cout << '<' << (now->tm_mon + 1) << ':' << now->tm_sec << "> ";
 }
 
-void extract_msg(net::socket& sock)
+std::unique_ptr<char[]> extract_name(net::socket& sock)
 {
 	size_t size;
-	sock.recv_all((char *)&size, sizeof(size));
 
-	char msg[size + 1];
-	sock.recv_all(msg, size);
+	sock.recv_all((char *)&size, sizeof(size));
+	std::unique_ptr<char[]> name(new char[size + 1]);
+	sock.recv_all(name.get(), size);
+	name[size] = 0;
+
+	return std::move(name);
+}
+
+std::unique_ptr<char[]> extract_msg(net::socket& sock)
+{
+	size_t size;
+
+	sock.recv_all((char *)&size, sizeof(size));
+	std::unique_ptr<char[]> msg(new char[size + 1]);
+	sock.recv_all(msg.get(), size);
 	msg[size] = 0;
 
-	std::cout << msg;
+	return std::move(msg);
 }
 
 void process_in(net::socket& sock)
 {
 	try {
 		while (true) {
-			extract_name(sock);
-			extract_msg(sock);
-			std::cout << std::endl;
+			auto name = extract_name(sock);
+			auto msg = extract_msg(sock);
+
+			print_time();
+			std::cout << "[" << name.get() << "] " << msg.get() << std::endl;
 		}
 	} catch (net::network_exception& e) {
 		std::cout << e.what() << std::endl;
@@ -64,13 +76,15 @@ void process_out(net::socket& sock, std::string name)
 
 int main(int argc, char *argv[])
 {
+	net::socket_ops::init();
+
 	if (argc < 4) {
 		std::cerr << "usage " << argv[0] << " hostname port name\n";
 		return 1;
 	}
 
 	uint16_t portno = (uint16_t) atoi(argv[2]);
-	
+
 	net::socket sock;
 	sock.connect(argv[1], portno);
 	std::cout << "connected... enter messages" << std::endl;

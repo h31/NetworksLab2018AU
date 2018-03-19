@@ -2,6 +2,7 @@
 #include <thread>
 #include <mutex>
 #include <iostream>
+#include <memory>
 
 #include "socket.hpp"
 
@@ -50,24 +51,27 @@ static void process_round(server& server, client& cur)
 	size_t msg_sz;
 
 	cur.sock.recv_all((char *)&name_sz, sizeof(name_sz));
-	char name_frame[name_sz + sizeof(name_sz) + 1] = {};
-	((size_t*)name_frame)[0] = name_sz;
-	cur.sock.recv_all(name_frame + sizeof(name_sz), name_sz);
+	std::unique_ptr<char[]> name_frame(new char[name_sz + sizeof(name_sz) + 1]);
+	((size_t*)name_frame.get())[0] = name_sz;
+	cur.sock.recv_all(name_frame.get() + sizeof(name_sz), name_sz);
+	name_frame[name_sz + sizeof(name_sz)] = 0;
 
 	cur.sock.recv_all((char *)&msg_sz, sizeof(msg_sz));
-	char msg_frame[msg_sz + sizeof(msg_sz) + 1] = {};
-	((size_t*)msg_frame)[0] = msg_sz;
-	cur.sock.recv_all(msg_frame + sizeof(msg_sz), msg_sz);
+	std::unique_ptr<char[]> msg_frame(new char[msg_sz + sizeof(msg_sz) + 1]);
+	cur.sock.recv_all(msg_frame.get() + sizeof(msg_sz), msg_sz);
+	((size_t*)msg_frame.get())[0] = msg_sz;
 
-	const char *const msg = msg_frame + sizeof(msg_sz);
-	const char *const name = name_frame + sizeof(name_sz);
+	char *const msg = msg_frame.get() + sizeof(msg_sz);
+	char *const name = name_frame.get() + sizeof(name_sz);
+	msg[msg_sz] = 0;
+	name[name_sz] = 0;
 	std::cout << DEBUG_TOKEN "msg: " << name << ", " << msg << std::endl;
 
 	try {
 		std::lock_guard<std::mutex> guard(server.mtx);
 		process_broadcast(server, cur, [=, &name_frame, &msg_frame](client& client) {
-			client.sock.send_all(name_frame, name_sz + sizeof(name_sz));
-			client.sock.send_all(msg_frame, msg_sz + sizeof(msg_sz));
+			client.sock.send_all(name_frame.get(), name_sz + sizeof(name_sz));
+			client.sock.send_all(msg_frame.get(), msg_sz + sizeof(msg_sz));
 		});
 	} catch (net::network_exception& e) {
 		// ignore broken connection
@@ -102,13 +106,15 @@ static void clear_server(server& server)
 
 int main(int argc, char *argv[])
 {
+	net::socket_ops::init();
+
 	if (argc < 2) {
 		std::cerr << "usage " << argv[0] << " port\n";
 		return 1;
 	}
 
-	server server;
 	uint16_t portno = (uint16_t) atoi(argv[1]);
+	server server;
 
 	std::cout << DEBUG_TOKEN "start listening" << std::endl;
 
