@@ -99,13 +99,14 @@ int run_server(int port) {
 
 
     int id_socket;
+
     struct sockaddr_in address{};
+    memset((char *) &address, 0, sizeof(address));
 
     if ((id_socket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         print_error(__LINE__, "can not open socket ");
         return -1;
     }
-    memset((char *) &address, 0, sizeof(address));
 
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;

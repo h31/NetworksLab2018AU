@@ -41,7 +41,7 @@ struct message_data {
 
 struct clien {
     char *nick = nullptr;
-    int nick_size = 0;
+    size_t nick_size = 0;
     char time[TIME_SIZE]{};
     message_data mess;
 
