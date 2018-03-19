@@ -12,9 +12,4 @@
  */
 ssize_t safe_strlen(const char* str, size_t buf_size);
 
-#ifdef _WIN32
-size_t getline()
-#endif
-
-
 #endif  // PROJECT_STRING_UTILS_H
