@@ -3,14 +3,10 @@
 
 
 #include <mutex>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
 #include <queue>
 #include <condition_variable>
 #include <thread>
-#include <strings.h>
-#include "../Messages.h"
+#include "Messages.h"
 
 class MessageSender {
 public:

@@ -1,15 +1,14 @@
 #ifndef MESSENGER_MESSAGE_H
 #define MESSENGER_MESSAGE_H
 
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
+#pragma warning(disable : 4996) //_CRT_SECURE_NO_WARNINGS
+
 #include <queue>
 #include <mutex>
 #include <condition_variable>
 #include <time.h>
-#include <strings.h>
 #include <cstring>
+#include <WinSock2.h>
 
 
 class Message {
@@ -31,34 +30,33 @@ public:
         return time_of_recieving;
     }
 
-    void write_to_socket(int socket) {
+    void write_to_socket(SOCKET socket) {
         int8_t nicklen = author.size();
         uint32_t textlen = text.size();
         char buffer[1];
-        bzero(buffer, 1);
         buffer[0] = nicklen;
-        ssize_t n = write(socket, buffer, 1); // send on Windows
+        int n = send(socket, buffer, 1, 0); // send on Windows
 
         if (n < 0) {
             perror("ERROR writing to socket");
             exit(1);
         }
 
-        n = write(socket, author.c_str(), nicklen + 1); // send on Windows
+        n = send(socket, author.c_str(), nicklen + 1, 0); // send on Windows
 
         if (n < 0) {
             perror("ERROR writing to socket");
             exit(1);
         }
-
-        auto len = std::to_string(textlen).c_str();
-        n = write(socket, len, 5); // send on Windows
+		textlen = htonl(textlen);
+        auto len = (char*)(&textlen);
+        n = send(socket, len, 5, 0); // send on Windows
 
         if (n < 0) {
             perror("ERROR writing to socket");
             exit(1);
         }
-        n = write(socket, text.c_str(), text.size() + 1); // send on Windows
+        n = send(socket, text.c_str(), text.size() + 1, 0); // send on Windows
 
         if (n < 0) {
             perror("ERROR writing to socket");
@@ -68,31 +66,28 @@ public:
 
     static Message read_from_socket(int socket) {
         char buffer[1];
-        bzero(buffer, 1);
-        ssize_t n = read(socket, buffer, 1);
+        int n = recv(socket, buffer, 1, 0);
         if (n < 0) {
             perror("ERROR reading from socket");
             exit(1);
         }
 
-        int8_t nicklen = buffer[0];
-        char nick_buffer[nicklen + 1];
-        bzero(nick_buffer, nicklen + 1);
-        n = read(socket, nick_buffer, nicklen + 1);
+        int nicklen = buffer[0];
+        char *nick_buffer = new char[nicklen + 1];
+        n = recv(socket, nick_buffer, nicklen + 1, 0);
         if (n < 0) {
             perror("ERROR reading from socket");
             exit(1);
         }
         std::string nick = std::string(nick_buffer);
-
-        char text_len_buffer[5];
-        bzero(text_len_buffer, 5);
-        n = read(socket, text_len_buffer, 5); // recv on Windows
-        uint32_t textlen = atoi(text_len_buffer);
-
-        char text_buffer[textlen + 1];
-        n = read(socket, text_buffer, textlen + 1); // recv on Windows
+		delete[] nick_buffer;
+        uint32_t textlen;
+        n = recv(socket, (char*)&textlen, 5, 0); // recv on Windows
+		textlen = ntohl(textlen);
+        char * text_buffer = new char[textlen + 1];
+        n = recv(socket, text_buffer, textlen + 1, 0); // recv on Windows
         std::string text = std::string(text_buffer);
+		delete[] text_buffer;
         return Message(nick, text);
     }
 

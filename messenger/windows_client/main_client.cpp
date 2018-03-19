@@ -13,8 +13,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "usage %s hostname port\n", argv[0]);
         exit(0);
     }
-
-    auto port = (uint16_t) atoi(argv[2]);
+	auto port = (uint16_t) atoi(argv[2]);
     Client client(argv[1], port, argv[3]);
     client.run();
     return 0;

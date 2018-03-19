@@ -5,7 +5,7 @@
 #include <string>
 #include <thread>
 #include <iostream>
-#include "../Messages.h"
+#include "Messages.h"
 
 class MessagesViewer {
 public:
