@@ -2,14 +2,8 @@ language: c
 os: linux
 before_install: cd messenger
 compiler:
-- gcc-5
+- gcc
 - clang
 script: mkdir build && (cd build && cmake .. && make)
 notifications:
   email: false
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - gcc-5

@@ -11,7 +11,7 @@
 
 struct server {
   struct list_head clients_list;  // GUARDED_BY(rwlock)
-  const socket_t socket;
+  socket_t socket;
   pthread_rwlock_t rwlock;
 };
 

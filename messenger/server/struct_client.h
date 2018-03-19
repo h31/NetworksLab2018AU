@@ -5,7 +5,7 @@
 #include "server.h"
 
 struct client {
-  const socket_t socket;  // GUARDED_BY(mutex)
+  socket_t socket;  // GUARDED_BY(mutex)
   pthread_mutex_t mutex;
   struct server* server;
   struct list_head lnode;
