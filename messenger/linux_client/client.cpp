@@ -58,37 +58,39 @@ void set_line(clien &data_client, char *mess) {
     get_current_time(data_client.time);
 }
 
-void get_argv(int argc, char **argv, char **address_server,
-              uint16_t &port_server, char **nick_name) {
-
-    int res;
-    while ((res = getopt(argc, argv, "s:p:n:")) != -1) {
-        switch (res) {
-            case 's': {
-                size_t len = strlen(optarg);
-                *address_server = static_cast<char *>(malloc(
-                        sizeof(char) * (len + 1)));
-                strncpy(*address_server, optarg, len);
-                *(address_server + len) = '\0';
-                break;
-            }
-            case 'p': {
-                port_server = (uint16_t) (atoi(optarg));
-                break;
-            }
-            case 'n': {
-                size_t len = strlen(optarg);
-                *nick_name = static_cast<char *>(malloc(
-                        sizeof(char) * (len + 1)));
-                strncpy(*nick_name, optarg, len);
-                *(nick_name + len) = '\0';
-                break;
-            }
-            default:
-                break;
-        }
-    }
-}
+//void get_argv(int argc, char **argv, char **address_server,
+//              uint16_t &port_server, char **nick_name) {
+//
+//    int res;
+//    while ((res = getopt(argc, argv, "s:p:n:")) != -1) {
+//        switch (res) {
+//            case 's': {
+//                size_t len = strlen(optarg);
+//                *address_server = new char[len + 1];
+////                        static_cast<char *>(malloc(
+////                        sizeof(char) * (len + 1)));
+//                memcpy(*address_server, optarg, len);
+//                *(address_server + len) = '\0';
+//                break;
+//            }
+//            case 'p': {
+//                port_server = (uint16_t) (atoi(optarg));
+//                break;
+//            }
+//            case 'n': {
+//                size_t len = strlen(optarg);
+//                *nick_name = new char[len + 1];
+////                        static_cast<char *>(malloc(
+////                        sizeof(char) * (len + 1)));
+//                memcpy(*nick_name, optarg, len);
+//                *(nick_name + len) = '\0';
+//                break;
+//            }
+//            default:
+//                break;
+//        }
+//    }
+//}
 
 int main(int argc, char *argv[]) {
 
@@ -99,11 +101,37 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    char *address_server;
+    char *address_server = nullptr;
     uint16_t port_server;
-    char *nick_name;
+    char *nick_name = nullptr;
 
-    get_argv(argc, argv, &address_server, port_server, &nick_name);
+//    get_argv(argc, argv, &address_server, port_server, &nick_name);
+
+    int res;
+    while ((res = getopt(argc, argv, "s:p:n:")) != -1) {
+        switch (res) {
+            case 's': {
+                size_t len = strlen(optarg);
+                address_server = new char[len + 1];
+                memcpy(address_server, optarg, len);
+                address_server[len] = '\0';
+                break;
+            }
+            case 'p': {
+                port_server = (uint16_t) (atoi(optarg));
+                break;
+            }
+            case 'n': {
+                size_t len = strlen(optarg);
+                nick_name = new char[len + 1];
+                memcpy(nick_name, optarg, len);
+                nick_name[len] = '\0';
+                break;
+            }
+            default:
+                break;
+        }
+    }
 
     clien data_client(nick_name);
 
@@ -115,13 +143,14 @@ int main(int argc, char *argv[]) {
     }
     struct hostent *server = gethostbyname(address_server);
 
+
     if (server == nullptr) {
         print_error(__LINE__, "  no such host");
         exit(0);
     }
 
     struct sockaddr_in serv_addr{};
-    memset((char *) &address_server, 0, sizeof(address_server));
+    memset((void *) &serv_addr, 0, sizeof(serv_addr));
 
     serv_addr.sin_family = AF_INET;
     bcopy(server->h_addr, (char *) &serv_addr.sin_addr.s_addr,
@@ -135,13 +164,14 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    int res = send_login_to_server(id_socket, data_client);
+    res = send_login_to_server(id_socket, data_client);
     if (res != 0) {
         exit(1);
     }
     pthread_t updates_thread;
     int code = pthread_create(&updates_thread, nullptr, reader_message,
                               &id_socket);
+
     if (code < 0) {
         print_error(__LINE__, "on creating reader thread");
         exit(1);
@@ -170,6 +200,11 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    pthread_detach(updates_thread);
+
+    delete[]address_server;
+    delete[]nick_name;
 
     if (close(id_socket) < 0) {
         print_error(__LINE__, "closed socket");

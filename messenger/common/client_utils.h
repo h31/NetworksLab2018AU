@@ -22,6 +22,18 @@ struct message_data {
 
     message_data() : size(0), cap(0) {}
 
+    void delete_mess() {
+        if (mess != nullptr && size != 0) {
+            delete[] mess;
+            size = 0;
+            cap = 0;
+        }
+    }
+
+    ~message_data() {
+        delete_mess();
+    }
+
     size_t size;
     size_t cap;
     char *mess = nullptr;
@@ -29,20 +41,22 @@ struct message_data {
 
 struct clien {
     char *nick = nullptr;
+    int nick_size = 0;
     char time[TIME_SIZE]{};
     message_data mess;
 
-    explicit clien(char *nick) : nick(nick), time() {}
+    explicit clien(char *nick) : time() {
+        nick_size = strlen(nick);
+        this->nick = new char[nick_size + 1];
+        memcpy(this->nick, nick, nick_size);
+        nick[nick_size] = '\0';
+    }
 
     clien() = default;
 
     void set_empty() {
-        delete[] nick;
-        delete[] mess.mess;
-        nick = nullptr;
-        mess.mess = nullptr;
-        mess.size = 0;
-        mess.cap = 0;
+        delete_nick();
+        mess.delete_mess();
     }
 
     char *create_mess() const {
@@ -59,16 +73,28 @@ struct clien {
         return m;
     }
 
+    void delete_nick() {
+        if (nick != nullptr && nick_size != 0) {
+            delete[]nick;
+            nick_size = 0;
+        }
+    }
+
     void set_nick(char *message, size_t size) {
-        nick = new char[size];
-        strncpy(nick, message, size);
+        delete_nick();
+        nick_size = size;
+        nick = new char[nick_size + 1];
+        memcpy(nick, message, size);
+        nick[nick_size] = '\0';
     }
 
     void set_mess(char *message, size_t size) {
-        mess.mess = new char[size];
+        mess.delete_mess();
         mess.size = size;
         mess.cap = size + 1;
-        strncpy(mess.mess, message, size);
+        mess.mess = new char[size + 1];
+        memcpy(mess.mess, message, size);
+        mess.mess[size] = '\0';
     }
 
     void set_time(char *message, size_t size = TIME_SIZE) {
@@ -76,23 +102,28 @@ struct clien {
     }
 
     size_t get_len_login() const {
-        return nick != nullptr ? strlen(nick) : 0;
+        return nick_size;
     }
 
     size_t get_len_mess() const {
         return mess.size;
     }
 
+    ~clien() {
+        delete_nick();
+    }
+
     friend std::ostream &operator<<(std::ostream &os, const clien &clien1) {
         //<%s> [%s] %s
-        os << " <" << clien1.time << "> ";
         if (clien1.get_len_login() > 0) {
+            os << " <" << clien1.time << "> ";
             os << " [" << clien1.nick << "] ";
+            if (clien1.get_len_mess() > 0) {
+                os << clien1.mess.mess;
+            }
         }
 
-        if (clien1.get_len_mess() > 0) {
-            os << clien1.mess.mess;
-        }
+
         return os;
     }
 };
@@ -134,6 +165,7 @@ int sender(int id_socket, const clien &data_client, bool only_nick,
     } else {
         char *mess = data_client.create_mess();
         n = write(id_socket, mess, size_nick + size_time + size_mess);
+        delete[]mess;
 
     }
     if (n < 0) {
@@ -183,6 +215,7 @@ int reader(int id_socket, clien &clien_data,
         clien_data.set_time(message + nick_size, time_size);
         clien_data.set_mess(message + nick_size + time_size, mess_size);
     }
+    delete[]message;
     return 0;
 }
 
