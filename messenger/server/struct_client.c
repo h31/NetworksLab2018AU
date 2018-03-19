@@ -20,10 +20,11 @@ void client_init(struct client* client, struct server* server, socket_t socket) 
 
 void destroy_client(struct client* client) {
   pthread_rwlock_wrlock(&client->server->rwlock);
-  close(client->socket);
-  pthread_mutex_destroy(&client->mutex);
-  list_del(&client->lnode);
-  pthread_rwlock_unlock(&client->server->rwlock);
+  pthread_cleanup_push(cleanup_rwlock_unlock, &client->server->rwlock);
+      close_socket(client->socket);
+      pthread_mutex_destroy(&client->mutex);
+      list_del(&client->lnode);
+  pthread_cleanup_pop(true);
 }
 
 static void cleanup_destroy_client(void* arg_raw) {

@@ -44,7 +44,7 @@ void destroy_server(struct server* server) {
     pthread_join(client->receiver_thread, NULL);
     free(client);
   }
-  close(server->socket);
+  close_socket(server->socket);
   pthread_rwlock_destroy(&server->rwlock);
 }
 
