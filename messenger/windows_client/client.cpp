@@ -78,18 +78,18 @@ void* connection_listener(void *arg) {
     char header[24];
     char login[101];
     char message[1001];
-    SOCKET *socket_ptr = (SOCKET *) arg;
+    SOCKET socket_ptr = (SOCKET) arg;
     while (!stopped) {
-        if (recv(*socket_ptr, header, 24, 0) != 24) {
+        if (recv(socket_ptr, header, 24, 0) != 24) {
             return report_listener_stopped();
         }
         unsigned long long time = to_long(&header[0]);
         unsigned long long login_length = to_long(&header[8]);
         unsigned long long message_length = to_long(&header[16]);
-        if (recv(*socket_ptr, &login[0], login_length, 0) != login_length) {
+        if (recv(socket_ptr, &login[0], login_length, 0) != login_length) {
             return report_listener_stopped();
         }
-        if (recv(*socket_ptr, &message[0], message_length, 0) != message_length) {
+        if (recv(socket_ptr, &message[0], message_length, 0) != message_length) {
             return report_listener_stopped();
         }
         login[login_length] = 0;
@@ -100,15 +100,13 @@ void* connection_listener(void *arg) {
             }
         }
         printf("[%02d:%02d:%02d from %s] %s\n", get_hours(time), get_minutes(time), get_seconds(time), login, message);
-        //cout << "[" << get_hours(time) << ":" << get_minutes(time) << ":" << get_seconds(time)
-             //       << " from " << login << "] " << message << endl;
     }
     return (void*) 0;
 }
 
 void start_communication(SOCKET connection, string login) {
     pthread_t listener;
-    int err_code = pthread_create(&listener, NULL, connection_listener, (void*) &connection);
+    int err_code = pthread_create(&listener, NULL, connection_listener, (void*) connection);
     if (err_code < 0) {
         cout << "Error: new thread creation failed. Error code: " << err_code << endl;
         return;
