@@ -1,0 +1,8 @@
+server_Debug/
+client_Debug/
+.cproject
+.project
+.settings/
+*.cbp
+*.depend
+
