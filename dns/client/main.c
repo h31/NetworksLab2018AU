@@ -3,9 +3,9 @@
 
 #include <string.h>
 
-#include "initialization.h"
+#include "../common/connection.h"
+#include "../common/handling.h"
 #include "request.h"
-#include "response.h"
 
 int main(int argc, char *argv[]) {
 	if (argc != 4) {
@@ -14,10 +14,10 @@ int main(int argc, char *argv[]) {
 	}
 
     int sock = get_udp_sock();
-    struct sockaddr_in addr = get_addr_struct(argv[1], (uint16_t) atoi(argv[2]));
+    struct sockaddr_in addr = get_external_addr(argv[1], (uint16_t) atoi(argv[2]));
 
     uint8_t *response = request_addr(sock, &addr, argv[3]);
-    process_response(response);
+    print_server_response(response);
 
     close(sock);
 

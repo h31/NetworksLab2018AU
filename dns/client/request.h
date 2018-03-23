@@ -11,8 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_UDP_DATA_SIZE (65507)
-
 uint8_t* request_addr(int sock, struct sockaddr_in *server_addr, char *name);
 
 #endif /* REQUEST_H_ */

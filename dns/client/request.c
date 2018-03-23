@@ -1,4 +1,5 @@
 #include "request.h"
+#include "../common/connection.h"
 
 void convert_name_to_byte_sequence(char *name, uint8_t *dest) {
 	size_t len = 0;
