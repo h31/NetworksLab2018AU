@@ -7,9 +7,37 @@
 uint8_t data_buffer[MAX_UDP_DATA_SIZE];
 char message_buffer[MAX_UDP_DATA_SIZE];
 
-int main(void) {
+uint8_t generate_value(char *string, uint8_t salt) {
+	int value = 1;
+	int mod = 263;
+
+	char *ptr = string;
+	while (*ptr) {
+		int character = *(ptr++);
+		value = (value * (character + salt)) % mod;
+	}
+
+	return value % 256;
+}
+
+address_t generate_address(char *string) {
+	address_t result;
+
+	for (int i = 0; i < 4; ++i) {
+		result.bytes[i] = generate_value(string, i);
+	}
+
+	return result;
+}
+
+int main(int argc, char *argv[]) {
+	if (argc != 2) {
+		fprintf(stderr, "usage %s port\n", argv[0]);
+		exit(0);
+	}
+
     int sock = get_udp_sock();
-    struct sockaddr_in addr = bind_to_port(sock, 8888);
+    bind_to_port(sock, (uint16_t) atoi(argv[1]));
 
     while(1) {
     	struct sockaddr_in client_addr;
@@ -21,17 +49,13 @@ int main(void) {
     	}
 
     	get_query_name(data_buffer, message_buffer);
-    	printf("%s\n", message_buffer);
+    	address_t address = generate_address(message_buffer);
 
-        /*//print details of the client/peer and the data received
-        printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
-        printf("Data: %s\n" , buf);
-
-        //now reply the client with the same data
-        if (sendto(sock, buf, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1)
-        {
-            die("sendto()");
-        }*/
+    	uint8_t *ptr = form_response(data_buffer, address);
+        if (sendto(sock, data_buffer, ptr - data_buffer, 0, (struct sockaddr*) &client_addr, addr_len) == -1) {
+            perror("sendto() failed!");
+            exit(1);
+        }
     }
 
     close(sock);

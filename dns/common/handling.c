@@ -17,6 +17,11 @@ uint16_t get_num_of_answers(uint8_t *response) {
 	return response[7] | (response[6] << 8);
 }
 
+void set_num_of_answers(uint8_t *query, uint16_t value) {
+	query[6] = value >> 8;
+	query[7] = value & 0x00ff;
+}
+
 uint8_t* skip_header(uint8_t *response) {
 	return response + 12;
 }
@@ -66,4 +71,38 @@ void get_query_name(uint8_t *query, char *dest) {
 	}
 
 	*(dest - 1) = '\0';
+}
+
+uint8_t* form_response(uint8_t *query, address_t address) {
+	set_num_of_answers(query, 1);
+	uint16_t num_of_questions = get_num_of_questions(query);
+
+	query = skip_header(query);
+	while (num_of_questions-- > 0) {
+		query = skip_question(query);
+	}
+
+	*(query++) = 0xc0;
+	*(query++) = 0x0c;
+
+	*(query++) = 0x00;
+	*(query++) = 0x01;
+
+	*(query++) = 0x00;
+	*(query++) = 0x01;
+
+	*(query++) = 0x00;
+	*(query++) = 0x00;
+	*(query++) = 0x00;
+	*(query++) = 0xff;
+
+	*(query++) = 0x00;
+	*(query++) = 0x04;
+
+	*(query++) = address.bytes[0];
+	*(query++) = address.bytes[1];
+	*(query++) = address.bytes[2];
+	*(query++) = address.bytes[3];
+
+	return query;
 }
