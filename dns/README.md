@@ -1,6 +1,6 @@
 # MyDNS 
 
-Simple DNS server and client supporting just A-type records
+Simple Linux DNS server and client supporting just A-type records.
 
 ## Server 
 
