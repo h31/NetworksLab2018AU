@@ -1,4 +1,4 @@
-# Elegram
+# MyDNS 
 
 Simple DNS server and client supporting just A-type records
 
