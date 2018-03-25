@@ -10,3 +10,4 @@
 #define ADDRINFOA addrinfo
 
 #define DNS_PORT 53
+#define HTTP_PORT 80

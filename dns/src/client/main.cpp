@@ -167,6 +167,30 @@ int main(int argc, char *argv[]) {
         // get answer
         dns::message answer = io::read_message(sockfd, server_info->ai_addr, &server_info->ai_addrlen);
 
+        dns::header_rcode rcode = static_cast<dns::header_rcode>(answer.h.rcode);
+        if (rcode != dns::OK) {
+            std::cout << "WARNING: Responce rcode is not OK, but ";
+            switch (rcode) {
+                case dns::FORMAT:
+                    std::cout << "FORMAT";
+                    break;
+                case dns::SERVER:
+                    std::cout << "SERVER";
+                    break;
+                case dns::NAME:
+                    std::cout << "NAME";
+                    break;
+                case dns::UNIMPL:
+                    std::cout << "UNIMPL";
+                    break;
+                case dns::REFUSE:
+                    std::cout << "REFUSE";
+                    break;
+                default:
+                    std::cout << "unknown rcode";
+            }
+            std::cout << "\n";
+        }
         if (ntohs(answer.h.id) != getpid()) {
             std::cout << "WARNING: Responce id does not correspond to ours\n";
         }
