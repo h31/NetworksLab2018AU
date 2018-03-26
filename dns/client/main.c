@@ -24,18 +24,18 @@ static void assert_error(char expression, const char *msg)
 // This will convert www.google.com to 3www6google3com 
 static void to_dns_name(unsigned char *dns, const char * const host)
 {
-	unsigned int lock = 0;
-	for (unsigned int i = 0; i < strlen(host) + 1; i++)
-	{
-		if (host[i] == '.' || host[i] == 0)
-		{
-			*dns++ = i - lock;		
-			memcpy(dns, host + lock, i - lock); 
+    unsigned int lock = 0;
+    for (unsigned int i = 0; i < strlen(host) + 1; i++)
+    {
+        if (host[i] == '.' || host[i] == 0)
+        {
+            *dns++ = i - lock;        
+            memcpy(dns, host + lock, i - lock); 
             dns += i - lock;
-			lock += i - lock + 1;
-		} 
-	} 
-	*dns = 0;
+            lock += i - lock + 1;
+        } 
+    } 
+    *dns = 0;
 } 
 
 static unsigned char *read_name(unsigned char* reader, unsigned char *buffer, int *count)
@@ -85,36 +85,36 @@ int main(int argc, char **argv)
     const int client_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);  
     assert_error(client_socket_fd >= 0, "ERROR: opening socket");
 
-	struct sockaddr_in serveraddr = {
-		.sin_family = AF_INET,
-		.sin_addr.s_addr = inet_addr(dns_server),
-		.sin_port = htons(PORT)
-	};
+    struct sockaddr_in serveraddr = {
+        .sin_family = AF_INET,
+        .sin_addr.s_addr = inet_addr(dns_server),
+        .sin_port = htons(PORT)
+    };
 
     unsigned char buffer[BUFFER_SIZE] = { };
     struct DNS_HEADER *dns = (struct DNS_HEADER*)buffer;
     dns->id = (unsigned short) htons(getpid());
     dns->q_count = htons(1); //we have only 1 question
-	unsigned char *qname =	(unsigned char*)(buffer + sizeof(struct DNS_HEADER));
-	to_dns_name(qname, resolve_address);
-	struct QUESTION *qinfo =(struct QUESTION*)(buffer + sizeof(struct DNS_HEADER) + strlen((char*)qname) + 1);
-	qinfo->qtype = htons(T_A); 
-	qinfo->qclass = htons(1); // internet
+    unsigned char *qname =    (unsigned char*)(buffer + sizeof(struct DNS_HEADER));
+    to_dns_name(qname, resolve_address);
+    struct QUESTION *qinfo =(struct QUESTION*)(buffer + sizeof(struct DNS_HEADER) + strlen((char*)qname) + 1);
+    qinfo->qtype = htons(T_A); 
+    qinfo->qclass = htons(1); // internet
 
-	printf("Sending packet...\n");
-	assert_error(sendto(client_socket_fd, (char*)buffer,
-						sizeof(struct DNS_HEADER) + strlen((const char*)qname) + 1 + sizeof(struct QUESTION),
-						0, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) >= 0, "Send to failes"); 
-	printf("Done!\n");
+    printf("Sending packet...\n");
+    assert_error(sendto(client_socket_fd, (char*)buffer,
+                        sizeof(struct DNS_HEADER) + strlen((const char*)qname) + 1 + sizeof(struct QUESTION),
+                        0, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) >= 0, "Send to failes"); 
+    printf("Done!\n");
 
-	unsigned int serverlen = sizeof serveraddr;
-	
+    unsigned int serverlen = sizeof serveraddr;
+    
     bzero(buffer, BUFFER_SIZE);
-	printf("Receiving answer...\n");
+    printf("Receiving answer...\n");
     assert_error(recvfrom(client_socket_fd, (char*)buffer, BUFFER_SIZE , 0 , (struct sockaddr*)&serveraddr , (socklen_t*)&serverlen) >= 0, "recvfrom failed");
     printf("Done\n");
 
-	printf("The response contains:\n");
+    printf("The response contains:\n");
     printf(" %d Questions.\n",ntohs(dns->q_count));
     printf(" %d Answers.\n",ntohs(dns->ans_count));
     printf(" %d Authoritative Servers.\n",ntohs(dns->auth_count));
@@ -154,8 +154,8 @@ int main(int argc, char **argv)
             free(rdata);
         }
         free(name);
-		printf("\n");
+        printf("\n");
     }
-	
+    
     return 0;
 }
