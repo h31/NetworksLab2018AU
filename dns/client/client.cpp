@@ -2,13 +2,10 @@
 // Created by kate on 26.03.18.
 //
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <netdb.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>    //getpid
 
@@ -39,19 +36,6 @@ void change_to_dns_name_format(char *dns, const char *const host) {
     dns[++des] = '\0';
 }
 
-struct DNS_HEADER *create_pack(const char *address) {
-    struct DNS_HEADER *dns = (struct DNS_HEADER *) buffer;
-    dns->id = (short) htons(getpid());
-    dns->q_count = htons(1); //we have only 1 question
-    char *qname = (char *) (buffer + DNS_HEADER_SIZE);
-    change_to_dns_name_format(qname, address);
-    struct QUESTION *qinfo = (struct QUESTION *) (buffer +
-                                                  DNS_HEADER_SIZE +
-                                                  strlen((char *) qname) + 1);
-    qinfo->qtype = htons(1);
-    qinfo->qclass = htons(1); // internet
-    return dns;
-}
 
 void print_dns(struct DNS_HEADER *dns) {
     std::cout << "Recv: questions=" << ntohs(dns->q_count) << " answers="
@@ -69,7 +53,7 @@ char *read_name(char *reader, char *buffer, int *count) {
     int i, j;
 
     *count = 1;
-    char *name = new char [256];
+    auto *name = new char[256];
 
     name[0] = '\0';
 
@@ -87,21 +71,21 @@ char *read_name(char *reader, char *buffer, int *count) {
         reader = reader + 1;
 
         if (jumped == 0) {
-            *count = *count +
-                     1; //if we havent jumped to another location then we can count up
+            *count = *count + 1;
+            //if we havent jumped to another location then we can count up
         }
     }
 
     name[p] = '\0'; //string complete
     if (jumped == 1) {
-        *count = *count +
-                 1; //number of steps we actually moved forward in the packet
+        *count = *count + 1;
+        //number of steps we actually moved forward in the packet
     }
 
     //now convert 3www6google3com0 to www.google.com
     for (i = 0; i < (int) strlen((const char *) name); i++) {
         p = name[i];
-        for (j = 0; j < (int) p; j++) {
+        for (j = 0; j < p; j++) {
             name[i] = name[i + 1];
             i = i + 1;
         }
@@ -124,33 +108,31 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    struct sockaddr_in addr;
+    struct sockaddr_in addr = {};
     memset((char *) &addr, 0, sizeof(addr));
 
     addr.sin_family = AF_INET;
     addr.sin_port = htons(PORT);
-//    addr.sin_addr.s_addr = inet_addr(argv[1]);
 
     if (inet_aton(argv[1], &addr.sin_addr) <= 0) {
         std::cout << "ERROR: inet_aton " << argv[1] << std::endl;
         exit(1);
     }
-//    struct DNS_HEADER *dns = create_pack(argv[2]);
 
-    struct DNS_HEADER *dns = (struct DNS_HEADER *) buffer;
-    dns->id = (short) htons(getpid());
+    auto *dns = (struct DNS_HEADER *) buffer;
+    dns->id = (short) htons(static_cast<uint16_t>(getpid()));
     dns->q_count = htons(1); //we have only 1 question
-    char *qname = (char *) (buffer + DNS_HEADER_SIZE);
+    auto *qname = (char *) (buffer + DNS_HEADER_SIZE);
     change_to_dns_name_format(qname, argv[2]);
-    struct QUESTION *qinfo = (struct QUESTION *) (buffer +
-                                                  DNS_HEADER_SIZE +
-                                                  strlen((char *) qname) + 1);
+    auto *qinfo = (struct QUESTION *) (buffer +
+                                       DNS_HEADER_SIZE +
+                                       strlen(qname) + 1);
     qinfo->qtype = htons(1);
     qinfo->qclass = htons(1); // internet
 
-    std::cout << "Sending packet " << server_id << std::endl;
+    std::cout << "send packet " << server_id << std::endl;
     if (sendto(server_id, (char *) buffer, DNS_HEADER_SIZE +
-                                           strlen((const char *) qname) +
+                                           strlen(qname) +
                                            1 + QUESTION_SIZE, 0,
                (struct sockaddr *) &addr, sizeof(addr)) < 0) {
         std::cout << " ERROR: send packet" << std::endl;
@@ -158,52 +140,47 @@ int main(int argc, char **argv) {
     }
 
     bzero(buffer, MAX_UDP_SIZE);
-    std::cout << "Receiving answer" << std::endl;
+    std::cout << "recv answer" << std::endl;
     size_t len_addr = sizeof(addr);
     if (recvfrom(server_id, (char *) buffer, MAX_UDP_SIZE, 0,
                  (struct sockaddr *) &addr, (socklen_t *) &len_addr)
         == -1) {
-        std::cout << "ERRORL recvfrom " << std::endl;
+        std::cout << "ERROR: recvfrom " << std::endl;
         exit(1);
     }
     print_dns(dns);
 
-    char *reader = buffer + DNS_HEADER_SIZE + strlen((const char *) qname) +
-                   1 + QUESTION_SIZE;
+    char *reader = (char *) buffer + DNS_HEADER_SIZE +
+                   strlen(qname) + 1 + QUESTION_SIZE;
     for (int i = 0; i < ntohs(dns->ans_count); i++) {
         int offset = 0;
         char *name = read_name(reader, buffer, &offset);
-        std::cout << " name " << name << std::endl;
+        std::cout << " name: " << name << std::endl;
         reader += offset;
-        struct R_DATA *data = (struct R_DATA *) reader;
+        auto *data = (struct R_DATA *) reader;
         reader += sizeof(struct R_DATA);
         if (ntohs(data->type) == 1) {
-            char *rdata = (char *) malloc(
-                    ntohs(data->data_len));
+            auto *rdata = new char[ntohs(data->data_len)];
             memcpy(rdata, reader, ntohs(data->data_len));
             rdata[ntohs(data->data_len)] = 0;
             reader += ntohs(data->data_len);
-//            struct sockaddr_in a = {
-//                    .sin_addr.s_addr = *(int *) rdata
-//            };
 
-            struct sockaddr_in a;
-            memset((char *) &a, 0, sizeof(a));
-            addr.sin_addr.s_addr = *(int *) rdata;
+            struct sockaddr_in a = {};
+            a.sin_addr.s_addr = static_cast<in_addr_t>(*(int *) rdata);
 
-            std::cout << "has IPv4 address: " << inet_ntoa(a.sin_addr) <<
+            std::cout << " IPv4 address: " << inet_ntoa(a.sin_addr) <<
                       std::endl;
-            free(rdata);
+            delete[]rdata;
         } else {
-            int offset = 0;
+            offset = 0;
             char *rdata = read_name(reader, buffer, &offset);
             reader = reader + offset;
             if (ntohs(data->type) == 5) {
                 std::cout << "has alias name: " << rdata << std::endl;
             }
-            free(rdata);
+            delete[] rdata;
         }
-        free(name);
+        delete[]name;
         std::cout << "\n" << std::endl;
     }
     return 0;
