@@ -1,16 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <netdb.h>
-#include <unistd.h>
 #include <string.h>
 
-int* client_ids;
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdint.h>
+#include <time.h>
+
+SOCKET* client_ids;
 size_t clients_count = 0, max_count;
 pthread_mutex_t mutex;
 
 void resize_client_ids() {
-    int* new_ids = malloc((max_count * 2));
+    SOCKET* new_ids = malloc((max_count * 2));
 
     for (size_t i = 0; i < clients_count; i++) {
         new_ids[i] = client_ids[i];
@@ -23,14 +26,19 @@ void resize_client_ids() {
 }
 
 
-void add_client(int socket) {
+int add_client(SOCKET socket) {
     if (clients_count == max_count) {
         resize_client_ids();
     }
 
     printf("clients count %d\n", clients_count);
-    client_ids[clients_count] = socket;
+    int index = clients_count;
+    client_ids[index] = socket;
     clients_count++;
+
+    pthread_mutex_unlock(&mutex);
+    printf("Client with socket index %d was registered\n", index);
+    return index;
 }
 
 void send_message(char* nickname, char* message, char* time) {
@@ -40,7 +48,7 @@ void send_message(char* nickname, char* message, char* time) {
 
     // 1 + 128 + 1 + 128 + 10 = 268
     char buffer[269];
-    bzero(buffer, 269);
+    memset(buffer, 0, 269);
     buffer[0] = nickname_len;
     strcpy(buffer + 1, nickname);
 
@@ -50,9 +58,11 @@ void send_message(char* nickname, char* message, char* time) {
 
     for (size_t i = 0; i < clients_count; i++) {
         printf("sending to client %zu with socket %d\n", i, client_ids[i]);
-        int socket_dest = client_ids[i];
+        if (client_ids[i] == INVALID_SOCKET) {
+            continue;
+        }
 
-        ssize_t n = write(socket_dest, buffer, strlen(buffer));
+        ssize_t n = send(client_ids[i], buffer, strlen(buffer), 0);
         if (n < 0) {
             perror("ERROR writing to socket");
         }
@@ -63,16 +73,19 @@ void send_message(char* nickname, char* message, char* time) {
 
 void handle_client_input(int socket) {
     char nickname[128];
-    bzero(nickname, 128);
+    memset(nickname, 0, 128);
+    SOCKET sock = client_ids[socket];
 
-    if (read(socket, nickname, 1) != 1) {
+    if (recv(sock, nickname, 1, 0) != 1) {
         printf("ERROR reading from %d socket length of nickname\n", socket);
         return;
     }
 
-    ssize_t nickname_len = (ssize_t) nickname[0];
+    uint8_t nickname_len = (uint8_t) nickname[0];
     nickname[0] = 0;
-    if (read(socket, nickname, nickname_len) != nickname_len) {
+
+    printf("nickname len %d\n", nickname_len);
+    if (recv(sock, nickname, nickname_len, 0) != nickname_len) {
         printf("ERROR reading client nickname\n");
         return;
     }
@@ -81,8 +94,8 @@ void handle_client_input(int socket) {
 
     char buffer[128];
     while (1) {
-        bzero(buffer, 128);
-        if (read(socket, buffer, 1) != 1) {
+        memset(buffer, 0, 128);
+        if (recv(sock, buffer, 1, 0) != 1) {
             printf("ERROR reading from %d socket message length\n", socket);
             return;
         }
@@ -90,7 +103,7 @@ void handle_client_input(int socket) {
         uint8_t buffer_length = (uint8_t) buffer[0];
         buffer[0] = 0;
 
-        if (read(socket, buffer, buffer_length) != buffer_length) {
+        if (recv(sock, buffer, buffer_length, 0) != buffer_length) {
             printf("ERROR reading from %d socket message \n", socket);
             return;
         }
@@ -117,19 +130,10 @@ void* handle_client(void* arg) {
     int client_socket = (int) arg;
 
     pthread_mutex_lock(&mutex);
-
-    printf("adding client to server\n");
-    add_client(client_socket);
-    printf("added client to server\n");
-
     handle_client_input(client_socket);
-
+    client_ids[client_socket] = INVALID_SOCKET;
     pthread_mutex_unlock(&mutex);
 
-    if (close(client_socket) < 0) {
-        printf("ERROR closing the socket %d\n", client_socket);
-        return (void*) 1;
-    }
 
     return (void*) 0;
 }
@@ -138,48 +142,81 @@ void* handle_client(void* arg) {
 int main(int argc, char *argv[]) {
     printf("creating a server\n");
 
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (sockfd < 0) {
-        perror("ERROR opening socket");
-        exit(1);
+    WSADATA wsa_data;
+    int result_code;
+    // Initialize Winsock
+    result_code = WSAStartup(MAKEWORD(2,2), &wsa_data);
+    if (result_code != 0) {
+        printf("WSAStartup failed: %d\n", result_code);
+        return 1;
     }
 
-    struct sockaddr_in serv_addr;
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    uint16_t port_number = 9000;
+    /* Initialize socket structure */
+    struct addrinfo *result = NULL, hints;
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(port_number);
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
 
-    if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        perror("ERROR on binding");
-        exit(1);
+    result_code = getaddrinfo(NULL, "9000", &hints, &result);
+    if (result_code != 0) {
+        printf("getaddrinfo error: %d\n", result_code);
+        WSACleanup();
+        return 1;
     }
+
+    SOCKET listen_socket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (listen_socket == INVALID_SOCKET) {
+        printf("Error socket(): %d\n", WSAGetLastError());
+        freeaddrinfo(result);
+        WSACleanup();
+        return 1;
+    }
+
+    /* Now bind the host address using bind() call.*/
+    result_code = bind(listen_socket, result->ai_addr, (int) result->ai_addrlen);
+    if (result_code == SOCKET_ERROR) {
+        printf("bind error: %d\n", WSAGetLastError());
+        freeaddrinfo(result);
+        closesocket(listen_socket);
+        WSACleanup();
+        return 1;
+    }
+    freeaddrinfo(result);
+
+    /* Now start listening for the clients, here process will
+    * go in sleep mode and will wait for the incoming connection
+    */
+    result_code = listen(listen_socket, SOMAXCONN);
+    if (result_code == SOCKET_ERROR) {
+        printf("Listen error: %d\n", WSAGetLastError());
+        closesocket(listen_socket);
+        WSACleanup();
+        return 1;
+    }
+    SOCKET client_socket;
 
     pthread_mutex_init(&mutex, NULL);
     max_count = 10;
-    client_ids = malloc(sizeof(int) * max_count);
-
-    listen(sockfd, 5);
-    struct sockaddr_in cli_addr;
-    unsigned int clilen = sizeof(cli_addr);
-
-    printf("listening on port %d\n", port_number);
+    client_ids = malloc(sizeof(SOCKET) * max_count);
+    printf("listening on port %d\n", 9000);
     while (1) {
-        int client_socket = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-        printf("accepted client socket %d\n", client_socket);
+        client_socket = accept(listen_socket, NULL, NULL);
 
-        if (client_socket < 0) {
-            perror("ERROR on accept");
+        if (client_socket == INVALID_SOCKET) {
+            printf("accept failed: %d\n", WSAGetLastError());
+            closesocket(listen_socket);
+            WSACleanup();
+            return 1;
         } else {
+            int socket_index = add_client(client_socket);
             pthread_t client_thread;
-            int code = pthread_create(&client_thread, NULL, handle_client, (void*) client_socket);
+            int code = pthread_create(&client_thread, NULL, handle_client, (void*) socket_index);
 
             if (code < 0) {
-                perror("ERROR on creating a pthread");
-                exit(1);
+                perror("ERROR on starting a pthread");
             }
         }
     }

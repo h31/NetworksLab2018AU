@@ -1,49 +1,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <netdb.h>
-#include <unistd.h>
 #include <string.h>
 
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdint.h>
+
 void* server_updates(void* arg) {
-    int server_socket = (int) arg;
+    SOCKET* sock_p = (SOCKET *) arg;
 
     uint8_t nickname_len = 0, message_len = 0;
     char nickname[300];
     char message[300];
     char time[300];
-    bzero(message, 300);
-    bzero(nickname, 300);
-    bzero(time, 300);
+    memset(message, 0, 300);
+    memset(nickname, 0, 300);
+    memset(time, 0, 300);
 
     while (1) {
         pthread_testcancel();
 
-        if (read(server_socket, nickname, 1) != 1) {
+        if (recv(*sock_p, nickname, 1, 0) != 1) {
             perror("ERROR nickname len reading from socket");
             return (void*) 1;
         }
-        nickname_len = nickname[0];
+        nickname_len = (uint8_t) nickname[0];
         nickname[0] = 0;
 
-        if (read(server_socket, nickname, nickname_len) != nickname_len) {
+        if (recv(*sock_p, nickname, nickname_len, 0) != nickname_len) {
             perror("ERROR nickname reading from socket");
             return (void*) 1;
         }
 
-        if (read(server_socket, message, 1) != 1) {
+        if (recv(*sock_p, message, 1, 0) != 1) {
             perror("ERROR message len reading from socket");
             return (void*) 1;
         }
-        message_len = message[0];
+        message_len = (uint8_t) message[0];
         message[0] = 0;
 
-        if (read(server_socket, message, message_len) != message_len) {
+        if (recv(*sock_p, message, message_len, 0) != message_len) {
             perror("ERROR message reading from socket");
             return (void*) 1;
         }
 
-        if (read(server_socket, time, 9) != 9) {
+        if (recv(*sock_p, time, 9, 0) != 9) {
             perror("ERROR time reading from socket");
             return (void*) 1;
         }
@@ -54,67 +56,79 @@ void* server_updates(void* arg) {
     return NULL;
 }
 
-int main(int argc, char *argv[]) {
-    uint16_t port_number;
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
-
+int main(int argc, char* argv[]) {
     if (argc < 4) {
-        printf("usage: hostname, port, nickname\n");
-        exit(0);
-    }
-    port_number = (uint16_t) atoi(argv[2]);
-
-    int socketfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (socketfd < 0) {
-        perror("ERROR opening socket");
-        exit(1);
+        fprintf(stderr, "usage: hostname port nickname\n");
+        return 0;
     }
 
-    server = gethostbyname(argv[1]);
-    if (server == NULL) {
-        fprintf(stderr, "ERROR, no such host\n");
-        exit(0);
+    WSADATA wsa_data;
+    int code = WSAStartup(MAKEWORD(2,2), &wsa_data);
+    if (code != 0) {
+        printf("WSAStartup failed: %d\n", code);
+        return 1;
     }
 
-    memset((char *) &serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
+    struct addrinfo* result = NULL, hints;
 
-    memcpy((char *) &serv_addr.sin_addr.s_addr, server->h_addr, (size_t)server->h_length);
-    serv_addr.sin_port = htons(port_number);
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
 
-    if (connect(socketfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        perror("ERROR connecting");
-        exit(1);
+    code = getaddrinfo(argv[1], argv[2], &hints, &result);
+    if (code != 0) {
+        printf("getaddrinfo failed: %d\n", code);
+        WSACleanup();
+        return 1;
     }
 
-    printf("connected to server\n");
+    SOCKET connect_socket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (connect_socket == INVALID_SOCKET) {
+        printf("Error at socket(): %d\n", WSAGetLastError());
+        freeaddrinfo(result);
+        WSACleanup();
+        return 1;
+    }
 
-    char buffer[128];
-    bzero(buffer, 128);
+    code = connect(connect_socket, result->ai_addr, (int) result->ai_addrlen);
+    if (code == SOCKET_ERROR) {
+        closesocket(connect_socket);
+        connect_socket = INVALID_SOCKET;
+    }
+    freeaddrinfo(result);
+    if (connect_socket == INVALID_SOCKET) {
+        printf("Unable to connect to server!\n");
+        WSACleanup();
+        return 1;
+    }
+
+    char buffer[129];
+    memset(buffer, 0, 129);
     uint8_t nickname_len = (uint8_t) strlen(argv[3]);
     buffer[0] = nickname_len;
+    printf("nickname len %d\n", nickname_len);
     strcpy(buffer + 1, argv[3]);
-    if (write(socketfd, buffer, strlen(buffer)) != 1 + nickname_len) {
-        perror("ERROR writing to socket");
-        exit(1);
-    }
-
-    pthread_t updates_thread;
-    int code = pthread_create(&updates_thread, NULL, server_updates, (void*) socketfd);
-    if (code < 0) {
-        perror("ERROR on creating a pthread");
-        exit(1);
+    if (send(connect_socket, buffer, strlen(buffer), 0) != 1 + nickname_len) {
+        printf("Error writing nickname\n");
+        return 1;
     }
 
     printf("sent nickname: %s\n", buffer);
     printf("Entered to chat, press :q to exit:\n");
 
+    pthread_t updates_thread;
+    int p_code = pthread_create(&updates_thread, NULL, server_updates, (void*) &connect_socket);
+    if (p_code < 0) {
+        perror("ERROR on creating a pthread");
+        exit(1);
+    }
+
     while(1) {
         printf("Enter your message(and press enter in the end of it):\n");
 
         char message[128];
-        bzero(message, 128);
+        memset(message, 0, 128);
         fgets(message, 128, stdin);
 
         if (strcmp(message, ":q\n") == 0) {
@@ -124,21 +138,26 @@ int main(int argc, char *argv[]) {
         uint8_t message_len = (uint8_t) strlen(message);
         buffer[0] = message_len;
         strcpy(buffer + 1, message);
-        if (write(socketfd, buffer, strlen(buffer)) != 1 + message_len) {
+        if (send(connect_socket, buffer, strlen(buffer), 0) != 1 + message_len) {
             perror("ERROR writing to socket");
             exit(1);
         }
 
-        printf("sent message\n", message);
+        printf("sent message\n");
     }
 
     pthread_cancel(updates_thread);
     pthread_join(updates_thread, NULL);
 
-    if (close(socketfd) < 0) {
-        perror("ERROR on closing the socket");
-        exit(1);
+    int shutdown_code = shutdown(connect_socket, SD_BOTH);
+    if (shutdown_code == SOCKET_ERROR) {
+        printf("shutdown failed: %d\n", WSAGetLastError());
+        closesocket(connect_socket);
+        WSACleanup();
+        return 1;
     }
+    closesocket(connect_socket);
+    WSACleanup();
 
     return 0;
 }
