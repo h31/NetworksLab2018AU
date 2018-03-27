@@ -575,6 +575,10 @@ paket-files/
 .idea/
 *.sln.iml
 
+# CLion
+cmake-build-debug/
+cmake-build-release/
+
 # CodeRush
 .cr/
 
