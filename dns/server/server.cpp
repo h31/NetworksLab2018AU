@@ -2,6 +2,8 @@
 // Created by kate on 26.03.18.
 //
 
+// источник: https://www.binarytides.com/dns-query-code-in-c-with-winsock/
+
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -9,6 +11,7 @@
 #include <arpa/inet.h>
 
 #include "../common/common.h"
+
 
 const static int PORT = 1234;
 char buffer[MAX_UDP_SIZE];
@@ -50,14 +53,14 @@ int main(int argc, char **argv) {
 
 //        size_t n = unpack();
         auto *dns = (struct DNS_HEADER *) buffer;
-        auto *qname = (char *) (buffer + DNS_HEADER_SIZE);
+        auto *qname = buffer + DNS_HEADER_SIZE;
         dns->qr = 1;
         dns->ans_count = htons(1);
-        char *reader = buffer + DNS_HEADER_SIZE +
-                       strlen(qname) + 1 + QUESTION_SIZE;
+        char *reader = buffer + DNS_HEADER_SIZE + strlen(qname) + 1 +
+                QUESTION_SIZE;
 
         memcpy(reader, qname, strlen(qname) + 1);
-        reader += strlen((char *) qname) + 1;
+        reader += strlen(qname) + 1;
 
         auto *data = (struct R_DATA *) reader;
         data->type = htons(1);

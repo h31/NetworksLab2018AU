@@ -2,6 +2,8 @@
 // Created by kate on 26.03.18.
 //
 
+// источник: https://www.binarytides.com/dns-query-code-in-c-with-winsock/
+
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -10,6 +12,7 @@
 #include <unistd.h>    //getpid
 
 #include "../common/common.h"
+
 
 
 char buffer[MAX_UDP_SIZE];
@@ -67,15 +70,12 @@ char *read_name(char *reader, char *buffer, int *count) {
         } else {
             name[p++] = *reader;
         }
-
         reader = reader + 1;
-
         if (jumped == 0) {
             *count = *count + 1;
             //if we havent jumped to another location then we can count up
         }
     }
-
     name[p] = '\0'; //string complete
     if (jumped == 1) {
         *count = *count + 1;
@@ -83,7 +83,7 @@ char *read_name(char *reader, char *buffer, int *count) {
     }
 
     //now convert 3www6google3com0 to www.google.com
-    for (i = 0; i < (int) strlen((const char *) name); i++) {
+    for (i = 0; i < (int) strlen(name); i++) {
         p = name[i];
         for (j = 0; j < p; j++) {
             name[i] = name[i + 1];
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
     auto *dns = (struct DNS_HEADER *) buffer;
     dns->id = (short) htons(static_cast<uint16_t>(getpid()));
     dns->q_count = htons(1); //we have only 1 question
-    auto *qname = (char *) (buffer + DNS_HEADER_SIZE);
+    auto *qname = buffer + DNS_HEADER_SIZE;
     change_to_dns_name_format(qname, argv[2]);
     auto *qinfo = (struct QUESTION *) (buffer +
                                        DNS_HEADER_SIZE +
@@ -131,9 +131,8 @@ int main(int argc, char **argv) {
     qinfo->qclass = htons(1); // internet
 
     std::cout << "send packet " << server_id << std::endl;
-    if (sendto(server_id, (char *) buffer, DNS_HEADER_SIZE +
-                                           strlen(qname) +
-                                           1 + QUESTION_SIZE, 0,
+    if (sendto(server_id, buffer, DNS_HEADER_SIZE + strlen(qname) + 1 +
+                                  QUESTION_SIZE, 0,
                (struct sockaddr *) &addr, sizeof(addr)) < 0) {
         std::cout << " ERROR: send packet" << std::endl;
         exit(1);
@@ -142,7 +141,7 @@ int main(int argc, char **argv) {
     bzero(buffer, MAX_UDP_SIZE);
     std::cout << "recv answer" << std::endl;
     size_t len_addr = sizeof(addr);
-    if (recvfrom(server_id, (char *) buffer, MAX_UDP_SIZE, 0,
+    if (recvfrom(server_id, buffer, MAX_UDP_SIZE, 0,
                  (struct sockaddr *) &addr, (socklen_t *) &len_addr)
         == -1) {
         std::cout << "ERROR: recvfrom " << std::endl;
@@ -150,7 +149,7 @@ int main(int argc, char **argv) {
     }
     print_dns(dns);
 
-    char *reader = (char *) buffer + DNS_HEADER_SIZE +
+    char *reader = buffer + DNS_HEADER_SIZE +
                    strlen(qname) + 1 + QUESTION_SIZE;
     for (int i = 0; i < ntohs(dns->ans_count); i++) {
         int offset = 0;
@@ -158,7 +157,7 @@ int main(int argc, char **argv) {
         std::cout << " name: " << name << std::endl;
         reader += offset;
         auto *data = (struct R_DATA *) reader;
-        reader += sizeof(struct R_DATA);
+        reader += R_DATA_SIZE;
         if (ntohs(data->type) == 1) {
             auto *rdata = new char[ntohs(data->data_len)];
             memcpy(rdata, reader, ntohs(data->data_len));
