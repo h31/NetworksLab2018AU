@@ -11,7 +11,7 @@ void print_time()
 {
 	time_t t = time(0);
 	struct tm * now = localtime( & t );
-	std::cout << '<' << (now->tm_mon + 1) << ':' << now->tm_sec << "> ";
+	std::cout << '<' << now->tm_hour << ':' << now->tm_min << "> ";
 }
 
 std::unique_ptr<char[]> extract_name(net::socket& sock)
