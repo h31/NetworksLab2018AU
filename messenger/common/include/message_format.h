@@ -27,6 +27,7 @@
 // -----
 //
 // The protocol is designed to be both forward and backward compatible.
+#pragma pack(1)
 typedef struct {
   uint32_t format_version;  // version of the protocol. Use `ELEGRAM_FORMAT_VERSION` constant
   char nickname[32];  // null-terminated nickname
