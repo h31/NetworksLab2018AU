@@ -7,6 +7,16 @@
 #include "socket_utils.h"
 #include "server.h"
 
+// A few words about `struct client` lifetime:
+//
+// * it is created, when a client connects to the server
+// * (working) it receives messages from the client and sends them to the other clients
+// * it is destroyed in one of the following ways:
+// |- Option 1: Client disconnected. In this case flag finished will be set. Later `client_join`
+// |            and `client_destroy` will be called by the server garbage collection process.
+// |
+// |- Option 2: Server is shut down. In this case the server will call `client_stop`, `client_join`
+//    and `client_destroy`.
 struct client {
   socket_t socket;  // GUARDED_BY(socket_mutex)
   pthread_mutex_t socket_mutex;
@@ -18,7 +28,7 @@ struct client {
 
 void client_init(struct client* client, struct server* server, socket_t socket);
 
-void destroy_client(struct client* client);
+void client_destroy(struct client* client);
 
 void* client_routine(void* arg_raw);
 

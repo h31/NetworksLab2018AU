@@ -16,7 +16,7 @@ void client_init(struct client* client, struct server* server, socket_t socket) 
   atomic_init(&client->finished, false);
 }
 
-void destroy_client(struct client* client) {
+void client_destroy(struct client* client) {
   close_socket(client->socket);
   pthread_mutex_destroy(&client->socket_mutex);
 }

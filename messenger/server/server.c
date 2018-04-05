@@ -56,14 +56,20 @@ int server_broadcast_message(struct server* server, elegram_msg_t* message) {
 }
 
 static void join_and_remove_client(struct client* client) {
-  // note: this is a cancelation point
+  int old_cancel_state;
+  // Even if a cancelation in this function might look safe, it's better to disable it
+  // to avoid getting the system into an invalid state.
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancel_state);
+
   client_join(client);
   list_del(&client->lnode);
-  destroy_client(client);
+  client_destroy(client);
   free(client);
+
+  pthread_setcancelstate(old_cancel_state, NULL);
 }
 
-void destroy_server(struct server* server) {
+void server_destroy(struct server* server) {
   int old_cancel_state;
   // cancelation in this destructor would cause an invalid state
   pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancel_state);
@@ -92,6 +98,7 @@ static void do_garbage_collection(struct server* server) {
   pthread_rwlock_wrlock(&server->rwlock);
   pthread_cleanup_push(cleanup_rwlock_unlock, &server->rwlock);
       list_for_each_safe(pos, tmp, &server->clients_list) {
+        pthread_testcancel();
         struct client* client = list_entry(pos, struct client, lnode);
         if (client_finished(client)) {
           join_and_remove_client(client);

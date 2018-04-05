@@ -15,7 +15,7 @@ struct server {
   pthread_rwlock_t rwlock;
 };
 
-void destroy_server(struct server* server);
+void server_destroy(struct server* server);
 
 int server_init(struct server* server, uint16_t port);
 

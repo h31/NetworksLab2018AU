@@ -11,8 +11,8 @@ typedef struct {
   /*out*/ int ret;
 } server_routine_arg_t;
 
-static void cleanup_destroy_server(void* server) {
-  destroy_server((struct server*) server);
+static void cleanup_server_destroy(void* server) {
+  server_destroy((struct server*) server);
 }
 
 static void* server_routine(void* arg_raw) {
@@ -27,7 +27,7 @@ static void* server_routine(void* arg_raw) {
   }
   LOG("[Server] initialized");
 
-  pthread_cleanup_push(cleanup_destroy_server, &server);
+  pthread_cleanup_push(cleanup_server_destroy, &server);
     LOG("[Server] working...");
     if (server_serve(&server) != 0)  {
       print_error("Server error");
