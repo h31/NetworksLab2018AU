@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
 
   int ret = 0;
   if (arg.ret != 0) {
-    print_error("Server error");
+    fprintf(stderr, "Server error\n");
     ret = 1;
   }
   if (socket_utils_cleanup() != 0) {

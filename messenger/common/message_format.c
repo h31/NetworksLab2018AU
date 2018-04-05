@@ -32,7 +32,6 @@ int read_message(elegram_msg_t* out, socket_t socket) {
       || header.text_length == 0
       || safe_strlen(header.nickname, sizeof(header.nickname)) < 0) {
     errno = EPROTO;
-    fprintf(stderr, "\nQWERTY: %u %u\n\n", elegram_header_checksum(header), header.header_checksum);
     return -1;
   }
 
@@ -49,7 +48,8 @@ int read_message(elegram_msg_t* out, socket_t socket) {
     return -1;
   }
 
-  // it is safe to evaluate `header.text_length - 1` since `text_length` is always greater than 0
+  // it is safe to evaluate `header.text_length - 1`
+  // since `text_length` is checked to be greater than 0
   if (safe_strlen(data + header.text_offset, header.text_length) != header.text_length - 1) {
     free(data);
     errno = EPROTO;

@@ -10,6 +10,7 @@
 #include "thread_utils.h"
 #include "elegram_port.h"
 #include "message_format.h"
+#include "string_utils.h"
 
 
 static void printf_now(const char* format, ...) {
@@ -20,14 +21,13 @@ static void printf_now(const char* format, ...) {
   va_end(args);
 }
 
-static int cli_get_message(elegram_msg_t* out, char* nickname) {
+static int cli_get_message(elegram_msg_t* out, char* nickname, void* data, size_t data_size) {
   printf_now("Enter message: ");
 
-  char line[1024];
-  if (fgets(line, sizeof(line), stdin) == NULL) {
+  if (fgets(data, data_size, stdin) == NULL) {
     return -1;
   }
-  size_t text_length = strlen(line) + 1;  // null character should be counted
+  size_t text_length = safe_strlen(data, data_size) + 1;  // null character should be counted
 
   if (text_length > MAX_MESSAGE_LENGTH) {
     return EOVERFLOW;
@@ -40,7 +40,7 @@ static int cli_get_message(elegram_msg_t* out, char* nickname) {
           .text_length = (uint32_t) text_length,
           .header_checksum = elegram_header_checksum(out->header),
       },
-      .data = line,
+      .data = data,
   };
   strcpy(out->header.nickname, nickname);
 
@@ -104,8 +104,9 @@ int cli(client_t* client) {
         if (strcmp(line_buf, ":m\n") != 0) {
           printf_now("Unknown command: %s", line_buf);
         } else {
+          char data[1024];
           elegram_msg_t message;
-          if (cli_get_message(&message, client->nickname) < 0) {
+          if (cli_get_message(&message, client->nickname, data, sizeof(data)) < 0) {
             if (errno == 0) {
               // EOF
               printf_now("\n");

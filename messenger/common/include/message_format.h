@@ -21,7 +21,7 @@
 // |
 // -----
 // |
-// | Text
+// | ascii-encoded null-terminated text
 // | (text_length bytes)
 // |
 // -----
@@ -30,7 +30,7 @@ typedef struct {
   char nickname[32];  // null-terminated nickname
   uint32_t text_offset;  // offset of the start of the text EXCLUDING the size of the header
   uint32_t text_length;  // the length of the text INCLUDING the null character
-  struct tm timestamp;
+  struct tm timestamp;  // filled in by the server
   uint32_t header_checksum; // must be the last field. Use `elegram_header_checksum` function
 } elegram_msg_header_t;
 
