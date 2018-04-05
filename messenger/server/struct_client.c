@@ -9,32 +9,27 @@
 
 void client_init(struct client* client, struct server* server, socket_t socket) {
   *client = (struct client) {
+      .socket_mutex = PTHREAD_MUTEX_INITIALIZER,
       .socket = socket,
       .server = server,
   };
-  pthread_rwlock_wrlock(&server->rwlock);
-  pthread_cleanup_push(cleanup_rwlock_unlock, &server->rwlock) ;
-      list_push_back(&server->clients_list, &client->lnode);
-  pthread_cleanup_pop(true);
+  atomic_init(&client->finished, false);
 }
 
 void destroy_client(struct client* client) {
-  pthread_rwlock_wrlock(&client->server->rwlock);
-  pthread_cleanup_push(cleanup_rwlock_unlock, &client->server->rwlock);
-      close_socket(client->socket);
-      pthread_mutex_destroy(&client->mutex);
-      list_del(&client->lnode);
-  pthread_cleanup_pop(true);
+  close_socket(client->socket);
+  pthread_mutex_destroy(&client->socket_mutex);
 }
 
-static void cleanup_destroy_client(void* arg_raw) {
-  destroy_client((struct client*) arg_raw);
+static void cleanup_set_finished(void* client_raw) {
+  struct client* client = (struct client*) client_raw;
+  atomic_store(&client->finished, true);
 }
 
 void* client_routine(void* arg_raw) {
   struct client* client = (struct client*) arg_raw;
 
-  pthread_cleanup_push(cleanup_destroy_client, client) ;
+  pthread_cleanup_push(cleanup_set_finished, client) ;
       while (true) {
         pthread_testcancel();
 

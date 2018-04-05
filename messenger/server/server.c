@@ -34,20 +34,6 @@ int server_init(struct server* server, uint16_t port) {
   return 0;
 }
 
-void destroy_server(struct server* server) {
-  struct list_head* pos;
-  struct list_head* tmp;
-  list_for_each_safe(pos, tmp, &server->clients_list) {
-    struct client* client = list_entry(pos, struct client, lnode);
-    // `destroy_client` will be called by the client thread cleanup
-    pthread_cancel(client->receiver_thread);
-    pthread_join(client->receiver_thread, NULL);
-    free(client);
-  }
-  close_socket(server->socket);
-  pthread_rwlock_destroy(&server->rwlock);
-}
-
 int server_broadcast_message(struct server* server, elegram_msg_t* message) {
   struct list_head* pos;
   pthread_rwlock_rdlock(&server->rwlock);
@@ -57,13 +43,61 @@ int server_broadcast_message(struct server* server, elegram_msg_t* message) {
 
       list_for_each(pos, &server->clients_list) {
         struct client* client = list_entry(pos, struct client, lnode);
-        pthread_mutex_lock(&client->mutex);
-        pthread_cleanup_push(cleanup_mutex_unlock, &client->mutex) ;
-            write_message(message, client->socket);
-        pthread_cleanup_pop(true);
+        if (!client_finished(client)) {
+          pthread_mutex_lock(&client->socket_mutex);
+          pthread_cleanup_push(cleanup_mutex_unlock, &client->socket_mutex) ;
+              // error code is deliberately ignored
+              write_message(message, client->socket);
+          pthread_cleanup_pop(true);
+        }
       }
   pthread_cleanup_pop(true);
   return 0;
+}
+
+static void join_and_remove_client(struct client* client) {
+  // note: this is a cancelation point
+  client_join(client);
+  list_del(&client->lnode);
+  destroy_client(client);
+  free(client);
+}
+
+void destroy_server(struct server* server) {
+  int old_cancel_state;
+  // cancelation in this destructor would cause an invalid state
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancel_state);
+
+  struct list_head* pos;
+  struct list_head* tmp;
+
+  pthread_rwlock_wrlock(&server->rwlock);
+  list_for_each_safe(pos, tmp, &server->clients_list) {
+    struct client* client = list_entry(pos, struct client, lnode);
+    client_stop(client);
+    join_and_remove_client(client);
+  }
+  pthread_rwlock_unlock(&server->rwlock);
+
+  close_socket(server->socket);
+  pthread_rwlock_destroy(&server->rwlock);
+
+  pthread_setcancelstate(old_cancel_state, NULL);
+}
+
+static void do_garbage_collection(struct server* server) {
+  struct list_head* pos;
+  struct list_head* tmp;
+
+  pthread_rwlock_wrlock(&server->rwlock);
+  pthread_cleanup_push(cleanup_rwlock_unlock, &server->rwlock);
+      list_for_each_safe(pos, tmp, &server->clients_list) {
+        struct client* client = list_entry(pos, struct client, lnode);
+        if (client_finished(client)) {
+          join_and_remove_client(client);
+        }
+      }
+  pthread_cleanup_pop(true);
 }
 
 int server_serve(struct server* server) {
@@ -78,9 +112,15 @@ int server_serve(struct server* server) {
       continue;
     }
 
+    do_garbage_collection(server);
+
     struct client* new_client = malloc(sizeof(struct client));
     client_init(new_client, server, client_socket);
 
-    pthread_create(&new_client->receiver_thread, NULL, client_routine, new_client);
+    pthread_rwlock_wrlock(&server->rwlock);
+    list_push_back(&server->clients_list, &new_client->lnode);
+    pthread_rwlock_unlock(&server->rwlock);
+
+    client_start(new_client);
   }
 }
