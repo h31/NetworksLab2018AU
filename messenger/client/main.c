@@ -53,8 +53,8 @@ typedef struct {
   socket_t socket;
 } client_t;
 
-static void send_message(client_t* client, const elegram_msg_t* message) {
-  write_message(message, client->socket);
+static int send_message(client_t* client, const elegram_msg_t* message) {
+  return write_message(message, client->socket);
 }
 
 static void* receiver_routine(void* arg) {
@@ -92,6 +92,7 @@ int cli(client_t* client) {
     char line_buf[1024];
     if (fgets(line_buf, sizeof(line_buf), stdin) == NULL) {
       pthread_cancel(receiver_thread);
+      pthread_join(receiver_thread, NULL);
       if (errno == 0) {
         return 0;  // end-of-file
       } else {
@@ -112,10 +113,12 @@ int cli(client_t* client) {
               printf_now("\n");
               fflush(stdout);
             } else {
-              print_error("ERROR reading your message\n");
+              print_error("ERROR reading your message");
             }
           } else {
-            send_message(client, &message);
+            if (send_message(client, &message) != 0) {
+              print_error("ERROR sendin messeage");
+            }
           }
         }
     pthread_cleanup_pop(true);

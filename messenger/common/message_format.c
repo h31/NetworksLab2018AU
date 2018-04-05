@@ -63,6 +63,7 @@ int read_message(elegram_msg_t* out, socket_t socket) {
   return 0;
 }
 
+// Returns 0 on success, -1 on error. The error code is written to errno.
 int write_message(const elegram_msg_t* message, socket_t socket) {
   if (checked_socket_write(socket, &message->header, sizeof(message->header)) < 0) {
     return -1;
