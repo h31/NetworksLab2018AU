@@ -90,7 +90,7 @@ int cli(client_t* client) {
 
   while (true) {
     char line_buf[1024];
-    if (fgets(line_buf, sizeof(line_buf), stdin) < 0) {
+    if (fgets(line_buf, sizeof(line_buf), stdin) == NULL) {
       pthread_cancel(receiver_thread);
       if (errno == 0) {
         return 0;  // end-of-file
