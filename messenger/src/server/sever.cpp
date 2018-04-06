@@ -47,19 +47,21 @@ static void process_broadcast(server& server, client& cur, Foo foo)
 
 static void process_round(server& server, client& cur)
 {
-	size_t name_sz;
-	size_t msg_sz;
+	uint32_t name_sz;
+	uint32_t msg_sz;
 
 	cur.sock.recv_all((char *)&name_sz, sizeof(name_sz));
+	name_sz =  htonl(name_sz);
 	std::unique_ptr<char[]> name_frame(new char[name_sz + sizeof(name_sz) + 1]);
-	((size_t*)name_frame.get())[0] = name_sz;
+	((uint32_t*)name_frame.get())[0] = htonl(name_sz);
 	cur.sock.recv_all(name_frame.get() + sizeof(name_sz), name_sz);
 	name_frame[name_sz + sizeof(name_sz)] = 0;
 
 	cur.sock.recv_all((char *)&msg_sz, sizeof(msg_sz));
+	msg_sz = htonl(msg_sz);
 	std::unique_ptr<char[]> msg_frame(new char[msg_sz + sizeof(msg_sz) + 1]);
 	cur.sock.recv_all(msg_frame.get() + sizeof(msg_sz), msg_sz);
-	((size_t*)msg_frame.get())[0] = msg_sz;
+	((uint32_t*)msg_frame.get())[0] = htonl(msg_sz);
 
 	char *const msg = msg_frame.get() + sizeof(msg_sz);
 	char *const name = name_frame.get() + sizeof(name_sz);
