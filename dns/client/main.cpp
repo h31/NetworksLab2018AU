@@ -7,33 +7,30 @@
 
 #include "DnsAll.h"
 
-static SocketWrapper clientSocket;
+static DnsSocketWrapper clientSocket;
 volatile bool is_finished = false;
 
 int main(int argc, char *argv[]) {
-    if (argc != 4) {
-        fprintf(stderr, "usage %s <hostname> <port> <username>\n", argv[0]);
-        exit(0);
+    if (argc != 3) {
+        fprintf(stderr, "usage %s <hostname> <port>\n", argv[0]);
+        return 1;
     }
 
     const std::string hostname = argv[1];
     const std::string portstr = argv[2];
-    const std::string username = argv[3];
     auto const portno = stoi(portstr);
     try {
-        Socket::init();
-        clientSocket = std::make_shared<Socket>(hostname, portno, username);
-        bool broadcast_on = true;
+        clientSocket.reset(new DnsSocket(hostname, portno));
         while (!is_finished) {
-            std::cout << "Please enter the message: " << std::endl;
+            std::cout << "Please enter address: " << std::endl;
             std::string line;
             std::getline(std::cin, line);
             if (line.empty()) {
-                clientSocket->write_uint(static_cast<int>(MessageType::FINISH));
+                clientSocket.reset();
                 is_finished = true;
                 break;
             } else {
-                // TODO write dns request.
+                std::cout << "Answer: " << clientSocket->resolve(line) << std::endl;
             }
         }
     }

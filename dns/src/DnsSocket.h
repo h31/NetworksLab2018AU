@@ -7,12 +7,16 @@
 
 #define DEBUG_DNS 0
 
+#define DEFAULT_UDP_PORT 53
+
 struct DnsSocket {
     using socket_t = int;
 
     DnsSocket();
     
-    void set_dns_server(std::string &dns_server);
+    explicit DnsSocket(const std::string &dns_server, int port=DEFAULT_UDP_PORT);
+    
+    void set_dns_server(const std::string &dns_server, int port=DEFAULT_UDP_PORT);
     
     std::string resolve(const std::string &hostname);
 
