@@ -1,5 +1,7 @@
-#ifndef MESSENGER_ELEGRAMALL_H
-#define MESSENGER_ELEGRAMALL_H
+#ifndef DNS_ALL_H
+#define DNS_ALL_H
+
+#include <cassert>
 
 #include "DnsFwd.h"
 #include "DnsError.h"
@@ -96,7 +98,9 @@ static inline std::string read_name(unsigned char *reader, unsigned char *buffer
     std::string result;
     bool jumped = false;
     
-    assert(*reader != 0);
+    if (*reader == 0) {
+        throw DnsError("Failed to read name from buffer.");
+    }
     //read the names in 3www6google3com format
     for (; *reader != 0; ++reader) {
         if (*reader >= 192) {
@@ -147,4 +151,4 @@ static inline void hostname_in_dns(unsigned char *dns, std::string hostname) {
     *dns = '\0'; // *dns++ = '\0'.
 }
 
-#endif //MESSENGER_ELEGRAMALL_H
+#endif //DNS_ALL_H

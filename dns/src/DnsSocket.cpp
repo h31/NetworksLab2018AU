@@ -8,22 +8,9 @@
 #include "DnsSocket.h"
 #include "DnsAll.h"
 
-
-DnsSocket::DnsSocket() {
-    s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP); //UDP packet for DNS queries
-}
-
 DnsSocket::DnsSocket(const std::string &dns_server, int port)
-        : DnsSocket()
-{
-    set_dns_server(dns_server, port);
-}
-
-void DnsSocket::set_dns_server(const std::string &dns_server, int port) {
-    dest.sin_family = AF_INET;
-    dest.sin_port = htons(port);
-    dest.sin_addr.s_addr = inet_addr(dns_server.c_str());
-}
+        : UdpSocket(dns_server, port)
+{}
 
 static std::string address_from_answer(const RES_RECORD &answer) {
     auto resource_type = ntohs(answer.resource.type);
@@ -84,7 +71,7 @@ std::string DnsSocket::resolve(const std::string &hostname) {
     qinfo->qtype = htons(QUERY_TYPE);
     qinfo->qclass = htons(1);
     
-    auto const send_result = sendto(s, (char *) buf,
+    auto const send_result = sendto(fd, buf,
                                     DNS_HEADER_SIZE + (qname_length + 1) + QUESTION_SIZE, 0,
                                     reinterpret_cast<const sockaddr *>(&dest), sizeof dest);
     if (send_result < 0) {
@@ -93,13 +80,11 @@ std::string DnsSocket::resolve(const std::string &hostname) {
     
     // Receiving answer
     socklen_t dest_addr_len = sizeof dest;
-    if (recvfrom(s, buf, DNS_BUF_SIZE, 0, reinterpret_cast<sockaddr *>(&dest), &dest_addr_len) < 0) {
+    if (recvfrom(fd, buf, DNS_BUF_SIZE, 0, reinterpret_cast<sockaddr *>(&dest), &dest_addr_len) < 0) {
         throw DnsError("recvfrom failed");
     }
     
     assert(dest_addr_len == sizeof dest);
-    
-//    dns = reinterpret_cast<DNS_HEADER *>(buf);
     
     //move ahead of the dns header and the query field
     // update qname_length?
@@ -185,62 +170,4 @@ std::string DnsSocket::resolve(const std::string &hostname) {
     }
     
     return address_from_answer(answers[0]);
-    
-//    //read authorities
-//    for (int i = 0; i < ntohs(dns->auth_count); i++) {
-//        auth[i].name = ReadName(reader, buf, &stop);
-//        reader += stop;
-//
-//        auth[i].resource = (struct R_DATA *) (reader);
-//        reader += sizeof(struct R_DATA);
-//
-//        auth[i].rdata = ReadName(reader, buf, &stop);
-//        reader += stop;
-//    }
-//
-//    //read additional
-//    for (int i = 0; i < ntohs(dns->add_count); i++) {
-//        addit[i].name = ReadName(reader, buf, &stop);
-//        reader += stop;
-//
-//        addit[i].resource = (struct R_DATA *) (reader);
-//        reader += sizeof(struct R_DATA);
-//
-//        if (ntohs(addit[i].resource->type) == 1) {
-//            addit[i].rdata = (unsigned char *) malloc(ntohs(addit[i].resource->data_len));
-//            for (j = 0; j < ntohs(addit[i].resource->data_len); j++)
-//                addit[i].rdata[j] = reader[j];
-//
-//            addit[i].rdata[ntohs(addit[i].resource->data_len)] = '\0';
-//            reader += ntohs(addit[i].resource->data_len);
-//        } else {
-//            addit[i].rdata = ReadName(reader, buf, &stop);
-//            reader += stop;
-//        }
-//    }
-//
-//
-//    //print authorities
-//    printf("\nAuthoritive Records : %d \n", ntohs(dns->auth_count));
-//    for (i = 0; i < ntohs(dns->auth_count); i++) {
-//
-//        printf("Name : %s ", auth[i].name);
-//        if (ntohs(auth[i].resource->type) == 2) {
-//            printf("has nameserver : %s", auth[i].rdata);
-//        }
-//        printf("\n");
-//    }
-//
-//    //print additional resource records
-//    printf("\nAdditional Records : %d \n", ntohs(dns->add_count));
-//    for (i = 0; i < ntohs(dns->add_count); i++) {
-//        printf("Name : %s ", addit[i].name);
-//        if (ntohs(addit[i].resource->type) == 1) {
-//            long *p;
-//            p = (long *) addit[i].rdata;
-//            a.sin_addr.s_addr = (*p);
-//            printf("has IPv4 address : %s", inet_ntoa(a.sin_addr));
-//        }
-//        printf("\n");
-//    }
 }

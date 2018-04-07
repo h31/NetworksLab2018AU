@@ -1,5 +1,5 @@
-#ifndef MESSENGER_MESSENGERERROR_H
-#define MESSENGER_MESSENGERERROR_H
+#ifndef DNS_ERROR_H
+#define DNS_ERROR_H
 
 #include <stdexcept>
 
@@ -12,4 +12,4 @@ struct ProtocolError : std::runtime_error {
     ProtocolError(): std::runtime_error("Protocol error") {}
 };
 
-#endif //MESSENGER_MESSENGERERROR_H
+#endif //DNS_ERROR_H

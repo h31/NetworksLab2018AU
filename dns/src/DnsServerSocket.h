@@ -1,11 +1,12 @@
-#ifndef MESSENGER_DNSSERVERSOCKET_H
-#define MESSENGER_DNSSERVERSOCKET_H
+#ifndef DNS_SERVER_SOCKET_H
+#define DNS_SERVER_SOCKET_H
 
 #include <string>
 
 #include "DnsFwd.h"
+#include "UdpSocket.h"
 
-struct DnsServerSocket {
+struct DnsServerSocket : public UdpSocket {
     using socket_t = int;
     
     explicit DnsServerSocket(int portno);
@@ -14,12 +15,6 @@ struct DnsServerSocket {
 
 private:
     socket_t client_fd;
-    
-    socket_t dns_fd;
-    
-    void set_dns_server(const std::string &dns_server, int port);
-    
-    sockaddr_in dest;
 };
 
-#endif //MESSENGER_DNSSERVERSOCKET_H
+#endif //DNS_SERVER_SOCKET_H

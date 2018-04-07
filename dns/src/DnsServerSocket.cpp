@@ -8,6 +8,8 @@
 #include "DnsServerSocket.h"
 
 static std::vector<std::string> get_dns_servers() {
+    std::vector<std::string> dns_servers;
+    dns_servers.emplace_back("8.8.8.8");
     std::ifstream fin;
     fin.open("/etc/resolv.conf");
     if (!fin) {
@@ -24,23 +26,25 @@ static std::vector<std::string> get_dns_servers() {
             std::istringstream is(line);
             std::string nameserver_ip;
             is >> nameserver_ip >> nameserver_ip;
+            dns_servers.emplace_back(nameserver_ip);
         }
     }
     
     fin.close();
-    std::vector<std::string> dns_servers;
     dns_servers.emplace_back("208.67.222.222");
     dns_servers.emplace_back("208.67.220.220");
     return dns_servers;
 }
 
-DnsServerSocket::DnsServerSocket(int portno) {
+DnsServerSocket::DnsServerSocket(int portno)
+        : UdpSocket(get_dns_servers()[0], DEFAULT_UDP_PORT)
+{
     client_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (client_fd < 0) {
         throw DnsError("ERROR opening client socket: ");
     }
     
-    struct sockaddr_in serv_addr;
+    sockaddr_in serv_addr{};
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -51,28 +55,14 @@ DnsServerSocket::DnsServerSocket(int portno) {
         auto const error_msg = std::to_string(bind_result);
         throw DnsError("ERROR on binding: " + error_msg);
     }
-    
-    auto dns_servers = get_dns_servers();
-//    set_dns_server(dns_servers[0], DEFAULT_UDP_PORT);
-    set_dns_server("8.8.8.8", DEFAULT_UDP_PORT);
-    dns_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (dns_fd < 0) {
-        throw DnsError("ERROR opening dns socket");
-    }
-}
-
-void DnsServerSocket::set_dns_server(const std::string &dns_server, int port) {
-    dest.sin_family = AF_INET;
-    dest.sin_port = htons(port);
-    dest.sin_addr.s_addr = inet_addr(dns_server.c_str());
 }
 
 void DnsServerSocket::step() {
+    auto const dns_fd = fd;
     static unsigned char buf[DNS_BUF_SIZE];
     sockaddr client_dest{};
     socklen_t client_destlen;
-    const int flags = 0;
-    auto recv_result = recvfrom(client_fd, buf, DNS_BUF_SIZE, flags, &client_dest, &client_destlen);
+    auto recv_result = recvfrom(client_fd, buf, DNS_BUF_SIZE, 0, &client_dest, &client_destlen);
     assert(client_destlen == sizeof(sockaddr_in));
     if (recv_result < 0) {
         throw DnsError("recvfrom from client failed.");

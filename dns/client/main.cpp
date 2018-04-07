@@ -1,8 +1,6 @@
 #include <iostream>
 #include <string>
-#include <mutex>
-#include <thread>
-#include <condition_variable>
+#include <cstdio>
 #include <cassert>
 
 #include "DnsAll.h"
@@ -30,7 +28,12 @@ int main(int argc, char *argv[]) {
                 is_finished = true;
                 break;
             } else {
-                std::cout << "Answer: " << clientSocket->resolve(line) << std::endl;
+                try {
+                    auto resolve_result = clientSocket->resolve(line);
+                    std::cout << "Answer: " << resolve_result << std::endl;
+                } catch (DnsError &err) {
+                    std::cerr << "ERROR: " << err.what() << std::endl;
+                }
             }
         }
     }
