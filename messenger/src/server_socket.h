@@ -1,10 +1,10 @@
 #ifndef MESSENGER_SERVERSOCKET_H
 #define MESSENGER_SERVERSOCKET_H
 
-#include "ElegramFwd.h"
+#include "elegram_fwd.h"
 
 struct ServerSocket {
-    ServerSocket(int portno);
+    explicit ServerSocket(int portno);
     
     ~ServerSocket();
     

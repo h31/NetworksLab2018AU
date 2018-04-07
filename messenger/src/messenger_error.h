@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-struct MessengerError : std::runtime_error {
+struct MessengerError: std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 

@@ -8,8 +8,8 @@
 #else
 #include <sys/socket.h>
 #endif
-#include "ElegramFwd.h"
-#include "Date.h"
+#include "elegram_fwd.h"
+#include "date.h"
 
 
 // I/O operations should come through buffer as TCP read/write operations can merge.

@@ -1,8 +1,8 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include "Message.h"
-#include "MessengerError.h"
+#include "message.h"
+#include "messenger_error.h"
 
 Message::Message(const std::string &message, const std::string &username, const Date &date)
         : buffer(message)

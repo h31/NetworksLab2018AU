@@ -5,9 +5,9 @@
 #include <condition_variable>
 #include <cassert>
 
-#include "ElegramAll.h"
+#include "elegram_all.h"
 
-static SocketWrapper clientSocket;
+static SocketWrapper client_socket;
 std::mutex socket_mutex;
 static auto last_message = Message::invalid_message();
 static std::mutex print_mutex;
@@ -18,7 +18,7 @@ void broadcast_callback() {
     while (!is_finished) {
         std::uint32_t itype;
         try {
-            itype = clientSocket->read_uint();
+            itype = client_socket->read_uint();
         } catch (std::exception &e) {
             if (!is_finished) { // otherwise it's closed.
                 std::cerr << "Error while reading broadcast: " << e.what() << "\nExiting..." << std::endl;
@@ -27,7 +27,7 @@ void broadcast_callback() {
         }
         auto mtype = static_cast<MessageType>(itype);
         assert(mtype == MessageType::BROADCAST);
-        auto message = clientSocket->read_broadcast();
+        auto message = client_socket->read_broadcast();
         if (message != last_message) {
             std::unique_lock<std::mutex> print_lock{print_mutex};
             std::cout << message << std::endl;
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     auto const portno = stoi(portstr);
     try {
         Socket::init();
-        clientSocket = std::make_shared<Socket>(hostname, portno, username);
+        client_socket = std::make_shared<Socket>(hostname, portno, username);
         std::thread broadcast_thread{ broadcast_callback };
         bool broadcast_on = true;
         while (!is_finished) {
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
             std::string line;
             std::getline(std::cin, line);
             if (line.empty()) {
-                clientSocket->write_uint(static_cast<int>(MessageType::FINISH));
+                client_socket->write_uint(static_cast<int>(MessageType::FINISH));
 #if _WIN32
                 // Waiting for server to acknowledge the finish in order to close the socket here without exception there.
                 Sleep(1000);
@@ -71,8 +71,8 @@ int main(int argc, char *argv[]) {
                 std::cout << "Muting other clients..." << std::endl;
             } else {
                 auto date = Date::now();
-                clientSocket->write_message(line, date);
-                last_message = Message(line, clientSocket->this_username, date);
+                client_socket->write_message(line, date);
+                last_message = Message(line, client_socket->this_username, date);
                 if (!broadcast_on) {
                     broadcast_on = true;
                     print_mutex.unlock();

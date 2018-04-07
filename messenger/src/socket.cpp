@@ -1,8 +1,8 @@
 #include <iostream>
 #include <limits>
 #include <cstring>
-#include "Socket.h"
-#include "ElegramAll.h"
+#include "socket.h"
+#include "elegram_all.h"
 
 #if _WIN32
 static u_long zero = 0;
@@ -49,18 +49,18 @@ Socket::Socket(const std::string &hostname, int portno, const std::string &usern
 #endif
         throw MessengerError("ERROR opening socket");
     }
-    struct hostent *server = gethostbyname(hostname.c_str());
+    hostent *server = gethostbyname(hostname.c_str());
     if (server == nullptr) {
         throw MessengerError("ERROR, no such host");
     }
     
-    struct sockaddr_in connect_addr;
+    sockaddr_in connect_addr{};
     memset((char *)&connect_addr, 0, sizeof(connect_addr));
     connect_addr.sin_family = AF_INET;
     memcpy((char *) &connect_addr.sin_addr.s_addr, server->h_addr, (size_t) server->h_length);
-    connect_addr.sin_port = htons(portno);
+    connect_addr.sin_port = htons(check_and_cast_uint16(portno));
     
-    auto const connect_result = connect(fd, (struct sockaddr *) &connect_addr, sizeof(connect_addr));
+    auto const connect_result = connect(fd, reinterpret_cast<const sockaddr *>(&connect_addr), sizeof(connect_addr));
 #if _WIN32
     if (connect_result == SOCKET_ERROR) {
 #else
@@ -99,7 +99,7 @@ void Socket::write_string(const std::string &str) const {
         throw MessengerError("Invalid message size : " + std::to_string(size));
     }
     
-    write_uint(size);
+    write_uint(static_cast<uint32_t>(size));
     ssize_t nbytes = 0;
     while (nbytes < static_cast<ssize_t>(size)) {
         nbytes = write(fd, &str[0], size - static_cast<size_t>(nbytes)); // send on Windows
@@ -151,7 +151,7 @@ ssize_t Socket::write(socket_t fd, const char * buf, size_t size)
 
 std::uint32_t Socket::read_uint() const {
     ssize_t nbytes = 0;
-    std::uint32_t n32;
+    std::uint32_t n32 = 0;
     while (nbytes < (int)sizeof(n32)) {
         nbytes = read(fd, reinterpret_cast<char *>(&n32) + nbytes, sizeof(n32) - static_cast<size_t>(nbytes));
         check_io(nbytes, "reading");

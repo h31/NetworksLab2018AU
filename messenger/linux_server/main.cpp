@@ -11,7 +11,7 @@
 #include <mutex>
 #include <thread>
 #include <cassert>
-#include "ElegramAll.h"
+#include "elegram_all.h"
 
 static std::list<SocketWrapper> sockets;
 static std::mutex sockets_mutex;
@@ -65,14 +65,14 @@ int main(int argc, char **argv) {
     }
     try {
         auto const port = stoi(static_cast<std::string>(argv[1]));
-        auto serverSocket = std::make_shared<ServerSocket>(port);
-        serverSocket->listen();
+        auto server_socket = std::make_shared<ServerSocket>(port);
+        server_socket->listen();
         std::cout << "Listening for incoming connections..." << std::endl;
         while (true) {
-            auto acceptSocket = serverSocket->accept();
+            auto accept_socket = server_socket->accept();
             std::unique_lock<std::mutex> sockets_lock{ sockets_mutex };
-            sockets.push_back(acceptSocket);
-            std::thread client_thread{ client_session, acceptSocket };
+            sockets.push_back(accept_socket);
+            std::thread client_thread{ client_session, accept_socket };
             client_thread.detach();
         }
     }

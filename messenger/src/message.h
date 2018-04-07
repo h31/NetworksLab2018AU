@@ -2,7 +2,7 @@
 #define MESSENGER_MESSAGE_H
 
 #include <iosfwd>
-#include "Date.h"
+#include "date.h"
 #include <string>
 
 struct Message {
@@ -10,6 +10,7 @@ struct Message {
         static const Message msg{"", "", Date::invalid()};
         return msg;
     }
+    
     Message(const std::string &message, const std::string &username, const Date &date);
     
     char *ptr();

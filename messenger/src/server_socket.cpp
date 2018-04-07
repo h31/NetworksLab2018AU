@@ -1,6 +1,6 @@
 #include <cstring>
-#include "ServerSocket.h"
-#include "ElegramAll.h"
+#include "server_socket.h"
+#include "elegram_all.h"
 
 
 ServerSocket::ServerSocket(int portno) {
@@ -23,13 +23,13 @@ ServerSocket::ServerSocket(int portno) {
         throw MessengerError("ERROR opening socket");
     }
     
-    struct sockaddr_in serv_addr;
+    sockaddr_in serv_addr{};
     memset((char *) &serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(portno);
+    serv_addr.sin_port = htons(check_and_cast_uint16(portno));
     
-    auto bind_result = bind(fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+    auto bind_result = bind(fd, reinterpret_cast<const sockaddr *>(&serv_addr), sizeof(serv_addr));
 #if _WIN32
     if (bind_result == SOCKET_ERROR) {
         auto const error_msg = std::to_string(WSAGetLastError());
@@ -46,7 +46,7 @@ void ServerSocket::listen(int nrequests) {
 }
 
 SocketWrapper ServerSocket::accept() {
-    struct sockaddr cli_addr = {};
+    sockaddr cli_addr = {};
 #if _WIN32
     int clilen = sizeof(cli_addr);
 #else

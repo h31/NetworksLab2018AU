@@ -4,7 +4,7 @@
 #include <memory>
 #include <cstdint>
 
-#include "MessageType.h"
+#include "message_type.h"
 
 struct ServerSocket;
 using ServerSocketWrapper = std::shared_ptr<ServerSocket>;
