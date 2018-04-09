@@ -19,83 +19,37 @@
 
 namespace net {
 
-#ifdef _WIN32
-	typedef int socklen_t;
+struct socket_ops
+{
+	static void init()
+	{}
 
-	struct socket_ops
+	static int send(int fd, const char *buf, size_t size)
 	{
-		static void init()
-		{
-			WSADATA wsaData;
+		return (int)::send(fd, buf, size, MSG_NOSIGNAL);
+	}
 
-			if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
-				std::cerr << "WSAStartup failed " << std::endl;
-				exit(1);
-			}
-		}
-
-		static int send(int fd, const char *buf, size_t size)
-		{
-			return (int)::send(fd, buf, size, 0);
-		}
-
-		static int recv(int fd, char *buf, size_t size)
-		{
-			return (int)::recv(fd, buf, size, 0);
-		}
-
-		static int close(int fd)
-		{
-			shutdown(fd);
-			return ::closesocket(fd);
-		}
-
-		static void shutdown(int fd)
-		{
-			::shutdown(fd, SD_BOTH);
-		}
-
-		static int create_inet()
-		{
-			return ::socket(AF_INET, SOCK_STREAM, 0);
-		}
-	};
-
-#else
-	struct socket_ops
+	static int recv(int fd, char *buf, size_t size)
 	{
-		static void init()
-		{}
+		return (int)::recv(fd, buf, size, MSG_NOSIGNAL);
+	}
 
-		static int send(int fd, const char *buf, size_t size)
-		{
-			return (int)::send(fd, buf, size, MSG_NOSIGNAL);
-		}
+	static void shutdown(int fd)
+	{
+		::shutdown(fd, SHUT_RDWR);
+	}
 
-		static int recv(int fd, char *buf, size_t size)
-		{
-			return (int)::recv(fd, buf, size, MSG_NOSIGNAL);
-		}
+	static int close(int fd)
+	{
+		shutdown(fd);
+		return ::close(fd);
+	}
 
-		static void shutdown(int fd)
-		{
-			::shutdown(fd, SHUT_RDWR);
-		}
-
-		static int close(int fd)
-		{
-			shutdown(fd);
-			return ::close(fd);
-		}
-
-		static int create_inet()
-		{
-			return ::socket(AF_INET, SOCK_STREAM, 0);
-		}
-	};
-#endif
-
-
+	static int create_inet()
+	{
+		return ::socket(AF_INET, SOCK_STREAM, 0);
+	}
+};
 
 struct network_exception: public std::exception
 {
@@ -112,7 +66,7 @@ struct network_exception: public std::exception
 };
 
 
-class socket
+struct socket
 {
 	int sock;
 	uint16_t portno;
@@ -123,7 +77,6 @@ class socket
 		sock = fd;
 	}
 
-public:
 	explicit socket()
 	{
 		portno = 0;
