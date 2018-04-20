@@ -103,6 +103,7 @@ struct socket
         if (server == nullptr)
             throw network_exception();
 
+        memset((char *)&addr, 0, sizeof(addr));
         addr.sin_family = AF_INET;
         memcpy((void *) &addr.sin_addr.s_addr, server->h_addr, (size_t)server->h_length);
         addr.sin_port = htons(portno);
@@ -118,6 +119,7 @@ struct socket
         sockaddr_in addr = {};
 
         portno = port;
+        memset(&addr, 0, sizeof(addr));
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = INADDR_ANY;
         addr.sin_port = htons(portno);
