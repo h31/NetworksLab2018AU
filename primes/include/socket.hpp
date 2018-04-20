@@ -204,11 +204,9 @@ struct socket
 
 struct socket_stream
 {
-private:
     net::socket sock;
     __gnu_cxx::stdio_filebuf<char> fbuf;
 
-public:
     std::iostream stream;
 
     socket_stream(socket_stream&& ss)
@@ -232,6 +230,17 @@ public:
         sock.close(); // force d-ctr order
     }
 };
+
+static inline std::string get_header()
+{
+    return "HTTP/1.1 200 OK\n\n";
+}
+
+static inline std::string get_request_header()
+{
+    return "GET / HTTP/1.1\n\n";
+}
+
 
 } // ::net
 #endif // SOCKET_HPP
