@@ -42,4 +42,8 @@ public class RegisterRequestCommand implements RequestCommand {
     public API getAPI() {
         return api;
     }
+
+    public User getUser() {
+        return user;
+    }
 }

@@ -34,8 +34,4 @@ public class HttpResponse extends HttpPacket {
     public int getStatus() {
         return status;
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> 5be30168dd2229de8dc1af70c2a361fd409cddf4
 }
