@@ -5,7 +5,6 @@ import org.json.JSONObject;
 
 import java.net.URI;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 public class HttpRequest extends HttpPacket {
