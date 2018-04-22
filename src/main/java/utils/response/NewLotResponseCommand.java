@@ -4,6 +4,8 @@ import http.HttpResponse;
 import utils.API;
 
 public class NewLotResponseCommand implements ResponseCommand {
+    private final String executionResult;
+
     public NewLotResponseCommand(HttpResponse httpResponse) {
     }
 
@@ -15,5 +17,10 @@ public class NewLotResponseCommand implements ResponseCommand {
     @Override
     public API getAPI() {
         return API.NEW_LOT;
+    }
+
+    @Override
+    public String getExecutionResult() {
+        return executionResult;
     }
 }

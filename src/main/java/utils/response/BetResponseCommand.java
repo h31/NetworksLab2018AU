@@ -8,31 +8,25 @@ import utils.API;
 import static http.HttpResponse.STATUS_OK;
 
 public class BetResponseCommand implements ResponseCommand {
-    private final static String LOT_ID = "lotId";
-    private final static String ERROR_DESCRIPTION = "executionResult";
-    private final int lotId;
     private final String executionResult;
 
-
     public BetResponseCommand(HttpResponse httpResponse) {
-       JSONObject body = httpResponse.getBody();
-       try {
-           lotId = body.getInt(LOT_ID);
-           executionResult = body.getString(ERROR_DESCRIPTION);
-       } catch (JSONException e) {
-           throw new IllegalStateException("No such field: lotId/executionResult");
-       }
+        JSONObject body = httpResponse.getBody();
+        try {
+            executionResult = body.getString(EXECUTION_RESULT);
+        } catch (JSONException e) {
+            throw new IllegalStateException("No such field: executionResult");
+        }
     }
 
-    public BetResponseCommand(int lotId, String executionResult) {
-        this.lotId = lotId;
+    public BetResponseCommand(String executionResult) {
         this.executionResult = executionResult;
     }
 
     @Override
     public HttpResponse toHttpResponse() {
         try {
-            JSONObject body = new JSONObject().put(LOT_ID, lotId).put(ERROR_DESCRIPTION, executionResult);
+            JSONObject body = new JSONObject().put(EXECUTION_RESULT, executionResult);
             return new HttpResponse(STATUS_OK, body);
         } catch(JSONException e) {
             throw new IllegalStateException(e);
@@ -44,10 +38,7 @@ public class BetResponseCommand implements ResponseCommand {
         return API.BET;
     }
 
-    public int getLotId() {
-        return lotId;
-    }
-
+    @Override
     public String getExecutionResult() {
         return executionResult;
     }

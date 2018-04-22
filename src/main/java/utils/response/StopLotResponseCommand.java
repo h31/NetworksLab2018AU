@@ -4,6 +4,8 @@ import http.HttpResponse;
 import utils.API;
 
 public class StopLotResponseCommand implements ResponseCommand {
+    private final String executionResult;
+
     public StopLotResponseCommand(HttpResponse httpResponse) {
     }
 
@@ -15,5 +17,10 @@ public class StopLotResponseCommand implements ResponseCommand {
     @Override
     public API getAPI() {
         return API.STOP_LOT;
+    }
+
+    @Override
+    public String getExecutionResult() {
+        return executionResult;
     }
 }
