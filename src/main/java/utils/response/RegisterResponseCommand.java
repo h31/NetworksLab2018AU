@@ -15,7 +15,7 @@ public class RegisterResponseCommand implements ResponseCommand {
 
     @Override
     public API getAPI() {
-        return null;
+        return API.REGISTER;
     }
 
 }

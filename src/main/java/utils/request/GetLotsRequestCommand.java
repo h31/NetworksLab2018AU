@@ -14,6 +14,6 @@ public class GetLotsRequestCommand implements RequestCommand {
 
     @Override
     public API getAPI() {
-        return null;
+        return API.GET_LOTS;
     }
 }

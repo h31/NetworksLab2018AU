@@ -14,6 +14,6 @@ public class RegisterRequestCommand implements RequestCommand {
 
     @Override
     public API getAPI() {
-        return null;
+        return API.REGISTER;
     }
 }

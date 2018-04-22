@@ -14,6 +14,6 @@ public class StopLotRequestCommand implements RequestCommand {
 
     @Override
     public API getAPI() {
-        return null;
+        return API.STOP_LOT;
     }
 }

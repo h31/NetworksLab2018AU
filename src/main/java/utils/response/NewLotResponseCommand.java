@@ -14,6 +14,6 @@ public class NewLotResponseCommand implements ResponseCommand {
 
     @Override
     public API getAPI() {
-        return null;
+        return API.NEW_LOT;
     }
 }
