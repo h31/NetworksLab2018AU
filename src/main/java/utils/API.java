@@ -1,17 +1,34 @@
 package utils;
 
+import http.HttpMethod;
 import http.HttpRequest;
 import http.HttpResponse;
 import utils.request.*;
 import utils.response.*;
 
 public enum API {
-    REGISTER,
-    GET_LOTS,
-    BET,
-    NEW_LOT,
-    STOP_LOT;
 
+    REGISTER(HttpMethod.POST, "user"),
+    GET_LOTS(HttpMethod.GET, "lot"),
+    BET(HttpMethod.POST, "bet"),
+    NEW_LOT(HttpMethod.POST, "lot"),
+    STOP_LOT(HttpMethod.DELETE, "lot");
+
+    private final HttpMethod httpMethod;
+    private final String uriStart;
+
+    API(HttpMethod httpMethod, String uriStart) {
+        this.httpMethod = httpMethod;
+        this.uriStart = uriStart;
+    }
+
+    public HttpMethod getHttpMethod() {
+        return httpMethod;
+    }
+
+    public String getUriStart() {
+        return uriStart;
+    }
 
     public ResponseCommand buildResponse(HttpResponse httpResponse) {
         switch (this) {
