@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class HttpPacket {
+    protected final static String VERSION = "HTTP/1.1";
+    protected final static String CONTENT_LENGTH = "content-length";
     private final static String NEWLINE = "\r\n";
     protected final String startLine;
     protected final Map<String, String> headers;
@@ -42,5 +44,17 @@ public abstract class HttpPacket {
         stringBuilder.append(NEWLINE);
         stringBuilder.append(body.toString()).append(NEWLINE);
         return stringBuilder.toString();
+    }
+
+    public String getStartLine() {
+        return startLine;
+    }
+
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    public JSONObject getBody() {
+        return body;
     }
 }
