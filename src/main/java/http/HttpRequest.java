@@ -28,7 +28,7 @@ public class HttpRequest extends HttpPacket {
     }
 
     private static String buildStartLine(HttpMethod httpMethod, URI uri) {
-        return httpMethod.name().toUpperCase() + " " + uri + " HTTP/1.1";
+        return httpMethod.name().toUpperCase() + " " + uri + " " + VERSION;
     }
 
     public URI getURI() {
