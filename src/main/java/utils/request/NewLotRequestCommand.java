@@ -14,6 +14,6 @@ public class NewLotRequestCommand implements RequestCommand {
 
     @Override
     public API getAPI() {
-        return null;
+        return API.NEW_LOT;
     }
 }

@@ -15,6 +15,6 @@ public class BetResponseCommand implements ResponseCommand {
 
     @Override
     public API getAPI() {
-        return null;
+        return API.BET;
     }
 }

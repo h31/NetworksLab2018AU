@@ -14,6 +14,6 @@ public class StopLotResponseCommand implements ResponseCommand {
 
     @Override
     public API getAPI() {
-        return null;
+        return API.STOP_LOT;
     }
 }
