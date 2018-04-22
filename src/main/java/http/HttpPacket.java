@@ -8,9 +8,11 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class HttpPacket {
+    private final static String NEWLINE = "\r\n";
+
     protected final static String VERSION = "HTTP/1.1";
     protected final static String CONTENT_LENGTH = "content-length";
-    private final static String NEWLINE = "\r\n";
+
     protected final String startLine;
     protected final Map<String, String> headers;
     protected final JSONObject body;
