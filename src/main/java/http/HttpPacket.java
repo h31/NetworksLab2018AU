@@ -16,7 +16,7 @@ public abstract class HttpPacket {
     protected HttpPacket(List<String> strings) throws JSONException {
         startLine = strings.get(0);
         headers = new HashMap<>();
-        for (int i = 2; i < strings.size() - 3; i++) {
+        for (int i = 1; i < strings.size() - 3; i++) {
             String current = strings.get(i);
             int colonIndex = current.indexOf(':');
             String key = current.substring(0, colonIndex);
@@ -40,7 +40,7 @@ public abstract class HttpPacket {
             stringBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append(NEWLINE);
         }
         stringBuilder.append(NEWLINE);
-        stringBuilder.append(body.toString());
+        stringBuilder.append(body.toString()).append(NEWLINE);
         return stringBuilder.toString();
     }
 }
