@@ -19,7 +19,7 @@ public class HttpRequest extends HttpPacket {
         this.httpMethod = httpMethod;
     }
 
-    public HttpRequest(List<String> strings) throws JSONException {
+    public HttpRequest(List<String> strings) {
         super(strings);
         final String[] splitStartLine = strings.get(0).split(" ");
         this.httpMethod = HttpMethod.valueOf(splitStartLine[0]);

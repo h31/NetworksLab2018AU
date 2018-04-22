@@ -3,6 +3,7 @@ package http;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,7 @@ public abstract class HttpPacket {
     protected final Map<String, String> headers;
     protected final JSONObject body;
 
-    protected HttpPacket(List<String> strings) throws JSONException {
+    protected HttpPacket(List<String> strings) {
         startLine = strings.get(0);
         headers = new HashMap<>();
         for (int i = 1; i < strings.size() - 3; i++) {
@@ -27,7 +28,12 @@ public abstract class HttpPacket {
             String value = current.substring(colonIndex + 2);
             headers.put(key, value);
         }
-        body = new JSONObject(strings.get(strings.size() - 1));
+        try {
+            body = new JSONObject(strings.get(strings.size() - 1));
+        } catch (JSONException e) {
+            throw new IllegalStateException(e);
+        }
+
     }
 
     protected HttpPacket(String startLine, Map<String, String> headers, JSONObject body) {
@@ -36,16 +42,15 @@ public abstract class HttpPacket {
         this.body = body;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(startLine).append(NEWLINE);
+    public List<String> toStrings() {
+        final List<String> strings = new ArrayList<>();
+        strings.add(startLine);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
-            stringBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append(NEWLINE);
+            strings.add(entry.getKey() + ": " + entry.getValue());
         }
-        stringBuilder.append(NEWLINE);
-        stringBuilder.append(body.toString()).append(NEWLINE);
-        return stringBuilder.toString();
+        strings.add("");
+        strings.add(body.toString());
+        return strings;
     }
 
     public String getStartLine() {

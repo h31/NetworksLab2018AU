@@ -3,6 +3,7 @@ package http;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class HttpResponse extends HttpPacket {
@@ -14,6 +15,11 @@ public class HttpResponse extends HttpPacket {
         this.status = status;
     }
 
+    public HttpResponse(List<String> strings) {
+        super(strings);
+        final String[] splitStartLine = strings.get(0).split(" ");
+        this.status = Integer.valueOf(splitStartLine[1]);
+    }
 
     private static String buildStartLine(int status) {
         return VERSION + " " + status;
@@ -28,4 +34,8 @@ public class HttpResponse extends HttpPacket {
     public int getStatus() {
         return status;
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5be30168dd2229de8dc1af70c2a361fd409cddf4
 }
