@@ -3,17 +3,22 @@ package http;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class HttpResponse extends HttpPacket {
     public final static int STATUS_OK = 200;
     private final int status;
-    private final JSONObject body;
 
     public HttpResponse(int status, JSONObject body) {
         super(buildStartLine(status), buildHeaders(body), body);
         this.status = status;
-        this.body = body;
+    }
+
+    public HttpResponse(List<String> strings) {
+        super(strings);
+        final String[] splitStartLine = strings.get(0).split(" ");
+        this.status = Integer.valueOf(splitStartLine[1]);
     }
     
 
@@ -31,7 +36,4 @@ public class HttpResponse extends HttpPacket {
         return status;
     }
 
-    public JSONObject getBody() {
-        return body;
-    }
 }

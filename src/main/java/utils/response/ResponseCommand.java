@@ -4,6 +4,7 @@ import http.HttpResponse;
 import utils.API;
 
 public interface ResponseCommand {
+
     HttpResponse toHttpResponse();
 
     API getAPI();
