@@ -3,6 +3,7 @@ package utils;
 import http.HttpMethod;
 import http.HttpRequest;
 import http.HttpResponse;
+import server.*;
 import utils.request.*;
 import utils.response.*;
 
@@ -52,5 +53,26 @@ public enum API {
 
             default: throw new IllegalStateException("no such API");
         }
+    }
+
+    public CommandRunner getCommandRunner() {
+        switch (this) {
+            case REGISTER: return new RegisterCommandRunner();
+            case GET_LOTS: return new GetLotsCommandRunner();
+            case BET: return new BetCommandRunner();
+            case NEW_LOT: return new NewLotCommandRunner();
+            case STOP_LOT: return new StopLotCommandRunner();
+
+            default: throw new IllegalStateException("no such API");
+        }
+    }
+
+    public static API buildAPI(HttpMethod httpMethod, String uriStart) {
+        for (API api: API.values()) {
+            if (api.httpMethod.equals(httpMethod) && api.uriStart.equals(uriStart)) {
+                return api;
+            }
+        }
+        throw new IllegalStateException("no such API");
     }
 }

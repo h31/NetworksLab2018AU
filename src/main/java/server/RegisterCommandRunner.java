@@ -8,6 +8,12 @@ import utils.response.RegisterResponseCommand;
 import utils.response.ResponseCommand;
 
 public class RegisterCommandRunner implements CommandRunner {
+    private final static RegisterCommandRunner INSTANCE = new RegisterCommandRunner();
+
+    public static RegisterCommandRunner getInstance() {
+        return INSTANCE;
+    }
+
     @Override
     public ResponseCommand run(RequestCommand requestCommand, Context context) {
         RegisterRequestCommand registerRequestCommand = (RegisterRequestCommand) requestCommand;

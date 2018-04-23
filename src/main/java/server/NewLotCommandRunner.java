@@ -8,6 +8,12 @@ import utils.response.NewLotResponseCommand;
 import utils.response.ResponseCommand;
 
 public class NewLotCommandRunner implements CommandRunner {
+    private final static NewLotCommandRunner INSTANCE = new NewLotCommandRunner();
+
+    public static NewLotCommandRunner getInstance() {
+        return INSTANCE;
+    }
+
     @Override
     public ResponseCommand run(RequestCommand requestCommand, Context context) {
         NewLotRequestCommand newLotRequestCommand = (NewLotRequestCommand) requestCommand;

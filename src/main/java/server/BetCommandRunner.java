@@ -8,6 +8,12 @@ import utils.response.BetResponseCommand;
 import utils.response.ResponseCommand;
 
 public class BetCommandRunner implements CommandRunner {
+    private final static BetCommandRunner INSTANCE = new BetCommandRunner();
+
+    public static BetCommandRunner getInstance() {
+        return INSTANCE;
+    }
+
     @Override
     public ResponseCommand run(RequestCommand requestCommand, Context context) {
         BetRequestCommand betRequestCommand = (BetRequestCommand) requestCommand;

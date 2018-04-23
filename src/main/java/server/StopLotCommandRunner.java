@@ -7,6 +7,12 @@ import utils.response.ResponseCommand;
 import utils.response.StopLotResponseCommand;
 
 public class StopLotCommandRunner implements CommandRunner {
+    private final static StopLotCommandRunner INSTANCE = new StopLotCommandRunner();
+
+    public static StopLotCommandRunner getInstance() {
+        return INSTANCE;
+    }
+
     @Override
     public ResponseCommand run(RequestCommand requestCommand, Context context) {
         StopLotRequestCommand stopLotRequestCommand = (StopLotRequestCommand) requestCommand;
