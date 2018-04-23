@@ -3,7 +3,6 @@ package utils.response;
 import http.HttpResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
-import utils.API;
 
 import static http.HttpResponse.STATUS_OK;
 
@@ -31,11 +30,6 @@ public abstract class SimpleResponseCommand implements ResponseCommand {
         } catch(JSONException e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    @Override
-    public API getAPI() {
-        return API.BET;
     }
 
     @Override
