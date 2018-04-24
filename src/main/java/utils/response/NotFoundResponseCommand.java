@@ -36,7 +36,7 @@ public class NotFoundResponseCommand implements ResponseCommand {
 
     @Override
     public API getAPI() {
-        return null; //TODO
+        return API.NOT_FOUND;
     }
 
     @Override

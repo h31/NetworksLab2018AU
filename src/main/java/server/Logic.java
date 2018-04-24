@@ -38,7 +38,7 @@ public class Logic {
             HttpRequest httpRequest = network.receive();
             RequestCommand requestCommand = API.buildAPI(
                     httpRequest.getMethod(),
-                    httpRequest.getURI().getPath().split("/")[0] //TODO Сheck this
+                    httpRequest.getURI().getPath().split("/")[0] //TODO check
             ).buildRequest(httpRequest);
             String executionResult = process(requestCommand);
             System.out.println(executionResult);

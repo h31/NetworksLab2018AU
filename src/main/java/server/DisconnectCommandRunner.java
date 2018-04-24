@@ -4,7 +4,7 @@ import utils.API;
 import utils.request.RequestCommand;
 import utils.response.ResponseCommand;
 
-//TODO
+//TODO implement
 public class DisconnectCommandRunner implements CommandRunner {
     @Override
     public ResponseCommand run(RequestCommand requestCommand, Context context) {

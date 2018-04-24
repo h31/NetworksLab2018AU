@@ -14,7 +14,7 @@ public enum API {
     BET(HttpMethod.POST, "bet"),
     NEW_LOT(HttpMethod.POST, "lot"),
     STOP_LOT(HttpMethod.DELETE, "lot"),
-    DISCONNECT(null, null), //TODO
+    DISCONNECT(null, null), //TODO implement
     NOT_FOUND(null, null);
     private final HttpMethod httpMethod;
     private final String uriStart;

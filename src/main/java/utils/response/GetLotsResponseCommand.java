@@ -45,7 +45,6 @@ public class GetLotsResponseCommand implements ResponseCommand {
             JSONObject body = new JSONObject().put(EXECUTION_RESULT, executionResult);
             JSONArray jsonArray = new JSONArray();
             for (Lot lot: lots) {
-                //TODO ???
                 jsonArray.put(lot.toJSONObject());
             }
             return new HttpResponse(STATUS_OK, body);
