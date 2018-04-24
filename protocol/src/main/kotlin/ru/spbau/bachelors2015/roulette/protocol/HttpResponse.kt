@@ -1,29 +1,28 @@
 package ru.spbau.bachelors2015.roulette.protocol
 
-enum class HttpRequestMethod {
-    GET, PUT, CONNECT
+enum class HttpResponseStatus(val statusCode: Int, val reasonPhrase: String) {
+    OK(200, "OK"), BAD_REQUEST(400, "BadRequest")
 }
 
 /**
- * A class that represent http request message and stores all the data that this message consists
+ * A class that represent http response message and stores all the data that this message consists
  * of.
  */
-class HttpRequest(
-    val method: HttpRequestMethod,
+class HttpResponse(
+    val status: HttpResponseStatus,
     predefinedHeaders: Map<String, String>?,
-    val uri: Uri,
     messageBody: String?
 ): HttpMessage(predefinedHeaders, messageBody) {
     /**
-     * Converts this http request to a string representation according to the protocol.
+     * Converts this http response to a string representation according to the protocol.
      */
     override fun toString(): String {
         return buildString {
-            append(method)
-            append(HttpMessageElements.spaceDelimiter)
-            append(uri)
-            append(HttpMessageElements.spaceDelimiter)
             append(HttpMessageElements.httpVersion)
+            append(HttpMessageElements.spaceDelimiter)
+            append(status.statusCode)
+            append(HttpMessageElements.spaceDelimiter)
+            append(status.reasonPhrase)
             append(HttpMessageElements.newlineDelimiter)
 
             append(stringRepresentationOfHeaders())
