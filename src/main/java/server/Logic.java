@@ -1,9 +1,9 @@
 package server;
 
-import http.HttpMethod;
 import http.HttpRequest;
 import http.HttpResponse;
 import utils.API;
+import utils.NotImplementedException;
 import utils.request.RequestCommand;
 import utils.response.ResponseCommand;
 
@@ -36,10 +36,19 @@ public class Logic {
     public void start() {
         while (running) {
             HttpRequest httpRequest = network.receive();
-            RequestCommand requestCommand = API.buildAPI(
-                    httpRequest.getMethod(),
-                    httpRequest.getURI().getPath().split("/")[0] //TODO check
-            ).buildRequest(httpRequest);
+            RequestCommand requestCommand;
+            try {
+                requestCommand = API.buildAPI(
+                        httpRequest.getMethod(),
+                        httpRequest.getURI().getPath().split("/")[0] //TODO check
+                ).buildRequest(httpRequest);
+            } catch (NotImplementedException e) {
+                ResponseCommand responseCommand = NotImplementedCommandRunner.getInstance().run();
+                HttpResponse httpResponse = responseCommand.toHttpResponse();
+                network.send(httpResponse);
+                System.out.println(responseCommand.getExecutionResult());
+                continue;
+            }
             String executionResult = process(requestCommand);
             System.out.println(executionResult);
         }

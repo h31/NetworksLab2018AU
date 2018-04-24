@@ -5,25 +5,24 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import utils.API;
 
-import static http.HttpResponse.STATUS_NOT_FOUND;
-import static http.HttpResponse.STATUS_OK;
+import static http.HttpResponse.STATUS_NOT_IMPLEMENTED;
 
-public class NotFoundResponseCommand implements ResponseCommand {
-    private final static String NOT_FOUND = "NOT FOUND";
-    private final static NotFoundResponseCommand INSTANCE;
+public class NotImplementedResponseCommand implements ResponseCommand {
+    private final static String NOT_IMPLEMENTED = "NOT IMPLEMENTED";
+    private final static NotImplementedResponseCommand INSTANCE;
     private final static HttpResponse RESPONSE_INSTANCE;
 
     static {
-        INSTANCE = new NotFoundResponseCommand();
+        INSTANCE = new NotImplementedResponseCommand();
         try {
-            JSONObject body = new JSONObject().put(EXECUTION_RESULT, NOT_FOUND);
-            RESPONSE_INSTANCE = new HttpResponse(STATUS_NOT_FOUND, body);
+            JSONObject body = new JSONObject().put(EXECUTION_RESULT, NOT_IMPLEMENTED);
+            RESPONSE_INSTANCE = new HttpResponse(STATUS_NOT_IMPLEMENTED, body);
         } catch(JSONException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private NotFoundResponseCommand() {}
+    private NotImplementedResponseCommand() {}
 
     public static ResponseCommand getInstance() {
         return INSTANCE;
@@ -36,11 +35,11 @@ public class NotFoundResponseCommand implements ResponseCommand {
 
     @Override
     public API getAPI() {
-        return API.NOT_FOUND;
+        return null;
     }
 
     @Override
     public String getExecutionResult() {
-        return NOT_FOUND;
+        return NOT_IMPLEMENTED;
     }
 }
