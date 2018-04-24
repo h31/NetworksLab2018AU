@@ -1,5 +1,7 @@
 package ru.spbau.bachelors2015.roulette.protocol
 
+import java.util.*
+
 enum class HttpRequestMethod {
     GET, PUT, CONNECT
 }
@@ -8,22 +10,26 @@ enum class HttpRequestMethod {
  * A class that represent http request message and stores all the data that this message consists
  * of.
  */
-class HttpRequest(val method: HttpRequestMethod, val uri: Uri, val messageBody: String?) {
+class HttpRequest(
+    val method: HttpRequestMethod,
+    predefinedHeaders: Map<String, String>?,
+    val uri: Uri,
+    val messageBody: String?
+): HttpMessage() {
     val headers: Map<String, String>
 
     init {
-        val tmp = mutableMapOf<String, String>()
+        val tmp = predefinedHeaders?.toSortedMap() ?: sortedMapOf()
 
         if (messageBody != null) {
-            tmp[HttpMessageElements.bodyLengthHeaderName] =
-                messageBody.toByteArray(HttpMessageElements.charset).size.toString()
+            tmp[HttpMessageElements.bodyLengthHeaderName] = messageBody.length.toString()
         }
 
         headers = tmp
     }
 
     /**
-     * Converts this http request to a string representation according to protocol.
+     * Converts this http request to a string representation according to the protocol.
      */
     override fun toString(): String {
         return buildString {

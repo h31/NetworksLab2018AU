@@ -3,7 +3,9 @@ package ru.spbau.bachelors2015.roulette.protocol
 /**
  * A query line that can appear in URI. It consists of key value pairs.
  */
-class QueryLine(val keyValuePairs: Map<String, String>) {
+class QueryLine(keyValuePairs: Map<String, String>) {
+    val keyValuePairs: Map<String, String> = keyValuePairs.toMap()
+
     init {
         for (entry in keyValuePairs) {
             if (entry.key.contains(pairsSeparator) ||

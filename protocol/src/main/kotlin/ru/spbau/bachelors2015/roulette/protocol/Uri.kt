@@ -23,7 +23,13 @@ class Uri(val path: List<String>, val queryLine: QueryLine?) {
      */
     override fun toString(): String {
         return buildString {
-            append(path.joinToString(elementsSeparator.toString()) { it })
+            val pathString = path.joinToString(elementsSeparator.toString()) { it }
+
+            if (pathString.isNotEmpty()) {
+                append(pathString)
+            } else {
+                append(elementsSeparator)
+            }
 
             if (queryLine != null) {
                 append(queryLineSeparator)
@@ -33,8 +39,8 @@ class Uri(val path: List<String>, val queryLine: QueryLine?) {
     }
 
     companion object {
-        private const val elementsSeparator = '/'
+        const val elementsSeparator = '/'
 
-        private const val queryLineSeparator = '?'
+        const val queryLineSeparator = '?'
     }
 }
