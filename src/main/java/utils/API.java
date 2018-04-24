@@ -13,7 +13,8 @@ public enum API {
     GET_LOTS(HttpMethod.GET, "lot"),
     BET(HttpMethod.POST, "bet"),
     NEW_LOT(HttpMethod.POST, "lot"),
-    STOP_LOT(HttpMethod.DELETE, "lot");
+    STOP_LOT(HttpMethod.DELETE, "lot"),
+    NOT_FOUND(null, null);
 
     private final HttpMethod httpMethod;
     private final String uriStart;
@@ -38,8 +39,9 @@ public enum API {
             case BET: return new BetResponseCommand(httpResponse);
             case NEW_LOT: return new NewLotResponseCommand(httpResponse);
             case STOP_LOT: return new StopLotResponseCommand(httpResponse);
+            case NOT_FOUND: return NotFoundResponseCommand.getInstance();
 
-            default: throw new IllegalStateException("no such API");
+            default: throw new IllegalStateException("no such API, including API.NOT_FOUND");
         }
     }
 
@@ -57,22 +59,26 @@ public enum API {
 
     public CommandRunner getCommandRunner() {
         switch (this) {
-            case REGISTER: return new RegisterCommandRunner();
-            case GET_LOTS: return new GetLotsCommandRunner();
-            case BET: return new BetCommandRunner();
-            case NEW_LOT: return new NewLotCommandRunner();
-            case STOP_LOT: return new StopLotCommandRunner();
+            case REGISTER: return RegisterCommandRunner.getInstance();
+            case GET_LOTS: return GetLotsCommandRunner.getInstance();
+            case BET: return BetCommandRunner.getInstance();
+            case NEW_LOT: return NewLotCommandRunner.getInstance();
+            case STOP_LOT: return StopLotCommandRunner.getInstance();
+            case NOT_FOUND: return NotFoundCommandRunner.getInstance();
 
-            default: throw new IllegalStateException("no such API");
+            default: throw new IllegalStateException("no such API, including API.NOT_FOUND");
         }
     }
 
     public static API buildAPI(HttpMethod httpMethod, String uriStart) {
         for (API api: API.values()) {
+            if (api == NOT_FOUND) {
+                continue;
+            }
             if (api.httpMethod.equals(httpMethod) && api.uriStart.equals(uriStart)) {
                 return api;
             }
         }
-        throw new IllegalStateException("no such API");
+        return NOT_FOUND;
     }
 }

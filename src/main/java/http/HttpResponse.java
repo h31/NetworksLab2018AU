@@ -8,6 +8,7 @@ import java.util.Map;
 
 public class HttpResponse extends HttpPacket {
     public final static int STATUS_OK = 200;
+    public final static int STATUS_NOT_FOUND = 404;
     private final int status;
 
     public HttpResponse(int status, JSONObject body) {

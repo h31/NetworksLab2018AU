@@ -10,6 +10,8 @@ import utils.response.ResponseCommand;
 public class NewLotCommandRunner implements CommandRunner {
     private final static NewLotCommandRunner INSTANCE = new NewLotCommandRunner();
 
+    private NewLotCommandRunner() {}
+
     public static NewLotCommandRunner getInstance() {
         return INSTANCE;
     }

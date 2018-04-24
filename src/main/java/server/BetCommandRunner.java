@@ -10,6 +10,8 @@ import utils.response.ResponseCommand;
 public class BetCommandRunner implements CommandRunner {
     private final static BetCommandRunner INSTANCE = new BetCommandRunner();
 
+    private BetCommandRunner() {}
+
     public static BetCommandRunner getInstance() {
         return INSTANCE;
     }

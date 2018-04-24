@@ -10,6 +10,8 @@ import java.util.ArrayList;
 public class GetLotsCommandRunner implements CommandRunner {
     private final static GetLotsCommandRunner INSTANCE = new GetLotsCommandRunner();
 
+    private GetLotsCommandRunner() {}
+
     public static GetLotsCommandRunner getInstance() {
         return INSTANCE;
     }
