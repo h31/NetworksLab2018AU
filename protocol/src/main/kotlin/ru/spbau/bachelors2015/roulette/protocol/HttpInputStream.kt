@@ -25,6 +25,20 @@ class HttpInputStream(inputStream: InputStream): Closeable {
     }
 
     /**
+     * Reads http response from this stream.
+     */
+    fun readHttpResponse(): HttpResponse {
+        val lines = readHeaderOfMessageAsLines()
+
+        val status = parseStartLineOfResponse(lines[0])
+        val headers = parseHeaders(lines.drop(1))
+
+        val body = handleBody(headers)
+
+        return HttpResponse(status, headers, body)
+    }
+
+    /**
      * Closes underlying stream.
      */
     override fun close() {
@@ -45,7 +59,7 @@ class HttpInputStream(inputStream: InputStream): Closeable {
         }
 
         if (lines.isEmpty()) {
-            throw ProtocolException("Empty HTTP request")
+            throw ProtocolException("Empty HTTP message")
         }
 
         return lines
@@ -54,10 +68,25 @@ class HttpInputStream(inputStream: InputStream): Closeable {
     private fun parseStartLineOfRequest(startLine: String): Pair<HttpRequestMethod, Uri> {
         val tokens = startLine.split(HttpMessageElements.spaceDelimiter)
         if (tokens.size != 3 || tokens[2] != HttpMessageElements.httpVersion) {
-            throw ProtocolException("Invalid HTTP start line")
+            throw ProtocolException("Invalid HTTP request start line")
         }
 
         return Pair(parseRequestMethod(tokens[0]), parseUri(tokens[1]))
+    }
+
+    private fun parseStartLineOfResponse(startLine: String): HttpResponseStatus {
+        val tokens = startLine.split(HttpMessageElements.spaceDelimiter)
+        if (tokens.size != 3 || tokens[0] != HttpMessageElements.httpVersion) {
+            throw ProtocolException("Invalid HTTP response start line")
+        }
+
+        val statusCode = try {
+            Integer.parseInt(tokens[1])
+        } catch (_: NumberFormatException) {
+            throw ProtocolException("Invalid HTTP response status code")
+        }
+
+        return HttpResponseStatus.fromStatusCode(statusCode)
     }
 
     private fun parseRequestMethod(method: String): HttpRequestMethod {
@@ -94,7 +123,7 @@ class HttpInputStream(inputStream: InputStream): Closeable {
         try {
             return parseKeyValuePairs(headers, HttpMessageElements.headerKeyValueSeparator)
         } catch (_: IllegalArgumentException) {
-            throw ProtocolException("Invalid header in HTTP request")
+            throw ProtocolException("Invalid header in HTTP message")
         }
     }
 
@@ -106,7 +135,7 @@ class HttpInputStream(inputStream: InputStream): Closeable {
         val bodyLength = try {
             Integer.parseInt(headers[HttpMessageElements.bodyLengthHeaderName])
         } catch (_: NumberFormatException) {
-            throw ProtocolException("Invalid body length in HTTP request")
+            throw ProtocolException("Invalid body length in HTTP message")
         }
 
         headers.remove(HttpMessageElements.bodyLengthHeaderName)

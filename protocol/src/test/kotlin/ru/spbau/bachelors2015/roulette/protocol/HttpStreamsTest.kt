@@ -33,4 +33,24 @@ class HttpStreamsTest {
 
         assertThat(readHttpRequest.toString(), `is`(equalTo(initialHttpRequest.toString())))
     }
+
+    @Test
+    fun responseWriteReadTest() {
+        val message = "Hello, world!"
+        val initialHttpResponse =
+            HttpResponse(HttpResponseStatus.OK, mapOf(Pair("a", "b")), message)
+
+        val outputStream = ByteArrayOutputStream()
+
+        HttpOutputStream(outputStream).use {
+            it.write(initialHttpResponse)
+        }
+
+        val readHttpResponse =
+            HttpInputStream(ByteArrayInputStream(outputStream.toByteArray())).use {
+                it.readHttpResponse()
+            }
+
+        assertThat(readHttpResponse.toString(), `is`(equalTo(initialHttpResponse.toString())))
+    }
 }
