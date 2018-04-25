@@ -2,7 +2,13 @@ package ru.spbau.bachelors2015.roulette.protocol.highlevel
 
 import ru.spbau.bachelors2015.roulette.protocol.http.*
 
+/**
+ * Abstract class which represents a request from a client.
+ */
 abstract class Request {
+    /**
+     * Returns http representation of this request.
+     */
     fun toHttpRepresentation(): HttpRequest {
         return HttpRequest(
             requestMethod,

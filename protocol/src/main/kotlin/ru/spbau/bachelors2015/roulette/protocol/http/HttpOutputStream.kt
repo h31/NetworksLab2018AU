@@ -15,6 +15,7 @@ class HttpOutputStream(outputStream: OutputStream): Closeable {
      */
     fun write(message: HttpMessage) {
         underlyingStream.write(message.toString())
+        underlyingStream.flush()
     }
 
     /**

@@ -21,9 +21,9 @@ enum class HttpResponseStatus(val statusCode: Int, val reasonPhrase: String) {
  * of.
  */
 class HttpResponse(
-        val status: HttpResponseStatus,
-        predefinedHeaders: Map<String, String>?,
-        messageBody: String?
+    val status: HttpResponseStatus,
+    predefinedHeaders: Map<String, String>?,
+    messageBody: String?
 ): HttpMessage(predefinedHeaders, messageBody) {
     /**
      * Converts this http response to a string representation according to the protocol.
