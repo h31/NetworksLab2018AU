@@ -8,6 +8,7 @@ import java.util.Map;
 
 public class HttpResponse extends HttpPacket {
     public final static int STATUS_OK = 200;
+    public final static int STATUS_FORBIDDEN = 403;
     public final static int STATUS_NOT_IMPLEMENTED = 501;
     private final int status;
 

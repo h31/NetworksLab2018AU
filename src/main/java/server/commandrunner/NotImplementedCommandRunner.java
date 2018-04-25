@@ -1,5 +1,6 @@
-package server;
+package server.commandrunner;
 
+import server.Context;
 import utils.API;
 import utils.request.RequestCommand;
 import utils.response.NotImplementedResponseCommand;

@@ -1,9 +1,13 @@
-package server;
+package server.commandrunner;
 
+import server.Context;
 import utils.API;
 import utils.data.Lot;
+import utils.data.User;
+import utils.data.UserRole;
 import utils.request.NewLotRequestCommand;
 import utils.request.RequestCommand;
+import utils.response.ForbiddenResponseCommand;
 import utils.response.NewLotResponseCommand;
 import utils.response.ResponseCommand;
 
@@ -18,6 +22,10 @@ public class NewLotCommandRunner implements CommandRunner {
 
     @Override
     public ResponseCommand run(RequestCommand requestCommand, Context context) {
+        User user = context.getUser();
+        if (user == null || user.getRole() != UserRole.MANAGER) {
+            return ForbiddenResponseCommand.getInstance();
+        }
         NewLotRequestCommand newLotRequestCommand = (NewLotRequestCommand) requestCommand;
         String description = newLotRequestCommand.getDescription();
         int startValue = newLotRequestCommand.getStartValue();

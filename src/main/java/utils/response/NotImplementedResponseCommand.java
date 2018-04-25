@@ -24,7 +24,7 @@ public class NotImplementedResponseCommand implements ResponseCommand {
 
     private NotImplementedResponseCommand() {}
 
-    public static ResponseCommand getInstance() {
+    public static NotImplementedResponseCommand getInstance() {
         return INSTANCE;
     }
 

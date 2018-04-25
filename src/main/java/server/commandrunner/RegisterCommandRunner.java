@@ -1,5 +1,6 @@
-package server;
+package server.commandrunner;
 
+import server.Context;
 import utils.API;
 import utils.data.User;
 import utils.request.RegisterRequestCommand;

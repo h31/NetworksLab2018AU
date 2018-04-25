@@ -1,10 +1,13 @@
-package server;
+package server.commandrunner;
 
+import server.Context;
 import utils.API;
 import utils.data.Lot;
+import utils.data.User;
 import utils.request.BetRequestCommand;
 import utils.request.RequestCommand;
 import utils.response.BetResponseCommand;
+import utils.response.ForbiddenResponseCommand;
 import utils.response.ResponseCommand;
 
 public class BetCommandRunner implements CommandRunner {
@@ -18,6 +21,10 @@ public class BetCommandRunner implements CommandRunner {
 
     @Override
     public ResponseCommand run(RequestCommand requestCommand, Context context) {
+        User user = context.getUser();
+        if (user == null) {
+            return ForbiddenResponseCommand.getInstance();
+        }
         BetRequestCommand betRequestCommand = (BetRequestCommand) requestCommand;
         int lotId = betRequestCommand.getLotId();
         int value = betRequestCommand.getValue();
