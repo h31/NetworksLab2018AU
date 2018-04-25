@@ -1,7 +1,9 @@
 package ru.spbau.bachelors2015.roulette.protocol.http
 
 enum class HttpResponseStatus(val statusCode: Int, val reasonPhrase: String) {
-    OK(200, "OK"), BAD_REQUEST(400, "BadRequest");
+    OK(200, "OK"),
+    NO_CONTENT(204, "NoContent"),
+    BAD_REQUEST(400, "BadRequest");
 
     companion object {
         fun fromStatusCode(statusCode: Int): HttpResponseStatus {
