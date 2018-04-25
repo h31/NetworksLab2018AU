@@ -35,7 +35,7 @@ public class NewLotCommandRunner implements CommandRunner {
         int lotId = context.getLots().size();
         Lot lot = new Lot(description, startValue, lotId);
         context.addLot(lot);
-        return new NewLotResponseCommand(NO_ERROR, lotId);
+        return new NewLotResponseCommand(NO_ERROR + ", lotId = " + lotId, lotId);
     }
 
     @Override

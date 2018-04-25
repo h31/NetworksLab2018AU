@@ -4,12 +4,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Lot {
+    private final static User NO_CURRENT_LEADER = new User("no user", UserRole.BIDDER);
     private final static String DESCRIPTION = "description";
     private final String description;
     private final static String CURRENT_PRICE = "currentPrice";
     private int currentPrice;
     private final static String CURRENT_LEADER = "currentLeader";
-    private User currentLeader;
+    private User currentLeader = NO_CURRENT_LEADER;
     private final static String LOT_ID = "lotId";
     private final int lotId;
 
@@ -32,7 +33,7 @@ public class Lot {
     }
 
     public Lot(String description, int startValue, int lotId) {
-        this(description, startValue, null, lotId);
+        this(description, startValue, NO_CURRENT_LEADER, lotId);
     }
 
 
@@ -73,4 +74,5 @@ public class Lot {
     public void setCurrentLeader(User currentLeader) {
         this.currentLeader = currentLeader;
     }
+
 }

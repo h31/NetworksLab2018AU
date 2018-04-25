@@ -23,7 +23,7 @@ public class StopLotRequestCommand implements RequestCommand {
 
     public StopLotRequestCommand(HttpRequest httpRequest) {
         final String[] parts = httpRequest.getURI().getPath().split("/");
-        this.lotId = Integer.valueOf(parts[1]);
+        this.lotId = Integer.valueOf(parts[2]);
     }
 
     @Override

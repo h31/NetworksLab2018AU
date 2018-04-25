@@ -21,7 +21,7 @@ public class RegisterCommandRunner implements CommandRunner {
         RegisterRequestCommand registerRequestCommand = (RegisterRequestCommand) requestCommand;
         User user = registerRequestCommand.getUser();
         String executionResult = NO_ERROR;
-        if (user != null) {
+        if (context.getUser() != null) {
             return new ForbiddenResponseCommand("User at this connection already registered");
         }
         if (context.containsUser(user)) {

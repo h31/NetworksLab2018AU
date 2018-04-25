@@ -20,6 +20,7 @@ public class GetLotsResponseCommand implements ResponseCommand {
 
     public GetLotsResponseCommand(HttpResponse httpResponse) {
         JSONObject body = httpResponse.getBody();
+        System.out.println(body);
         lots = new ArrayList<>();
         try {
             JSONArray jsonArray = body.getJSONArray(LOTS);
@@ -30,7 +31,7 @@ public class GetLotsResponseCommand implements ResponseCommand {
             }
             executionResult = body.getString(EXECUTION_RESULT);
         } catch (JSONException e) {
-            throw new IllegalStateException("No such field: executionResult/lots");
+            throw new IllegalStateException("No such field: executionResult/lots", e);
         }
     }
 
@@ -47,6 +48,7 @@ public class GetLotsResponseCommand implements ResponseCommand {
             for (Lot lot: lots) {
                 jsonArray.put(lot.toJSONObject());
             }
+            body.put(LOTS, jsonArray);
             return new HttpResponse(StatusCode.OK, body);
         } catch(JSONException e) {
             throw new IllegalStateException(e);
