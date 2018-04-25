@@ -1,4 +1,4 @@
-package ru.spbau.bachelors2015.roulette.protocol
+package ru.spbau.bachelors2015.roulette.protocol.http
 
 /**
  * Super class of HttpRequest and HttpResponse

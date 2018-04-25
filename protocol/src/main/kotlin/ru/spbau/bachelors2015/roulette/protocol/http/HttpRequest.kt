@@ -1,4 +1,4 @@
-package ru.spbau.bachelors2015.roulette.protocol
+package ru.spbau.bachelors2015.roulette.protocol.http
 
 enum class HttpRequestMethod {
     GET, PUT, CONNECT
@@ -9,10 +9,10 @@ enum class HttpRequestMethod {
  * of.
  */
 class HttpRequest(
-    val method: HttpRequestMethod,
-    predefinedHeaders: Map<String, String>?,
-    val uri: Uri,
-    messageBody: String?
+        val method: HttpRequestMethod,
+        predefinedHeaders: Map<String, String>?,
+        val uri: Uri,
+        messageBody: String?
 ): HttpMessage(predefinedHeaders, messageBody) {
     /**
      * Converts this http request to a string representation according to the protocol.

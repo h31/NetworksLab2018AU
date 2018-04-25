@@ -1,9 +1,11 @@
-package ru.spbau.bachelors2015.roulette.protocol
+package ru.spbau.bachelors2015.roulette.protocol.http
 
 /**
  * A query line that can appear in URI. It consists of key value pairs.
  */
 class QueryLine(keyValuePairs: Map<String, String>) {
+    constructor(vararg keyValuePairs: Pair<String, String>) : this(keyValuePairs.toMap())
+
     val keyValuePairs: Map<String, String> = keyValuePairs.toMap()
 
     init {

@@ -1,4 +1,4 @@
-package ru.spbau.bachelors2015.roulette.protocol
+package ru.spbau.bachelors2015.roulette.protocol.http
 
 enum class HttpResponseStatus(val statusCode: Int, val reasonPhrase: String) {
     OK(200, "OK"), BAD_REQUEST(400, "BadRequest");
@@ -21,9 +21,9 @@ enum class HttpResponseStatus(val statusCode: Int, val reasonPhrase: String) {
  * of.
  */
 class HttpResponse(
-    val status: HttpResponseStatus,
-    predefinedHeaders: Map<String, String>?,
-    messageBody: String?
+        val status: HttpResponseStatus,
+        predefinedHeaders: Map<String, String>?,
+        messageBody: String?
 ): HttpMessage(predefinedHeaders, messageBody) {
     /**
      * Converts this http response to a string representation according to the protocol.

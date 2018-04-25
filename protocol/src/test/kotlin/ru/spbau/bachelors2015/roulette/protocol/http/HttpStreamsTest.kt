@@ -1,4 +1,4 @@
-package ru.spbau.bachelors2015.roulette.protocol
+package ru.spbau.bachelors2015.roulette.protocol.http
 
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.equalTo
@@ -11,13 +11,13 @@ class HttpStreamsTest {
     @Test
     fun requestWriteReadTest() {
         val queryLine = QueryLine(mapOf(Pair("a", "b"), Pair("c", "d")))
-        val uri = Uri(listOf("p", "a", "t", "h"), queryLine)
+        val uri = Uri(ResourcePath("p", "a", "t", "h"), queryLine)
         val message = "Hello, world!"
         val initialHttpRequest = HttpRequest(
-            HttpRequestMethod.GET,
-            mapOf(Pair("h", "1")),
-            uri,
-            message
+                HttpRequestMethod.GET,
+                mapOf(Pair("h", "1")),
+                uri,
+                message
         )
 
         val outputStream = ByteArrayOutputStream()
@@ -38,7 +38,7 @@ class HttpStreamsTest {
     fun responseWriteReadTest() {
         val message = "Hello, world!"
         val initialHttpResponse =
-            HttpResponse(HttpResponseStatus.OK, mapOf(Pair("a", "b")), message)
+                HttpResponse(HttpResponseStatus.OK, mapOf(Pair("a", "b")), message)
 
         val outputStream = ByteArrayOutputStream()
 

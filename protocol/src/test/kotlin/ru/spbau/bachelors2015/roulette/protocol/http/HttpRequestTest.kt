@@ -1,4 +1,4 @@
-package ru.spbau.bachelors2015.roulette.protocol
+package ru.spbau.bachelors2015.roulette.protocol.http
 
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.equalTo
@@ -9,7 +9,7 @@ class HttpRequestTest {
     @Test
     fun stringConversionTest() {
         val queryLine = QueryLine(mapOf(Pair("a", "b"), Pair("c", "d")))
-        val uri = Uri(listOf("p", "a", "t", "h"), queryLine)
+        val uri = Uri(ResourcePath("p", "a", "t", "h"), queryLine)
         val message = "Hello, world!"
         val httpRequest = HttpRequest(HttpRequestMethod.GET, null, uri, message)
 
@@ -23,12 +23,12 @@ class HttpRequestTest {
 
     @Test
     fun minimalisticMessage() {
-        val uri = Uri(listOf(), null)
+        val uri = Uri(ResourcePath(), null)
         val httpRequest = HttpRequest(
-            HttpRequestMethod.PUT,
-            null,
-            uri,
-            null
+                HttpRequestMethod.PUT,
+                null,
+                uri,
+                null
         )
 
         val expected = "PUT / HTTP/1.1\r\n\r\n"

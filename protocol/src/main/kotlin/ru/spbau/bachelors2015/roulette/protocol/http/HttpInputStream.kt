@@ -1,4 +1,4 @@
-package ru.spbau.bachelors2015.roulette.protocol
+package ru.spbau.bachelors2015.roulette.protocol.http
 
 import java.io.*
 import java.net.ProtocolException
@@ -103,16 +103,19 @@ class HttpInputStream(inputStream: InputStream): Closeable {
             throw ProtocolException("Invalid HTTP request URI")
         }
 
-        return Uri(tokens[0].split(Uri.elementsSeparator), parseQueryLine(tokens[1]))
+        return Uri(
+            ResourcePath(tokens[0].split(ResourcePath.elementsSeparator)),
+            parseQueryLine(tokens[1])
+        )
     }
 
     private fun parseQueryLine(queryLine: String): QueryLine {
         try {
             return QueryLine(
-                parseKeyValuePairs(
-                    queryLine.split(QueryLine.pairsSeparator),
-                    QueryLine.keyValuePairSeparator
-                )
+                    parseKeyValuePairs(
+                        queryLine.split(QueryLine.pairsSeparator),
+                        QueryLine.keyValuePairSeparator
+                    )
             )
         } catch (_: IllegalArgumentException) {
             throw ProtocolException("Invalid query line in HTTP request")
