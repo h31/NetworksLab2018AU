@@ -19,21 +19,21 @@ volatile int print_pause = 0;
 
 int read_from_socket(SOCKET sockfd, char *buffer, int len, int sz) {
     memset(buffer, 0, sz);
-    int iResult = recv(sockfd, buffer, len, 0); 
-    if (iResult == SOCKET_ERROR) {
+    int result = recv(sockfd, buffer, len, 0); 
+    if (result == SOCKET_ERROR) {
         printf("Error during read: %d\n", WSAGetLastError());
     }
-    return iResult;
+    return result;
 }
 
 int send_via_socket(SOCKET sockfd, char *buffer) {
-    int iResult = send(sockfd, buffer, strlen(buffer), 0);
-    if (iResult == SOCKET_ERROR) {
+    int result = send(sockfd, buffer, strlen(buffer), 0);
+    if (result == SOCKET_ERROR) {
         printf("send failed: %d\n", WSAGetLastError());
         closesocket(sockfd);
         WSACleanup();
     }
-    return iResult;
+    return result;
 } 
 
 void *receiving_messages(void *arg) {
@@ -64,10 +64,10 @@ int main(int argc, char *argv[]) {
     char login[MAX_LOGIN_LEN];
     strcpy(login, argv[3]);
 
-    WSADATA wsaData;
-    int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
-    if (iResult != NO_ERROR) {
-        printf("WSAStartup failed: %d\n", iResult);
+    WSADATA wsa_data;
+    int result = WSAStartup(MAKEWORD(2,2), &wsa_data);
+    if (result != NO_ERROR) {
+        printf("WSAStartup failed: %d\n", result);
         exit(0);
     }
 
@@ -89,8 +89,8 @@ int main(int argc, char *argv[]) {
     memcpy((char *) &serv_addr.sin_addr.s_addr, server->h_addr, (size_t) server->h_length);
     serv_addr.sin_port = htons(portno);
 
-    iResult = connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)); 
-    if (iResult == SOCKET_ERROR) {
+    result = connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)); 
+    if (result == SOCKET_ERROR) {
         closesocket(sockfd);
         printf("Unable to connect to server: %d\n", WSAGetLastError());
         WSACleanup();

@@ -54,11 +54,11 @@ void close_socket(SOCKET socket_fd) {
 
 int read_from_socket(SOCKET sockfd, char *buffer, int len, int sz) {
     memset(buffer, 0, sz);
-    int iResult = recv(sockfd, buffer, len, 0); 
-    if (iResult == SOCKET_ERROR) {
+    int result = recv(sockfd, buffer, len, 0); 
+    if (result == SOCKET_ERROR) {
         printf("Error during read: %d\n", WSAGetLastError());
     }
-    return iResult;
+    return result;
 }
 
 void send_all_clients(SOCKET socketfd, uint8_t hours, uint8_t mins, char *login, char *msg) {
@@ -113,10 +113,10 @@ int main(int argc, char *argv[]) {
     }
     uint16_t portno = atoi(argv[1]);
 
-    WSADATA wsaData;
-    int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
-    if (iResult != NO_ERROR) {
-        printf("WSAStartup failed: %d\n", iResult);
+    WSADATA wsa_data;
+    int result = WSAStartup(MAKEWORD(2,2), &wsa_data);
+    if (result != NO_ERROR) {
+        printf("WSAStartup failed: %d\n", result);
         exit(1);
     }
 
@@ -134,8 +134,8 @@ int main(int argc, char *argv[]) {
     serv_addr.sin_addr.s_addr = htons(INADDR_ANY);
     serv_addr.sin_port = htons(portno);
 
-    iResult = bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
-    if (iResult == SOCKET_ERROR) {
+    result = bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+    if (result == SOCKET_ERROR) {
         printf("Error at bind(): %d\n", WSAGetLastError());
         closesocket(sockfd);
         WSACleanup();
