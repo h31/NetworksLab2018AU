@@ -9,7 +9,13 @@ public class Main {
 
     public static void main(String[] args) {
 
+        if (args.length < 2) {
+            System.out.println("usage: ./client host port");
+            return;
+        }
+
         final Network network = new Network(args[0], Integer.valueOf(args[1]));
+        network.start();
         final Logic logic = new Logic(network);
         final CliParser cliParser = new CliParser();
 
@@ -20,6 +26,7 @@ public class Main {
 
             final CliParser.ParseResult parseResult = cliParser.parse(input);
             if (parseResult.isExit()) {
+                network.terminate();
                 break;
             } else {
                 System.out.println(logic.process(parseResult.getRequestCommand()));

@@ -22,7 +22,7 @@ public class RegisterRequestCommand implements RequestCommand {
 
     public RegisterRequestCommand(HttpRequest httpRequest) {
         final String[] parts = httpRequest.getURI().getPath().split("/");
-        this.user = new User(parts[1], UserRole.valueOf(parts[2]));
+        this.user = new User(parts[2], UserRole.valueOf(parts[3]));
     }
 
     @Override

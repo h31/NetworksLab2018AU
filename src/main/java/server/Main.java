@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Main {
-    static volatile boolean running = true;
+    private static volatile boolean running = true;
 
     public static void main(String[] args) throws IOException {
         Map<Integer, Lot> lots = new ConcurrentHashMap<>();
