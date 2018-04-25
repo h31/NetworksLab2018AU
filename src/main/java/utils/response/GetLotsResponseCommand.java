@@ -4,6 +4,7 @@ import http.HttpResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import server.StatusCode;
 import utils.API;
 import utils.data.Lot;
 import utils.request.GetLotsRequestCommand;
@@ -11,7 +12,6 @@ import utils.request.GetLotsRequestCommand;
 import java.util.ArrayList;
 import java.util.List;
 
-import static http.HttpResponse.STATUS_OK;
 
 public class GetLotsResponseCommand implements ResponseCommand {
     private static final String LOTS = "LOTS";
@@ -47,7 +47,7 @@ public class GetLotsResponseCommand implements ResponseCommand {
             for (Lot lot: lots) {
                 jsonArray.put(lot.toJSONObject());
             }
-            return new HttpResponse(STATUS_OK, body);
+            return new HttpResponse(StatusCode.OK, body);
         } catch(JSONException e) {
             throw new IllegalStateException(e);
         }
