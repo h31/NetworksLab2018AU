@@ -3,6 +3,7 @@ package utils.response;
 import http.HttpResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
+import server.StatusCode;
 import utils.API;
 
 public class NewLotResponseCommand implements ResponseCommand {
@@ -27,7 +28,12 @@ public class NewLotResponseCommand implements ResponseCommand {
 
     @Override
     public HttpResponse toHttpResponse() {
-        return null;
+        try {
+            JSONObject body = new JSONObject().put(EXECUTION_RESULT, executionResult).put(LOT_ID, lotId);
+            return new HttpResponse(StatusCode.OK, body);
+        } catch(JSONException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
