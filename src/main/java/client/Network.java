@@ -45,8 +45,12 @@ public class Network {
     public HttpResponse receive() {
         final List<String> lines = new ArrayList<>();
         try {
-            while (reader.ready()) {
-                lines.add(reader.readLine());
+            boolean started = false;
+            while (!started) {
+                while (reader.ready()) {
+                    started = true;
+                    lines.add(reader.readLine());
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

@@ -29,8 +29,8 @@ public class BetRequestCommand implements RequestCommand {
 
     public BetRequestCommand(HttpRequest httpRequest) {
         final String[] parts = httpRequest.getURI().getPath().split("/");
-        this.lotId = Integer.valueOf(parts[1]);
-        this.value = Integer.valueOf(parts[2]);
+        this.lotId = Integer.valueOf(parts[2]);
+        this.value = Integer.valueOf(parts[3]);
     }
 
     @Override

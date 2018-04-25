@@ -42,7 +42,7 @@ public class Logic {
             try {
                 requestCommand = API.buildAPI(
                         httpRequest.getMethod(),
-                        httpRequest.getURI().getPath().split("/")[0] //TODO check
+                        httpRequest.getURI().getPath().split("/")[1] //TODO check
                 ).buildRequest(httpRequest);
             } catch (NotImplementedException e) {
                 ResponseCommand responseCommand = NotImplementedCommandRunner.getInstance().run();
@@ -50,6 +50,9 @@ public class Logic {
                 network.send(httpResponse);
                 System.out.println(responseCommand.getExecutionResult());
                 continue;
+            } catch (Exception e) {
+                e.printStackTrace();
+                break;
             }
             String executionResult = process(requestCommand);
             System.out.println(executionResult);
