@@ -3,34 +3,33 @@ package utils.response;
 import http.HttpResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
+import server.StatusCode;
 import utils.API;
 
-import static http.HttpResponse.STATUS_NOT_IMPLEMENTED;
-
 public class NotImplementedResponseCommand implements ResponseCommand {
-    private final static String NOT_IMPLEMENTED = "NOT IMPLEMENTED";
-    private final static NotImplementedResponseCommand INSTANCE;
-    private final static HttpResponse RESPONSE_INSTANCE;
+    protected final String executionResult;
 
-    static {
-        INSTANCE = new NotImplementedResponseCommand();
+    public NotImplementedResponseCommand(HttpResponse httpResponse) {
+        JSONObject body = httpResponse.getBody();
         try {
-            JSONObject body = new JSONObject().put(EXECUTION_RESULT, NOT_IMPLEMENTED);
-            RESPONSE_INSTANCE = new HttpResponse(STATUS_NOT_IMPLEMENTED, body);
-        } catch(JSONException e) {
-            throw new IllegalStateException(e);
+            executionResult = body.getString(EXECUTION_RESULT);
+        } catch (JSONException e) {
+            throw new IllegalStateException("No such field: executionResult");
         }
     }
 
-    private NotImplementedResponseCommand() {}
-
-    public static NotImplementedResponseCommand getInstance() {
-        return INSTANCE;
+    public NotImplementedResponseCommand(String executionResult) {
+        this.executionResult = executionResult;
     }
 
     @Override
     public HttpResponse toHttpResponse() {
-        return RESPONSE_INSTANCE;
+        try {
+            JSONObject body = new JSONObject().put(EXECUTION_RESULT, executionResult);
+            return new HttpResponse(StatusCode.NOT_IMPLEMENTED, body);
+        } catch(JSONException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
@@ -40,6 +39,6 @@ public class NotImplementedResponseCommand implements ResponseCommand {
 
     @Override
     public String getExecutionResult() {
-        return NOT_IMPLEMENTED;
+        return executionResult;
     }
 }

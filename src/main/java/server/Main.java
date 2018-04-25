@@ -27,7 +27,7 @@ public class Main {
             Socket clientSocket = serverSocket.accept();
             Context context = new Context(lots, users);
             Logic logic = new Logic(context, clientSocket);
-            logics.add(logic);
+                logics.add(logic);
             Thread thread = new Thread(logic::start);
             clientThreads.add(thread);
             thread.start();

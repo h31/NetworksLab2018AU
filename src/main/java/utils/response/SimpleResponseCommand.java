@@ -3,8 +3,7 @@ package utils.response;
 import http.HttpResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import static http.HttpResponse.STATUS_OK;
+import server.StatusCode;
 
 public abstract class SimpleResponseCommand implements ResponseCommand {
     protected final String executionResult;
@@ -26,7 +25,7 @@ public abstract class SimpleResponseCommand implements ResponseCommand {
     public HttpResponse toHttpResponse() {
         try {
             JSONObject body = new JSONObject().put(EXECUTION_RESULT, executionResult);
-            return new HttpResponse(STATUS_OK, body);
+            return new HttpResponse(StatusCode.OK, body);
         } catch(JSONException e) {
             throw new IllegalStateException(e);
         }

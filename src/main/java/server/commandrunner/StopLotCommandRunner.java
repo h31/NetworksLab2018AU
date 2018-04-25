@@ -20,8 +20,11 @@ public class StopLotCommandRunner implements CommandRunner {
     @Override
     public ResponseCommand run(RequestCommand requestCommand, Context context) {
         User user = context.getUser();
-        if (user == null || user.getRole() != UserRole.MANAGER) {
-            return ForbiddenResponseCommand.getInstance();
+        if (user == null) {
+            return new ForbiddenResponseCommand("User not registered");
+        }
+        if (user.getRole() != UserRole.MANAGER) {
+            return new ForbiddenResponseCommand("User " + user.getName() + " has role " + user.getRole() + " (MANAGER role required)");
         }
         StopLotRequestCommand stopLotRequestCommand = (StopLotRequestCommand) requestCommand;
         int lotId = stopLotRequestCommand.getLotId();

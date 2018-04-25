@@ -3,10 +3,10 @@ package server;
 import http.HttpRequest;
 import http.HttpResponse;
 import server.commandrunner.CommandRunner;
-import server.commandrunner.NotImplementedCommandRunner;
 import utils.API;
 import utils.NotImplementedException;
 import utils.request.RequestCommand;
+import utils.response.NotImplementedResponseCommand;
 import utils.response.ResponseCommand;
 
 import java.net.Socket;
@@ -45,7 +45,7 @@ public class Logic {
                         httpRequest.getURI().getPath().split("/")[1] //TODO check
                 ).buildRequest(httpRequest);
             } catch (NotImplementedException e) {
-                ResponseCommand responseCommand = NotImplementedCommandRunner.getInstance().run();
+                ResponseCommand responseCommand = new NotImplementedResponseCommand("Not implemented");
                 HttpResponse httpResponse = responseCommand.toHttpResponse();
                 network.send(httpResponse);
                 System.out.println(responseCommand.getExecutionResult());

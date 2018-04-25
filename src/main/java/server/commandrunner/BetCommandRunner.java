@@ -23,7 +23,7 @@ public class BetCommandRunner implements CommandRunner {
     public ResponseCommand run(RequestCommand requestCommand, Context context) {
         User user = context.getUser();
         if (user == null) {
-            return ForbiddenResponseCommand.getInstance();
+            return new ForbiddenResponseCommand("User not registered");
         }
         BetRequestCommand betRequestCommand = (BetRequestCommand) requestCommand;
         int lotId = betRequestCommand.getLotId();

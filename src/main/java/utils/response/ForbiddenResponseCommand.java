@@ -3,34 +3,33 @@ package utils.response;
 import http.HttpResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
+import server.StatusCode;
 import utils.API;
 
-import static http.HttpResponse.STATUS_FORBIDDEN;
-
 public class ForbiddenResponseCommand implements ResponseCommand {
-    private final static String FORBIDDEN = "FORBIDDEN";
-    private final static ForbiddenResponseCommand INSTANCE;
-    private final static HttpResponse RESPONSE_INSTANCE;
+    protected final String executionResult;
 
-    static {
-        INSTANCE = new ForbiddenResponseCommand();
+    public ForbiddenResponseCommand(HttpResponse httpResponse) {
+        JSONObject body = httpResponse.getBody();
         try {
-            JSONObject body = new JSONObject().put(EXECUTION_RESULT, FORBIDDEN);
-            RESPONSE_INSTANCE = new HttpResponse(STATUS_FORBIDDEN, body);
-        } catch(JSONException e) {
-            throw new IllegalStateException(e);
+            executionResult = body.getString(EXECUTION_RESULT);
+        } catch (JSONException e) {
+            throw new IllegalStateException("No such field: executionResult");
         }
     }
 
-    private ForbiddenResponseCommand() {}
-
-    public static ForbiddenResponseCommand getInstance() {
-        return INSTANCE;
+    public ForbiddenResponseCommand(String executionResult) {
+        this.executionResult = executionResult;
     }
 
     @Override
     public HttpResponse toHttpResponse() {
-        return RESPONSE_INSTANCE;
+        try {
+            JSONObject body = new JSONObject().put(EXECUTION_RESULT, executionResult);
+            return new HttpResponse(StatusCode.NOT_IMPLEMENTED, body);
+        } catch(JSONException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
@@ -40,6 +39,6 @@ public class ForbiddenResponseCommand implements ResponseCommand {
 
     @Override
     public String getExecutionResult() {
-        return FORBIDDEN;
+        return executionResult;
     }
 }
