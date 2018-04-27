@@ -13,22 +13,43 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Main {
     private static volatile boolean running = true;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Map<Integer, Lot> lots = new ConcurrentHashMap<>();
         Set<User> users = ConcurrentHashMap.newKeySet();
-        ServerSocket serverSocket = new ServerSocket(Integer.valueOf(args[0]));
+        ServerSocket serverSocket;
+        try {
+            serverSocket = new ServerSocket(Integer.valueOf(args[0]));
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            return;
+        }
         Set<Socket> clientSockets = ConcurrentHashMap.newKeySet();
         Thread consoleReaderThread = new Thread(Main::read);
         consoleReaderThread.start();
         while (running) {
-            Socket clientSocket = serverSocket.accept();
-            clientSockets.add(clientSocket);
+            Socket clientSocket;
+            try {
+                clientSocket = serverSocket.accept();
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+                stop();
+                return;
+            }
             Context context = new Context(lots, users, clientSocket, clientSockets);
-            Logic logic = new Logic(context, clientSocket);
+            Logic logic;
+            try {
+                logic = new Logic(context, clientSocket);
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+                continue;
+            }
+            clientSockets.add(clientSocket);
             Thread thread = new Thread(logic::start);
             thread.start();
         }
-        serverSocket.close();
+        try {
+            serverSocket.close();
+        } catch (IOException ignored) {}
     }
 
     private static void read() {
@@ -36,10 +57,15 @@ public class Main {
         try {
             do {
                 System.out.println(">>");
-            } while (!bufferedReader.readLine().equals("stop"));
+            } while (!bufferedReader.readLine().equals("stop") && running);
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
+        stop();
+
+    }
+
+    private static void stop() {
         running = false;
     }
 }

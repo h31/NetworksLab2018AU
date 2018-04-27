@@ -45,10 +45,14 @@ public class Network {
         return new HttpRequest(lines);
     }
 
-    public void terminate() throws IOException {
+    public void terminate() {
         writer.close();
-        reader.close();
-        socket.close();
+        try {
+            reader.close();
+        } catch (IOException ignored) {}
+        try {
+            socket.close();
+        } catch (IOException ignored) {}
     }
 }
 

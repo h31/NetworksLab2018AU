@@ -18,6 +18,10 @@ public class NotImplementedResponseCommand implements ResponseCommand {
         this.executionResult = executionResult;
     }
 
+    public NotImplementedResponseCommand() {
+        this("Not implemented");
+    }
+
     @Override
     public HttpResponse toHttpResponse() throws JSONException {
         JSONObject body = new JSONObject().put(EXECUTION_RESULT, executionResult);
