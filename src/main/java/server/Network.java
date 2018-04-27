@@ -37,19 +37,19 @@ public class Network {
     }
 
     public HttpRequest receive() {
-        final List<String> lines = new ArrayList<>();
         try {
-            boolean started = false;
-            while (!started) {
-                while (reader.ready()) {
-                    started = true;
-                    lines.add(reader.readLine());
+            while (!reader.ready()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    System.out.println(e);
                 }
             }
+            return new HttpRequest(reader);
         } catch (IOException e) {
-            e.printStackTrace();
+            // TODO
+            return null;
         }
-        return new HttpRequest(lines);
     }
 
     public void terminate() {

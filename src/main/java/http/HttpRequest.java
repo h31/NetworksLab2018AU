@@ -3,9 +3,12 @@ package http;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class HttpRequest extends HttpPacket {
 
@@ -14,14 +17,14 @@ public class HttpRequest extends HttpPacket {
 
 
     public HttpRequest(URI uri, HttpMethod httpMethod, JSONObject body) {
-        super(buildStartLine(httpMethod, uri), Collections.emptyMap(), body);
+        super(buildStartLine(httpMethod, uri), buildHeaders(body), body);
         this.uri = uri;
         this.httpMethod = httpMethod;
     }
 
-    public HttpRequest(List<String> strings) {
-        super(strings);
-        final String[] splitStartLine = strings.get(0).split(" ");
+    public HttpRequest(BufferedReader br) throws IOException {
+        super(br);
+        final String[] splitStartLine = startLine.split(" ");
         this.httpMethod = HttpMethod.valueOf(splitStartLine[0]);
         this.uri = URI.create(splitStartLine[1]);
     }

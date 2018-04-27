@@ -2,6 +2,7 @@ package server;
 
 import utils.data.Lot;
 import utils.data.User;
+import utils.data.UserRole;
 
 import java.io.*;
 import java.net.ServerSocket;

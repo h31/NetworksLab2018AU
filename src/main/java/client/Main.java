@@ -25,7 +25,9 @@ public class Main {
             final String input = scanner.nextLine();
 
             final CliParser.ParseResult parseResult = cliParser.parse(input);
-            if (parseResult.isExit()) {
+            if (parseResult.isSkip()) {
+                continue;
+            } else if (parseResult.isExit()) {
                 network.terminate();
                 break;
             } else {

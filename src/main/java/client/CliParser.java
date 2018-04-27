@@ -1,6 +1,7 @@
 package client;
 
 import com.beust.jcommander.JCommander;
+import com.beust.jcommander.MissingCommandException;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import utils.data.User;
@@ -33,17 +34,23 @@ public class CliParser {
             builder.addCommand(command.name(), command);
         }
         final JCommander jCommander = builder.build();
-        jCommander.parse(input.split(" "));
+        try {
+            jCommander.parse(input.split(" "));
+        } catch (Exception e) {
+            System.out.println("bad command");
+            return new ParseResult(null, true, false);
+
+        }
         if (jCommander.getParsedCommand().equals("exit")) {
-            return new ParseResult(null, true);
+            return new ParseResult(null, false, true);
         } else {
             for (ParserCommand command : commands) {
                 if (command.name().equals(jCommander.getParsedCommand())) {
-                    return new ParseResult(command.buildRequest(), false);
+                    return new ParseResult(command.buildRequest(), false, false);
                 }
             }
         }
-        throw new IllegalStateException("bad command, man");
+        throw new IllegalStateException();
     }
 
     interface ParserCommand {
@@ -160,6 +167,7 @@ public class CliParser {
     public class ParseResult {
 
         private final RequestCommand requestCommand;
+        private final boolean skip;
         private final boolean exit;
 
         public RequestCommand getRequestCommand() {
@@ -170,11 +178,15 @@ public class CliParser {
             return exit;
         }
 
-        public ParseResult(RequestCommand requestCommand, boolean exit) {
-            this.requestCommand = requestCommand;
-            this.exit = exit;
+        public boolean isSkip() {
+            return skip;
         }
 
+        public ParseResult(RequestCommand requestCommand, boolean skip, boolean exit) {
+            this.requestCommand = requestCommand;
+            this.skip = skip;
+            this.exit = exit;
+        }
     }
 
 }

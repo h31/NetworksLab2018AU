@@ -3,6 +3,8 @@ package http;
 import org.json.JSONObject;
 import server.StatusCode;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,20 +17,14 @@ public class HttpResponse extends HttpPacket {
         this.statusCode = statusCode;
     }
 
-    public HttpResponse(List<String> strings) {
-        super(strings);
-        final String[] splitStartLine = strings.get(0).split(" ");
-        this.statusCode = StatusCode.buildStatusCode(Integer.valueOf(splitStartLine[1]));
+    public HttpResponse(BufferedReader br) throws IOException {
+        super(br);
+        final String[] splitStartLine = startLine.split(" ");
+            this.statusCode = StatusCode.buildStatusCode(Integer.valueOf(splitStartLine[1]));
     }
 
     private static String buildStartLine(StatusCode statusCode) {
         return VERSION + " " + statusCode.getCode();
-    }
-
-    private static Map<String,String> buildHeaders(JSONObject body) {
-        Map<String, String> headers = new HashMap<>();
-        headers.put(CONTENT_LENGTH, Integer.toString(body.length()));
-        return headers;
     }
 
     public StatusCode getStatusCode() {

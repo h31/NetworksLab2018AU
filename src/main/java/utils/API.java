@@ -13,8 +13,8 @@ public enum API {
     GET_LOTS(HttpMethod.GET, "lot"),
     BET(HttpMethod.POST, "bet"),
     NEW_LOT(HttpMethod.POST, "lot"),
-    STOP_LOT(HttpMethod.DELETE, "lot"),
-    DISCONNECT(null, null); //TODO implement
+    STOP_LOT(HttpMethod.DELETE, "lot");
+
     private final HttpMethod httpMethod;
     private final String uriStart;
 
@@ -50,7 +50,6 @@ public enum API {
             case BET: return new BetRequestCommand(httpRequest);
             case NEW_LOT: return new NewLotRequestCommand(httpRequest);
             case STOP_LOT: return new StopLotRequestCommand(httpRequest);
-            case DISCONNECT: return new DisconnectRequestCommand(httpRequest);
 
             default: throw new IllegalStateException("no such API");
         }

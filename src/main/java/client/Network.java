@@ -42,20 +42,20 @@ public class Network {
         writer.flush();
     }
 
-    public HttpResponse receive() {
-        final List<String> lines = new ArrayList<>();
+    public HttpResponse receive()  {
         try {
-            boolean started = false;
-            while (!started) {
-                while (reader.ready()) {
-                    started = true;
-                    lines.add(reader.readLine());
+            while (!reader.ready()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    System.out.println(e);
                 }
             }
+            return new HttpResponse(reader);
         } catch (IOException e) {
-            e.printStackTrace();
+            // TODO
+            return null;
         }
-        return new HttpResponse(lines);
     }
 
     public void terminate() {
