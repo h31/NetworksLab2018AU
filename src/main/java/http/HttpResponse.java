@@ -1,7 +1,9 @@
 package http;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import server.StatusCode;
+import utils.UnknownStatusCodeException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +17,7 @@ public class HttpResponse extends HttpPacket {
         this.statusCode = statusCode;
     }
 
-    public HttpResponse(List<String> strings) {
+    public HttpResponse(List<String> strings) throws JSONException, UnknownStatusCodeException {
         super(strings);
         final String[] splitStartLine = strings.get(0).split(" ");
         this.statusCode = StatusCode.buildStatusCode(Integer.valueOf(splitStartLine[1]));

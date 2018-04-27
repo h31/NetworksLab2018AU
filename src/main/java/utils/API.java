@@ -3,6 +3,7 @@ package utils;
 import http.HttpMethod;
 import http.HttpRequest;
 import http.HttpResponse;
+import org.json.JSONException;
 import server.commandrunner.*;
 import utils.request.*;
 import utils.response.*;
@@ -31,7 +32,7 @@ public enum API {
         return uriStart;
     }
 
-    public ResponseCommand buildResponse(HttpResponse httpResponse) {
+    public ResponseCommand buildResponse(HttpResponse httpResponse) throws JSONException {
         switch (this) {
             case REGISTER: return new RegisterResponseCommand(httpResponse);
             case GET_LOTS: return new GetLotsResponseCommand(httpResponse);
@@ -43,7 +44,7 @@ public enum API {
         }
     }
 
-    public RequestCommand buildRequest(HttpRequest httpRequest) {
+    public RequestCommand buildRequest(HttpRequest httpRequest) throws JSONException {
         switch (this) {
             case REGISTER: return new RegisterRequestCommand(httpRequest);
             case GET_LOTS: return new GetLotsRequestCommand(httpRequest);

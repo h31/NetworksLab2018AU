@@ -2,6 +2,8 @@ package client;
 
 import http.HttpRequest;
 import http.HttpResponse;
+import org.json.JSONException;
+import utils.UnknownStatusCodeException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,14 +27,10 @@ public class Network {
         this.port = port;
     }
 
-    public void start() {
-        try {
-            this.socket = new Socket(host, port);
-            this.writer = new PrintWriter(socket.getOutputStream());
-            this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        } catch (IOException e) {
-            throw new IllegalStateException("can't create socket", e);
-        }
+    public void start() throws IOException {
+        this.socket = new Socket(host, port);
+        this.writer = new PrintWriter(socket.getOutputStream());
+        this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
     public void send(HttpRequest httpRequest) {
@@ -42,7 +40,7 @@ public class Network {
         writer.flush();
     }
 
-    public HttpResponse receive() {
+    public HttpResponse receive() throws UnknownStatusCodeException, JSONException {
         final List<String> lines = new ArrayList<>();
         try {
             boolean started = false;
@@ -58,14 +56,10 @@ public class Network {
         return new HttpResponse(lines);
     }
 
-    public void terminate() {
+    public void terminate() throws IOException {
         writer.close();
-        try {
-            reader.close();
-            socket.close();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
+        reader.close();
+        socket.close();
     }
 
 }

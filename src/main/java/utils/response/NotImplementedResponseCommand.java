@@ -9,13 +9,9 @@ import utils.API;
 public class NotImplementedResponseCommand implements ResponseCommand {
     protected final String executionResult;
 
-    public NotImplementedResponseCommand(HttpResponse httpResponse) {
+    public NotImplementedResponseCommand(HttpResponse httpResponse) throws JSONException {
         JSONObject body = httpResponse.getBody();
-        try {
-            executionResult = body.getString(EXECUTION_RESULT);
-        } catch (JSONException e) {
-            throw new IllegalStateException("No such field: executionResult");
-        }
+        executionResult = body.getString(EXECUTION_RESULT);
     }
 
     public NotImplementedResponseCommand(String executionResult) {
@@ -23,13 +19,9 @@ public class NotImplementedResponseCommand implements ResponseCommand {
     }
 
     @Override
-    public HttpResponse toHttpResponse() {
-        try {
-            JSONObject body = new JSONObject().put(EXECUTION_RESULT, executionResult);
-            return new HttpResponse(StatusCode.NOT_IMPLEMENTED, body);
-        } catch(JSONException e) {
-            throw new IllegalStateException(e);
-        }
+    public HttpResponse toHttpResponse() throws JSONException {
+        JSONObject body = new JSONObject().put(EXECUTION_RESULT, executionResult);
+        return new HttpResponse(StatusCode.NOT_IMPLEMENTED, body);
     }
 
     @Override

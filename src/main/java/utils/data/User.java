@@ -16,13 +16,9 @@ public class User {
         this.role = role;
     }
 
-    public User(JSONObject jsonObject) {
-        try {
-            name = jsonObject.getString(NAME);
-            role = UserRole.valueOf(jsonObject.getString(ROLE));
-        } catch (JSONException e) {
-            throw new IllegalStateException("No such field: name/role");
-        }
+    public User(JSONObject jsonObject) throws JSONException {
+        name = jsonObject.getString(NAME);
+        role = UserRole.valueOf(jsonObject.getString(ROLE));
     }
 
     public String getName() {
@@ -33,13 +29,8 @@ public class User {
         return role;
     }
 
-    public JSONObject toJSONObject() {
-        try {
-            JSONObject jsonObject = new JSONObject().put(NAME, name).put(ROLE, role);
-            return jsonObject;
-        } catch (JSONException e) {
-            throw new IllegalStateException(e);
-        }
+    public JSONObject toJSONObject() throws JSONException {
+        return new JSONObject().put(NAME, name).put(ROLE, role);
     }
 
     @Override

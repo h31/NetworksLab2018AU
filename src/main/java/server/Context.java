@@ -3,6 +3,7 @@ package server;
 import utils.data.Lot;
 import utils.data.User;
 
+import java.net.Socket;
 import java.util.Map;
 import java.util.Set;
 
@@ -10,11 +11,15 @@ public class Context {
 
     private final Map<Integer, Lot> lots;
     private final Set<User> users;
+    private final Set<Socket> clientSockets;
+    private final Socket clientSocket;
     private User user;
 
-    public Context(Map<Integer, Lot> lots, Set<User> users) {
+    public Context(Map<Integer, Lot> lots, Set<User> users, Socket clientSocket, Set<Socket> clientSockets) {
         this.lots = lots;
         this.users = users;
+        this.clientSocket = clientSocket;
+        this.clientSockets = clientSockets;
     }
 
     public Map<Integer, Lot> getLots() {
@@ -51,5 +56,10 @@ public class Context {
 
     public void stopLot(int lotId) {
         lots.remove(lotId);
+    }
+
+    public void clear() {
+        clientSockets.remove(clientSocket);
+        users.remove(user);
     }
 }

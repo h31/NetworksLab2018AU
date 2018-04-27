@@ -2,6 +2,7 @@ package server;
 
 import http.HttpRequest;
 import http.HttpResponse;
+import org.json.JSONException;
 import server.commandrunner.CommandRunner;
 import utils.API;
 import utils.NotImplementedException;
@@ -9,6 +10,7 @@ import utils.request.RequestCommand;
 import utils.response.NotImplementedResponseCommand;
 import utils.response.ResponseCommand;
 
+import java.io.IOException;
 import java.net.Socket;
 
 public class Logic {
@@ -16,18 +18,20 @@ public class Logic {
     private final Network network;
     private volatile boolean running;
 
-    public Logic(Context context, Socket clientSocket) {
+    public Logic(Context context, Socket clientSocket) throws IOException {
         running = true;
         this.context = context;
         network = new Network(clientSocket);
         network.start();
     }
 
-    public void stop() {
+    private void stop() throws IOException {
         running = false;
+        context.clear();
+        network.terminate();
     }
 
-    public String process(RequestCommand requestCommand) {
+    private String process(RequestCommand requestCommand) throws JSONException {
         CommandRunner commandRunner = requestCommand.getAPI().getCommandRunner();
         ResponseCommand responseCommand = commandRunner.run(requestCommand, context);
         HttpResponse httpResponse = responseCommand.toHttpResponse();
@@ -37,8 +41,20 @@ public class Logic {
 
     public void start() {
         while (running) {
-            HttpRequest httpRequest = network.receive();
-            RequestCommand requestCommand;
+            HttpRequest httpRequest;
+            try {
+                httpRequest = network.receive();
+            } catch (IOException | JSONException e) {
+                try {
+                    stop();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                System.out.println("CLOSING");
+                e.printStackTrace();
+                break;
+            }
+            RequestCommand requestCommand = null;
             try {
                 requestCommand = API.buildAPI(
                         httpRequest.getMethod(),
@@ -46,15 +62,23 @@ public class Logic {
                 ).buildRequest(httpRequest);
             } catch (NotImplementedException e) {
                 ResponseCommand responseCommand = new NotImplementedResponseCommand("Not implemented");
-                HttpResponse httpResponse = responseCommand.toHttpResponse();
-                network.send(httpResponse);
+                try {
+                    HttpResponse httpResponse = responseCommand.toHttpResponse();
+                    network.send(httpResponse);
+                } catch (JSONException e1) {
+                    e1.printStackTrace();
+                }
                 System.out.println(responseCommand.getExecutionResult());
                 continue;
-            } catch (Exception e) {
+            } catch (JSONException e) {
                 e.printStackTrace();
-                break;
             }
-            String executionResult = process(requestCommand);
+            String executionResult = null;
+            try {
+                executionResult = process(requestCommand);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
             System.out.println(executionResult);
         }
     }

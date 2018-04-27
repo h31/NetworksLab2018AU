@@ -2,7 +2,9 @@ package client;
 
 import http.HttpRequest;
 import http.HttpResponse;
+import org.json.JSONException;
 import server.StatusCode;
+import utils.UnknownStatusCodeException;
 import utils.request.RequestCommand;
 import utils.response.ResponseCommand;
 
@@ -14,7 +16,7 @@ public class Logic {
         this.network = network;
     }
 
-    public String process(RequestCommand requestCommand) {
+    public String process(RequestCommand requestCommand) throws JSONException, UnknownStatusCodeException {
         final HttpRequest httpRequest = requestCommand.toHttpRequest();
         network.send(httpRequest);
         final HttpResponse response = network.receive();

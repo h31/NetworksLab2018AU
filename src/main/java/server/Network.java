@@ -2,6 +2,7 @@ package server;
 
 import http.HttpRequest;
 import http.HttpResponse;
+import org.json.JSONException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,13 +21,9 @@ public class Network {
         this.socket = socket;
     }
 
-    public void start() {
-        try {
-            this.writer = new PrintWriter(socket.getOutputStream());
-            this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        } catch (IOException e) {
-            throw new IllegalStateException("can't сreate reader/writer", e);
-        }
+    public void start() throws IOException {
+        this.writer = new PrintWriter(socket.getOutputStream());
+        this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
     public void send(HttpResponse httpResponse) {
@@ -36,30 +33,22 @@ public class Network {
         writer.flush();
     }
 
-    public HttpRequest receive() {
+    public HttpRequest receive() throws IOException, JSONException {
         final List<String> lines = new ArrayList<>();
-        try {
-            boolean started = false;
-            while (!started) {
-                while (reader.ready()) {
-                    started = true;
-                    lines.add(reader.readLine());
-                }
+        boolean started = false;
+        while (!started) {
+            while (reader.ready()) {
+                started = true;
+                lines.add(reader.readLine());
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         return new HttpRequest(lines);
     }
 
-    public void terminate() {
+    public void terminate() throws IOException {
         writer.close();
-        try {
-            reader.close();
-            socket.close();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
+        reader.close();
+        socket.close();
     }
 }
 

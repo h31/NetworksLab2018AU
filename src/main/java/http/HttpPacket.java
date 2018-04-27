@@ -18,7 +18,7 @@ public abstract class HttpPacket {
     protected final Map<String, String> headers;
     protected final JSONObject body;
 
-    protected HttpPacket(List<String> strings) {
+    protected HttpPacket(List<String> strings) throws JSONException {
         startLine = strings.get(0);
         headers = new HashMap<>();
         for (int i = 1; i < strings.size() - 3; i++) {
@@ -28,11 +28,7 @@ public abstract class HttpPacket {
             String value = current.substring(colonIndex + 2);
             headers.put(key, value);
         }
-        try {
-            body = new JSONObject(strings.get(strings.size() - 1));
-        } catch (JSONException e) {
-            throw new IllegalStateException(e);
-        }
+        body = new JSONObject(strings.get(strings.size() - 1));
 
     }
 

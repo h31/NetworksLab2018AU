@@ -43,7 +43,7 @@ public class CliParser {
                 }
             }
         }
-        throw new IllegalStateException("bad command, man");
+        throw new IllegalStateException("bad command, man"); //TODO WTF
     }
 
     interface ParserCommand {

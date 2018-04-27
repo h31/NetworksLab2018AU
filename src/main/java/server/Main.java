@@ -6,8 +6,6 @@ import utils.data.User;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,33 +17,26 @@ public class Main {
         Map<Integer, Lot> lots = new ConcurrentHashMap<>();
         Set<User> users = ConcurrentHashMap.newKeySet();
         ServerSocket serverSocket = new ServerSocket(Integer.valueOf(args[0]));
-        List<Thread> clientThreads = new ArrayList<>();
-        List<Logic> logics = new ArrayList<>();
+        Set<Socket> clientSockets = ConcurrentHashMap.newKeySet();
         Thread consoleReaderThread = new Thread(Main::read);
         consoleReaderThread.start();
         while (running) {
             Socket clientSocket = serverSocket.accept();
-            Context context = new Context(lots, users);
+            clientSockets.add(clientSocket);
+            Context context = new Context(lots, users, clientSocket, clientSockets);
             Logic logic = new Logic(context, clientSocket);
-                logics.add(logic);
             Thread thread = new Thread(logic::start);
-            clientThreads.add(thread);
             thread.start();
         }
-        for (int i = 0; i < clientThreads.size(); i++) {
-            Logic logic = logics.get(i);
-            Thread clientThread = clientThreads.get(i);
-            logic.stop();
-            clientThread.interrupt();
-        }
+        serverSocket.close();
     }
 
     private static void read() {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
         try {
-            while (!bufferedReader.readLine().equals("stop")) {
+            do {
                 System.out.println(">>");
-            }
+            } while (!bufferedReader.readLine().equals("stop"));
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
