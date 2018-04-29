@@ -1,7 +1,5 @@
-package src.java;
-
-import src.main.java.HttpRequest;
-import src.main.java.HttpResponse;
+import protocol.HttpRequest;
+import protocol.HttpResponse;
 
 import java.io.*;
 import java.net.ServerSocket;

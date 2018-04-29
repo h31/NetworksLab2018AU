@@ -1,14 +1,11 @@
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import src.java.Utils;
-import src.main.java.HttpRequest;
-import src.main.java.HttpResponse;
+import protocol.HttpRequest;
+import protocol.HttpResponse;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.List;
 
 public class Main {

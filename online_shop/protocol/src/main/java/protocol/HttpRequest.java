@@ -1,4 +1,4 @@
-package src.main.java;
+package protocol;
 
 import org.json.JSONObject;
 
