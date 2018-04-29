@@ -1,11 +1,25 @@
-import java.io.*;
+import org.json.JSONObject;
 
-public class HttpRequest {
+import java.io.*;
+import java.util.List;
+
+public class HttpRequest extends HttpPacket {
     private String type;
     private String url;
-    private static String VERSION = "HTTP/1.1";
 
     public HttpRequest(String type, String url) {
+        this.type = type;
+        this.url = url;
+    }
+
+    public HttpRequest(String type, String url, List<String> body) {
+        super(body);
+        this.type = type;
+        this.url = url;
+    }
+
+    public HttpRequest(String type, String url, JSONObject jsonObject) {
+        super(jsonObject);
         this.type = type;
         this.url = url;
     }
@@ -30,14 +44,22 @@ public class HttpRequest {
         BufferedReader in = new BufferedReader(new InputStreamReader(is));
         String line = in.readLine();
         String[] parts = line.split(" ");
-        return new HttpRequest(parts[0], parts[1]);
+        String type = parts[0];
+        String url = parts[1];
+        List<String> body = parseBody(in);
+        return new HttpRequest(type, url, body);
     }
 
     public void dump(OutputStream os) throws IOException {
         BufferedWriter out = new BufferedWriter(new OutputStreamWriter(os, "UTF8"));
+
         String request = type + " " + url + " " + VERSION + "\r\n";
         out.write(request);
+
         out.write("\r\n");
+
+        dumpBody(out);
+
         out.flush();
     }
 
@@ -46,6 +68,7 @@ public class HttpRequest {
         return "HttpRequest{" +
                 "type='" + type + '\'' +
                 ", url='" + url + '\'' +
+                ", body=" + body +
                 '}';
     }
 }

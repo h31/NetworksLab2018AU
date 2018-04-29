@@ -3,6 +3,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) throws IOException {
@@ -11,7 +12,6 @@ public class Main {
                     ServerSocket serverSocket = new ServerSocket(11111);
                     Socket socket = serverSocket.accept();
             ) {
-
                 HttpRequest request = HttpRequest.parse(socket.getInputStream());
                 String requestURL = request.getUrl();
                 List<String> responseBody = Arrays.asList(requestURL, "666");
@@ -28,7 +28,6 @@ public class Main {
 
         String url = "localhost";
         try (Socket socket = new Socket(url, 11111)) {
-            socket.setSoTimeout(1000);
             HttpRequest request = new HttpRequest("GET", "/superduperitemprice");
             System.out.println(request);
             request.dump(socket.getOutputStream());

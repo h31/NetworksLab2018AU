@@ -1,23 +1,34 @@
+import org.json.JSONObject;
+
 import java.io.*;
-import java.net.SocketTimeoutException;
-import java.util.ArrayList;
 import java.util.List;
 
-public class HttpResponse {
-    private static String VERSION = "HTTP/1.1";
+public class HttpResponse extends HttpPacket {
     private int status;
     private String statusDescription;
-    private List<String> body;
+
 
     public HttpResponse(int status, List<String> body) {
+        super(body);
         this.status = status;
-        this.body = body;
+        this.statusDescription = "NO DESCRIPTION";
+    }
+
+    public HttpResponse(int status, JSONObject jsonObject) {
+        super(jsonObject);
+        this.status = status;
         this.statusDescription = "NO DESCRIPTION";
     }
 
     public HttpResponse(int status, String statusDescription, List<String> body) {
+        super(body);
         this.status = status;
-        this.body = body;
+        this.statusDescription = statusDescription;
+    }
+
+    public HttpResponse(int status, String statusDescription, JSONObject jsonObject) {
+        super(jsonObject);
+        this.status = status;
         this.statusDescription = statusDescription;
     }
 
@@ -29,49 +40,33 @@ public class HttpResponse {
         this.status = status;
     }
 
-    public List<String> getBody() {
-        return body;
-    }
-
-    public void setBody(List<String> body) {
-        this.body = body;
-    }
 
     public static HttpResponse parse(InputStream is) throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(is));
+
         String line = in.readLine();
         String[] parts = line.split(" ");
-        String status = parts[1];
-        int statusInt = Integer.parseInt(status);
-
+        int status = Integer.parseInt(parts[1]);
         String statusDescription = parts[2];
 
         // skip headers
-        while (!"".equals(in.readLine())) {
-        }
+        while (!"".equals(in.readLine())) {}
 
-        List<String> body = new ArrayList<>();
-        try {
-            while ((line = in.readLine()) != null) {
+        List<String> body = HttpPacket.parseBody(in);
 
-                body.add(line);
-
-            }
-        } catch (SocketTimeoutException ignored) {
-        }
-
-        return new HttpResponse(statusInt, statusDescription, body);
+        return new HttpResponse(status, statusDescription, body);
     }
 
     public void dump(OutputStream os) throws IOException {
         BufferedWriter out = new BufferedWriter(new OutputStreamWriter(os, "UTF8"));
+
         String header = VERSION + " " + status + " " + statusDescription + "\r\n";
         out.write(header);
+
         out.write("\r\n");
-        for (String line : body) {
-            out.write(line + "\r\n");
-        }
-        out.write("\r\n");
+
+        dumpBody(out);
+
         out.flush();
     }
 
