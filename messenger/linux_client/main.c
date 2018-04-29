@@ -9,35 +9,47 @@
 
 #include <string.h>
 
+#include "../commons/linux.h"
+
 
 #define MAX_LOGIN_LEN 256
 #define MAX_MSG_LEN 256
 
 volatile int print_pause = 0;
 
-int read_from_socket(int sockfd, char *buffer, int len, int sz) {
-    bzero(buffer, sz);
-    int n = read(sockfd, buffer, len); 
-    if (n < 0) perror("ERROR reading from socket");
-    return n;
-}
+
+
 
 void *receiving_messages(void *arg) {
     int sockfd = *((int *)arg);
 
     char header[4], login[MAX_LOGIN_LEN], msg[MAX_MSG_LEN];
-    while (read_from_socket(sockfd, header, 4, 4) > 0) {
+    while (read_from_socket(sockfd, header, 4, 4) == 4) {
         uint8_t hours, mins, login_len, msg_len;
         memcpy(&hours, header, 1);
         memcpy(&mins, header + 1, 1);
         memcpy(&login_len, header + 2, 1);
         memcpy(&msg_len, header + 3, 1);
-        if (read_from_socket(sockfd, login, login_len, MAX_LOGIN_LEN) <= 0) return NULL;
-        if (read_from_socket(sockfd, msg, msg_len, MAX_MSG_LEN) <= 0) return NULL;
-        while (print_pause) {}
+        if (read_from_socket(sockfd, login, login_len, MAX_LOGIN_LEN) != login_len) return NULL;
+        if (read_from_socket(sockfd, msg, msg_len, MAX_MSG_LEN) != msg_len) return NULL;
+        while (print_pause) {
+            sleep(1);
+        }
         printf("<%02d:%02d> [%s] %s", hours, mins, login, msg);
     }
     return NULL;
+}
+
+void send_buffer(int sockfd, char *buffer) {
+    uint8_t buffer_len = strlen(buffer);
+    if (write_to_socket(sockfd, (char *) &buffer_len, 1) != 1) {
+        perror("ERROR on writing to socket");
+        exit(1);
+    }
+    if (write_to_socket(sockfd, buffer, strlen(buffer)) != (int) strlen(buffer)) {
+        perror("ERROR on writing to socket");
+        exit(1);
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -74,10 +86,10 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    if (write(sockfd, login, strlen(login)) != (long) strlen(login)) {
-        perror("ERROR on writing to socket");
-        exit(1);
-    }
+    send_buffer(sockfd, login);;
+
+
+   
     pthread_t client;
     pthread_create(&client, NULL, receiving_messages, (void *) &sockfd);
 
@@ -96,10 +108,7 @@ int main(int argc, char *argv[]) {
             printf("<%02d:%02d> [%s] ", hours, mins, login);
             fgets(buffer, MAX_MSG_LEN - 1, stdin);    
             print_pause = 0;
-            if (write(sockfd, buffer, strlen(buffer)) != (long) strlen(buffer)) {
-                perror("ERROR on writing to socket");
-                exit(1);
-            }
+            send_buffer(sockfd, buffer);
         } 
     }
 

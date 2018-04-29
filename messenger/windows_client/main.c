@@ -48,7 +48,9 @@ void *receiving_messages(void *arg) {
         memcpy(&msg_len, header + 3, 1);
         if (read_from_socket(sockfd, login, login_len, MAX_LOGIN_LEN) == SOCKET_ERROR) return NULL;
         if (read_from_socket(sockfd, msg, msg_len, MAX_MSG_LEN) == SOCKET_ERROR) return NULL;
-        while (print_pause) {}
+        while (print_pause) {
+            Sleep(1);
+        }
         printf("<%02d:%02d> [%s] %s", hours, mins, login, msg);
     }
     return NULL;

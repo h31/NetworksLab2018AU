@@ -3,5 +3,5 @@ project(server_linux)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -Wall -Wextra")
 
-set(SOURCE_FILES main.c)
+set(SOURCE_FILES main.c "../commons/linux.c")
 add_executable(server_linux ${SOURCE_FILES})

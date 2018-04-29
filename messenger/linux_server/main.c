@@ -11,6 +11,8 @@
 
 #include <time.h>
 
+#include "../commons/linux.h"
+
 #define MAX_CLIENTS 10
 #define MAX_LOGIN_LEN 256
 #define MAX_MSG_LEN 256
@@ -61,32 +63,38 @@ void send_all_clients(int socketfd, uint8_t hours, uint8_t mins, char *login, ch
     pthread_mutex_lock(&mmutex);
     for (int i = 0; i < MAX_CLIENTS; i++) {
         if (socket_fds[i] != -1 && socket_fds[i] != socketfd) {
-            write(socket_fds[i], header, 4);
-            write(socket_fds[i], login, login_len);
-            write(socket_fds[i], msg, msg_len);
+            write_to_socket(socket_fds[i], header, 4);
+            write_to_socket(socket_fds[i], login, login_len);
+            write_to_socket(socket_fds[i], msg, msg_len);
         }
     }
     pthread_mutex_unlock(&mmutex);
 }
 
-int read_from_socket(int sockfd, char *buffer, int len) {
-    bzero(buffer, len);
-    int n = read(sockfd, buffer, len - 1); 
-    if (n < 0) perror("ERROR reading from socket");
-    return n;
+
+int read_buffer(int sockfd, char *buffer, int sz) {
+    uint8_t len;
+    if (read_from_socket(sockfd, (char *) &len, 1, 1) != 1) {
+        return 0;
+    }
+    if (read_from_socket(sockfd, buffer, len, sz) != len) {
+        return 0;
+    }
+    return 1;
 }
+
 
 void *connection_processing(void *arg) {
     int sockfd = *((int *)arg);
     
     char login[MAX_LOGIN_LEN];
-    if (read_from_socket(sockfd, login, MAX_LOGIN_LEN) <= 0) {
+    if (!read_buffer(sockfd, login, MAX_LOGIN_LEN)) {
         close_socket(sockfd);
         return NULL;
     }
 
     char receiving_buffer[MAX_MSG_LEN];
-    while (read_from_socket(sockfd, receiving_buffer, MAX_MSG_LEN) > 0) {
+    while (read_buffer(sockfd, receiving_buffer, MAX_MSG_LEN)) {
         time_t now = time(NULL);
         struct tm *now_tm = localtime(&now);
         int hours = now_tm->tm_hour;
@@ -135,7 +143,6 @@ int main(int argc, char *argv[]) {
         int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
         if (newsockfd < 0) {
             perror("ERROR on accept");
-            // break;
         }
 
         add_socket_fd(newsockfd);
