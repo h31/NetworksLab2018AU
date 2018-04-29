@@ -1,8 +1,13 @@
 package src.java;
 
+import src.main.java.HttpRequest;
+import src.main.java.HttpResponse;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
+import java.util.List;
 
 public class MainServer {
 
@@ -12,18 +17,11 @@ public class MainServer {
                     Utils.PORT_SERVER);
             ) {
                 Socket clientSocket = serverSocket.accept();
-                try (BufferedWriter out =
-                             new BufferedWriter(
-                                     new OutputStreamWriter(clientSocket.getOutputStream()));
-                     BufferedReader in = new BufferedReader(
-                             new InputStreamReader(clientSocket.getInputStream()))) {
-                    in.lines().forEach(System.out::println);
-                    out.write("hello Boris");
-                    out.flush();
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                HttpRequest request = HttpRequest.parse(clientSocket.getInputStream());
+                String requestURL = request.getUrl();
+                List<String> responseBody = Arrays.asList(requestURL, " HelloBoris");
+                HttpResponse response = new HttpResponse(200, "OK", responseBody);
+                response.dump(clientSocket.getOutputStream());
             } catch (IOException e) {
                 e.printStackTrace();
             }

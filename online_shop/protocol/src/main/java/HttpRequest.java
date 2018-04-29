@@ -1,3 +1,5 @@
+package src.main.java;
+
 import java.io.*;
 
 public class HttpRequest {
