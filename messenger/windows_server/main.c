@@ -13,6 +13,8 @@
 
 #include <time.h>
 
+#include "../commons/win.h"
+
 #define MAX_CLIENTS 10
 #define MAX_LOGIN_LEN 256
 #define MAX_MSG_LEN 256
@@ -51,16 +53,7 @@ void close_socket(SOCKET socket_fd) {
     pthread_mutex_unlock(&mmutex);
 }
 
-
-int read_from_socket(SOCKET sockfd, char *buffer, int len, int sz) {
-    memset(buffer, 0, sz);
-    int result = recv(sockfd, buffer, len, 0); 
-    if (result == SOCKET_ERROR) {
-        printf("Error during read: %d\n", WSAGetLastError());
-    }
-    return result;
-}
-
+                           
 void send_all_clients(SOCKET socketfd, uint8_t hours, uint8_t mins, char *login, char *msg) {
     uint8_t login_len = strlen(login);
     uint8_t msg_len = strlen(msg);
@@ -74,25 +67,38 @@ void send_all_clients(SOCKET socketfd, uint8_t hours, uint8_t mins, char *login,
     pthread_mutex_lock(&mmutex);
     for (int i = 0; i < MAX_CLIENTS; i++) {
         if (socket_fds[i] != INVALID_SOCKET && socket_fds[i] != socketfd) {
-            send(socket_fds[i], header, 4, 0);
-            send(socket_fds[i], login, login_len, 0);
-            send(socket_fds[i], msg, msg_len, 0);
+            if (write_to_socket(socket_fds[i], header, 4) != 4 || 
+            	write_to_socket(socket_fds[i], login, login_len) != login_len ||
+            	write_to_socket(socket_fds[i], msg, msg_len) != msg_len) {
+            	close_socket(socket_fds[i]);	
+            }
         }
     }
     pthread_mutex_unlock(&mmutex);
+}
+
+int read_buffer(SOCKET sockfd, char *buffer, int sz) {
+    uint8_t len;
+    if (read_from_socket(sockfd, (char *) &len, 1, 1) != 1) {
+        return 0;
+    }
+    if (read_from_socket(sockfd, buffer, len, sz) != len) {
+        return 0;
+    }
+    return 1;
 }
 
 void *connection_processing(void *arg) {
     SOCKET sockfd = *((int *)arg);
     
     char login[MAX_LOGIN_LEN];
-    if (read_from_socket(sockfd, login, MAX_LOGIN_LEN, MAX_LOGIN_LEN) == SOCKET_ERROR) {
+    if (!read_buffer(sockfd, login, MAX_LOGIN_LEN)) {
         close_socket(sockfd);
         return NULL;
     }
 
     char receiving_buffer[MAX_MSG_LEN];
-    while (read_from_socket(sockfd, receiving_buffer, MAX_MSG_LEN, MAX_MSG_LEN) != SOCKET_ERROR) {
+    while (read_buffer(sockfd, receiving_buffer, MAX_MSG_LEN)) {
         time_t now = time(NULL);
         struct tm *now_tm = localtime(&now);
         int hours = now_tm->tm_hour;

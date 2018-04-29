@@ -11,49 +11,49 @@
 #include <winsock2.h>
 #include <Ws2tcpip.h>
 
+#include "../commons/win.h"
 
 #define MAX_LOGIN_LEN 256
 #define MAX_MSG_LEN 256
 
 volatile int print_pause = 0;
-
-int read_from_socket(SOCKET sockfd, char *buffer, int len, int sz) {
-    memset(buffer, 0, sz);
-    int result = recv(sockfd, buffer, len, 0); 
-    if (result == SOCKET_ERROR) {
-        printf("Error during read: %d\n", WSAGetLastError());
-    }
-    return result;
+                                   
+void terminate(SOCKET sockfd) {
+	closesocket(sockfd);
+	WSACleanup();   
+	exit(1);
 }
-
-int send_via_socket(SOCKET sockfd, char *buffer) {
-    int result = send(sockfd, buffer, strlen(buffer), 0);
-    if (result == SOCKET_ERROR) {
-        printf("send failed: %d\n", WSAGetLastError());
-        closesocket(sockfd);
-        WSACleanup();
-    }
-    return result;
-} 
 
 void *receiving_messages(void *arg) {
     SOCKET sockfd = *((int *)arg);
 
     char header[4], login[MAX_LOGIN_LEN], msg[MAX_MSG_LEN];
-    while (read_from_socket(sockfd, header, 4, 4) != SOCKET_ERROR) {
+    while (read_from_socket(sockfd, header, 4, 4) == 4) {
         uint8_t hours, mins, login_len, msg_len;
         memcpy(&hours, header, 1);
         memcpy(&mins, header + 1, 1);
         memcpy(&login_len, header + 2, 1);
         memcpy(&msg_len, header + 3, 1);
-        if (read_from_socket(sockfd, login, login_len, MAX_LOGIN_LEN) == SOCKET_ERROR) return NULL;
-        if (read_from_socket(sockfd, msg, msg_len, MAX_MSG_LEN) == SOCKET_ERROR) return NULL;
+        if (read_from_socket(sockfd, login, login_len, MAX_LOGIN_LEN) != login_len) return NULL;
+        if (read_from_socket(sockfd, msg, msg_len, MAX_MSG_LEN) != msg_len) return NULL;
         while (print_pause) {
             Sleep(1);
         }
         printf("<%02d:%02d> [%s] %s", hours, mins, login, msg);
     }
     return NULL;
+}
+
+void send_buffer(SOCKET sockfd, char *buffer) {
+	uint8_t buffer_len = strlen(buffer);
+	if (write_to_socket(sockfd, (char *) &buffer_len, 1) != 1) {
+		printf("send buffer fail: %d\n", WSAGetLastError());
+		terminate(sockfd);
+	}
+	if (write_to_socket(sockfd, buffer, buffer_len) != buffer_len) {
+		printf("send buffer fail: %d\n", WSAGetLastError());
+		terminate(sockfd);
+	}	
 }
 
 int main(int argc, char *argv[]) {
@@ -93,16 +93,13 @@ int main(int argc, char *argv[]) {
 
     result = connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)); 
     if (result == SOCKET_ERROR) {
-        closesocket(sockfd);
         printf("Unable to connect to server: %d\n", WSAGetLastError());
-        WSACleanup();
-        exit(1);
+        terminate(sockfd);
     }
 
 
-    if (send_via_socket(sockfd, login) == SOCKET_ERROR) {
-        exit(1);
-    }
+    send_buffer(sockfd, login);
+
     pthread_t client;
     pthread_create(&client, NULL, receiving_messages, (void *) &sockfd);
 
@@ -121,9 +118,7 @@ int main(int argc, char *argv[]) {
             printf("<%02d:%02d> [%s] ", hours, mins, login);
             fgets(buffer, MAX_MSG_LEN - 1, stdin);    
             print_pause = 0;
-            if (send_via_socket(sockfd, buffer) == SOCKET_ERROR) {
-                exit(1);
-            }
+            send_buffer(sockfd, buffer);
         } 
     }
 
