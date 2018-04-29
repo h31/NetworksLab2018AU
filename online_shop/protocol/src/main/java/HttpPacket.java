@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class HttpPacket {
 
@@ -29,7 +30,8 @@ public abstract class HttpPacket {
     }
 
     public JSONObject getJSONBody() {
-        return new JSONObject(body);
+        String concatenatedBody = body.stream().collect(Collectors.joining());
+        return new JSONObject(concatenatedBody);
     }
 
     public void setBody(List<String> body) {

@@ -1,9 +1,11 @@
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) throws IOException {
@@ -14,8 +16,13 @@ public class Main {
             ) {
                 HttpRequest request = HttpRequest.parse(socket.getInputStream());
                 String requestURL = request.getUrl();
-                List<String> responseBody = Arrays.asList(requestURL, "666");
-                HttpResponse response = new HttpResponse(200, "OK", responseBody);
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("url", requestURL);
+                jsonObject.put("item1_price", 666);
+                jsonObject.put("item2_price", 888);
+                String[] array = {"str1", "str2", "str3"};
+                jsonObject.put("array_example", new JSONArray(array));
+                HttpResponse response = new HttpResponse(200, "OK", jsonObject);
                 response.dump(socket.getOutputStream());
 
             } catch (IOException e) {
@@ -28,11 +35,17 @@ public class Main {
 
         String url = "localhost";
         try (Socket socket = new Socket(url, 11111)) {
-            HttpRequest request = new HttpRequest("GET", "/superduperitemprice");
+            JSONObject jsonRequest = new JSONObject();
+            jsonRequest.put("hello", "world");
+            HttpRequest request = new HttpRequest("GET", "/superduperitemprice", jsonRequest);
             System.out.println(request);
             request.dump(socket.getOutputStream());
             HttpResponse response = HttpResponse.parse(socket.getInputStream());
             System.out.println(response);
+            List<Object> responseArrayExtracted = response.getJSONBody().getJSONArray("array_example").toList();
+            for (Object o : responseArrayExtracted) {
+                System.out.println(o);
+            }
         }
 
     }
