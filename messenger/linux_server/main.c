@@ -63,9 +63,12 @@ void send_all_clients(int socketfd, uint8_t hours, uint8_t mins, char *login, ch
     pthread_mutex_lock(&mmutex);
     for (int i = 0; i < MAX_CLIENTS; i++) {
         if (socket_fds[i] != -1 && socket_fds[i] != socketfd) {
-            write_to_socket(socket_fds[i], header, 4);
-            write_to_socket(socket_fds[i], login, login_len);
-            write_to_socket(socket_fds[i], msg, msg_len);
+
+            if (write_to_socket(socket_fds[i], header, 4) != 4 ||
+                write_to_socket(socket_fds[i], login, login_len) != login_len ||
+                write_to_socket(socket_fds[i], msg, msg_len) != msg_len) {
+                close_socket(socket_fds[i]);
+            }
         }
     }
     pthread_mutex_unlock(&mmutex);
