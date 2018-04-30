@@ -48,6 +48,7 @@ public abstract class HttpPacket {
         List<String> body = new ArrayList<>();
         String line;
         while (!"".equals(line = in.readLine())) {
+            System.out.println(" read line in packet " + line);
             body.add(line);
         }
         return body;
@@ -55,6 +56,7 @@ public abstract class HttpPacket {
 
     protected void dumpBody(BufferedWriter out) throws IOException {
         for (String line : body) {
+            System.out.println("dump body line " + line);
             out.write(line + "\r\n");
         }
         out.write("\r\n");

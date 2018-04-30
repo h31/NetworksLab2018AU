@@ -48,6 +48,7 @@ public class HttpRequest extends HttpPacket {
         String[] parts = line.split(" ");
         String type = parts[0];
         String url = parts[1];
+        System.out.println("line " + line);
         List<String> body = parseBody(in);
         return new HttpRequest(type, url, body);
     }
@@ -59,9 +60,7 @@ public class HttpRequest extends HttpPacket {
         out.write(request);
 
         out.write("\r\n");
-
         dumpBody(out);
-
         out.flush();
     }
 

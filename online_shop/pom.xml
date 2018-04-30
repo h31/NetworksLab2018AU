@@ -19,6 +19,7 @@
             <module>protocol</module>
             <module>utils</module>
             <module>server</module>
+            <module>client</module>
     </modules>
 
     <dependencies>

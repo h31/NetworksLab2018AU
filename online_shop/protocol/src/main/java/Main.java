@@ -17,6 +17,7 @@ public class Main {
             ) {
                 HttpRequest request = HttpRequest.parse(socket.getInputStream());
                 String requestURL = request.getUrl();
+                System.out.println(request.getBody());
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("url", requestURL);
                 jsonObject.put("item1_price", 666);
@@ -41,6 +42,8 @@ public class Main {
             HttpRequest request = new HttpRequest("GET", "/superduperitemprice", jsonRequest);
             System.out.println(request);
             request.dump(socket.getOutputStream());
+
+
             HttpResponse response = HttpResponse.parse(socket.getInputStream());
             System.out.println(response);
             List<Object> responseArrayExtracted = response.getJSONBody().getJSONArray("array_example").toList();
