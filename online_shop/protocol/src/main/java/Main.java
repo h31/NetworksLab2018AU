@@ -41,6 +41,8 @@ public class Main {
             jsonRequest.put("hello", "world");
             HttpRequest request = new HttpRequest("GET", "/superduperitemprice", jsonRequest);
             request.dump(socket.getOutputStream());
+
+
             HttpResponse response = HttpResponse.parse(socket.getInputStream());
             System.out.println(response);
             List<Object> responseArrayExtracted = response.getJSONBody().getJSONArray("array_example").toList();
