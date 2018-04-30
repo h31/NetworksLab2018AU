@@ -48,6 +48,10 @@ public class HttpRequest extends HttpPacket {
         String[] parts = line.split(" ");
         String type = parts[0];
         String url = parts[1];
+
+        // skip headers
+        while (!"".equals(in.readLine())) {}
+
         List<String> body = parseBody(in);
         return new HttpRequest(type, url, body);
     }
