@@ -1,3 +1,9 @@
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 public class Utils {
 
     public static final int PORT_SERVER = 8000;
@@ -26,8 +32,31 @@ public class Utils {
     public class JsonElement {
         public static final String NAME = "Name";
         public static final String STATUS = "Status";
-        public static final String PRODUCT = "Item";
+        public static final String URL = "url";
         public static final String PRODUCTS = "Items";
+        public static final String EXIT = "Exit";
+
     }
 
+    public static JSONObject dumpShop(Map<String, Integer> shop, JSONObject jsonObject) {
+        System.out.println("Dump Shop:");
+        System.out.println(shop);
+        System.out.println();
+        jsonObject.put(Utils.JsonElement.PRODUCTS, shop);
+        return jsonObject;
+    }
+
+    public static Map<String, Integer> parseShop(JSONObject jsonObject) {
+        JSONObject products = jsonObject.getJSONObject(Utils.JsonElement.PRODUCTS);
+        Set<String> keys = products.keySet();
+        Map<String, Integer> shop = new HashMap<>();
+        System.out.println("SHOP : ");
+        keys.forEach(item -> {
+            int count = products.getInt(item);
+            shop.put(item, count);
+            System.out.println(String.format("%s %d", item, count));
+        });
+        System.out.println();
+        return shop;
+    }
 }
