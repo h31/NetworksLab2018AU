@@ -18,7 +18,9 @@ public class ClientImpl extends Client {
     @Override
     public void run() {
         Stream.of(commantType).forEach(System.out::println);
-        Scanner sc = new Scanner(new ByteArrayInputStream(String.join("\n", textCommand).getBytes()));//System.in);
+        Scanner sc = new Scanner(
+//                new ByteArrayInputStream(String.join("\n", textCommand).getBytes()));
+                System.in);
         while (!isExit) {
             String[] line = sc.nextLine().replaceAll("\\s+", " ").split(" ");
             if (line.length == 0) {
