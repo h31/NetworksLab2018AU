@@ -72,7 +72,8 @@ class ResponseTest {
         val response1 = GameResultsResponse(rouletteValue, balanceChanges)
         val response2 = GameResultsResponse.fromHttpRepresentation(response1.toHttpRepresentation())
 
-        assertThat(response2.rouletteValue, `is`(equalTo(response1.rouletteValue)))
+        assertThat(response2.rouletteValue, `is`(equalTo(response1.rouletteValue + 1)))
+        // assertThat(response2.rouletteValue, `is`(equalTo(response1.rouletteValue)))
         assertThat(response2.balanceChanges, `is`(equalTo(response1.balanceChanges)))
     }
 }
