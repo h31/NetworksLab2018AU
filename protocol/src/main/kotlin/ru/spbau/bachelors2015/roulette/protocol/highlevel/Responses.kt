@@ -1,9 +1,11 @@
 package ru.spbau.bachelors2015.roulette.protocol.highlevel
 
+import org.apache.commons.io.IOUtils
 import ru.spbau.bachelors2015.roulette.protocol.http.HttpMessageElements
 import ru.spbau.bachelors2015.roulette.protocol.http.HttpResponse
 import ru.spbau.bachelors2015.roulette.protocol.http.HttpResponseStatus
 import java.lang.NumberFormatException
+import java.util.*
 
 class InvalidHttpResponse : Exception()
 
@@ -27,7 +29,7 @@ abstract class Response {
  * Error response.
  */
 class ErrorResponse(public override val messageBody: String): Response() {
-    public override val status: HttpResponseStatus = HttpResponseStatus.BAD_REQUEST
+    override val status: HttpResponseStatus = HttpResponseStatus.BAD_REQUEST
 
     companion object {
         fun fromHttpRepresentation(response: HttpResponse): ErrorResponse {
@@ -44,7 +46,7 @@ class ErrorResponse(public override val messageBody: String): Response() {
  * OK response that doesn't have any additional message.
  */
 class OkResponse: Response() {
-    public override val status: HttpResponseStatus = HttpResponseStatus.OK
+    override val status: HttpResponseStatus = HttpResponseStatus.OK
 
     override val messageBody: String? = null
 
@@ -102,7 +104,33 @@ class GameStatusPositiveResponse(
 
     companion object {
         fun fromHttpRepresentation(response: HttpResponse): GameStatusPositiveResponse {
-            TODO("Implement")
+            if (response.status != HttpResponseStatus.OK || response.messageBody == null) {
+                throw InvalidHttpResponse()
+            }
+
+            try {
+                return Scanner(
+                    IOUtils.toInputStream(response.messageBody, HttpMessageElements.charset),
+                    HttpMessageElements.charset.name()
+                ).use {
+                    val gameId = it.nextInt()
+                    val secondsLeft = it.nextInt()
+                    val bets = mutableMapOf<String, Int>()
+
+                    while (it.hasNext()) {
+                        val nickname = it.next()
+                        val bet = it.nextInt()
+
+                        bets[nickname] = bet
+                    }
+
+                    return@use GameStatusPositiveResponse(gameId, secondsLeft, bets)
+                }
+            } catch (_: InputMismatchException) {
+                throw InvalidHttpResponse()
+            } catch (_: NoSuchElementException) {
+                throw InvalidHttpResponse()
+            }
         }
     }
 }
@@ -158,6 +186,7 @@ class GameResultsResponse(
 
         for ((nickname, balanceChange) in balanceChanges) {
             append(nickname)
+            append(HttpMessageElements.spaceDelimiter)
             append(balanceChange)
             append(HttpMessageElements.newlineDelimiter)
         }
@@ -165,7 +194,32 @@ class GameResultsResponse(
 
     companion object {
         fun fromHttpRepresentation(response: HttpResponse): GameResultsResponse {
-            TODO("Implement")
+            if (response.status != HttpResponseStatus.OK || response.messageBody == null) {
+                throw InvalidHttpResponse()
+            }
+
+            try {
+                return Scanner(
+                    IOUtils.toInputStream(response.messageBody, HttpMessageElements.charset),
+                    HttpMessageElements.charset.name()
+                ).use {
+                    val rouletteValue = it.nextInt()
+                    val balanceChanges = mutableMapOf<String, Int>()
+
+                    while (it.hasNext()) {
+                        val nickname = it.next()
+                        val balanceChange = it.nextInt()
+
+                        balanceChanges[nickname] = balanceChange
+                    }
+
+                    return@use GameResultsResponse(rouletteValue, balanceChanges)
+                }
+            } catch (_: InputMismatchException) {
+                throw InvalidHttpResponse()
+            } catch (_: NoSuchElementException) {
+                throw InvalidHttpResponse()
+            }
         }
     }
 }
