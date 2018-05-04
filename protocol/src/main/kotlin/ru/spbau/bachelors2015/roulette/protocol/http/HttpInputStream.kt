@@ -81,7 +81,7 @@ class HttpInputStream(inputStream: InputStream): Closeable {
         }
 
         val statusCode = try {
-            Integer.parseInt(tokens[1])
+            tokens[1].toInt()
         } catch (_: NumberFormatException) {
             throw ProtocolException("Invalid HTTP response status code")
         }
@@ -136,7 +136,7 @@ class HttpInputStream(inputStream: InputStream): Closeable {
         }
 
         val bodyLength = try {
-            Integer.parseInt(headers[HttpMessageElements.bodyLengthHeaderName])
+            headers[HttpMessageElements.bodyLengthHeaderName]!!.toInt()
         } catch (_: NumberFormatException) {
             throw ProtocolException("Invalid body length in HTTP message")
         }

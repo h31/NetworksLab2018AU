@@ -73,7 +73,7 @@ class GameStartResponse(val gameId: Int): Response() {
             }
 
             try {
-                return GameStartResponse(Integer.parseInt(response.messageBody))
+                return GameStartResponse(response.messageBody.toInt())
             } catch (_: NumberFormatException) {
                 throw InvalidHttpResponse()
             }
@@ -166,7 +166,7 @@ class BalanceResponse(val balance: Int): Response() {
             }
 
             try {
-                return BalanceResponse(Integer.parseInt(response.messageBody))
+                return BalanceResponse(response.messageBody.toInt())
             } catch (_: NumberFormatException) {
                 throw InvalidHttpResponse()
             }

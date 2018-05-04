@@ -2,6 +2,8 @@ package ru.spbau.bachelors2015.roulette.protocol.highlevel
 
 import ru.spbau.bachelors2015.roulette.protocol.http.*
 
+class InvalidHttpRequest : Exception()
+
 /**
  * Abstract class which represents a request from a client.
  */
@@ -50,6 +52,27 @@ class RegistrationRequest(
         private val roleQuerlyLineKey = "role"
 
         private val nicknameQueryLineKey = "nickname"
+
+        fun fromHttpRepresentation(request: HttpRequest): RegistrationRequest {
+            if (request.uri.queryLine == null) {
+                throw InvalidHttpRequest()
+            }
+
+            val clientRoleString = request.uri.queryLine.keyValuePairs[roleQuerlyLineKey]
+            val nickname = request.uri.queryLine.keyValuePairs[nicknameQueryLineKey]
+
+            if (clientRoleString == null || nickname == null) {
+                throw InvalidHttpRequest()
+            }
+
+            val clientRole = try {
+                ClientRole.values().first { it.stringRepresentation == clientRoleString }
+            } catch (_: NoSuchElementException) {
+                throw InvalidHttpRequest()
+            }
+
+            return RegistrationRequest(clientRole, nickname)
+        }
     }
 }
 
@@ -66,6 +89,10 @@ class GameStartRequest: Request() {
         val resourcePath: ResourcePath = ResourcePath("start-game")
 
         val requestMethod: HttpRequestMethod = HttpRequestMethod.PUT
+
+        fun fromHttpRepresentation(request: HttpRequest): GameStartRequest {
+            return GameStartRequest()
+        }
     }
 }
 
@@ -82,6 +109,10 @@ class GameStatusRequest: Request() {
         val resourcePath: ResourcePath = ResourcePath("game-status")
 
         val requestMethod: HttpRequestMethod = HttpRequestMethod.GET
+
+        fun fromHttpRepresentation(request: HttpRequest): GameStatusRequest {
+            return GameStatusRequest()
+        }
     }
 }
 
@@ -98,6 +129,10 @@ class BalanceRequest: Request() {
         val resourcePath: ResourcePath = ResourcePath("balance")
 
         val requestMethod: HttpRequestMethod = HttpRequestMethod.GET
+
+        fun fromHttpRepresentation(request: HttpRequest): BalanceRequest {
+            return BalanceRequest()
+        }
     }
 }
 
@@ -121,6 +156,33 @@ class BetRequest(val gameId: Int, val value: Int): Request() {
         private val gameIdQueryLineKey = "id"
 
         private val valueQueryLineKey = "value"
+
+        fun fromHttpRepresentation(request: HttpRequest): BetRequest {
+            if (request.uri.queryLine == null) {
+                throw InvalidHttpRequest()
+            }
+
+            val gameIdString = request.uri.queryLine.keyValuePairs[gameIdQueryLineKey]
+            val valueString = request.uri.queryLine.keyValuePairs[valueQueryLineKey]
+
+            if (gameIdString == null || valueString == null) {
+                throw InvalidHttpRequest()
+            }
+
+            val gameId = try {
+                gameIdString.toInt()
+            } catch (_: NumberFormatException) {
+                throw InvalidHttpRequest()
+            }
+
+            val value = try {
+                valueString.toInt()
+            } catch (_: NumberFormatException) {
+                throw InvalidHttpRequest()
+            }
+
+            return BetRequest(gameId, value)
+        }
     }
 }
 
@@ -139,5 +201,22 @@ class GameResultsRequest(val gameId: Int): Request() {
         val requestMethod: HttpRequestMethod = HttpRequestMethod.GET
 
         private val gameIdQueryLineKey = "id"
+
+        fun fromHttpRepresentation(request: HttpRequest): GameResultsRequest {
+            if (request.uri.queryLine == null) {
+                throw InvalidHttpRequest()
+            }
+
+            val gameIdString =
+                request.uri.queryLine.keyValuePairs[gameIdQueryLineKey] ?:throw InvalidHttpRequest()
+
+            val gameId = try {
+                gameIdString.toInt()
+            } catch (_: NumberFormatException) {
+                throw InvalidHttpRequest()
+            }
+
+            return GameResultsRequest(gameId)
+        }
     }
 }
