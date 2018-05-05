@@ -11,14 +11,10 @@ public class NewLotResponseCommand implements ResponseCommand {
     private final static String LOT_ID = "lotId";
     private final int lotId;
 
-    public NewLotResponseCommand(HttpResponse httpResponse) {
+    public NewLotResponseCommand(HttpResponse httpResponse) throws JSONException {
         JSONObject body = httpResponse.getBody();
-        try {
-            executionResult = body.getString(EXECUTION_RESULT);
-            lotId = body.getInt(LOT_ID);
-        } catch (JSONException e) {
-            throw new IllegalStateException("No such field executionResult/lotId");
-        }
+        executionResult = body.getString(EXECUTION_RESULT);
+        lotId = body.getInt(LOT_ID);
     }
 
     public NewLotResponseCommand(String executionResult, int lotId) {
@@ -27,13 +23,9 @@ public class NewLotResponseCommand implements ResponseCommand {
     }
 
     @Override
-    public HttpResponse toHttpResponse() {
-        try {
-            JSONObject body = new JSONObject().put(EXECUTION_RESULT, executionResult).put(LOT_ID, lotId);
-            return new HttpResponse(StatusCode.OK, body);
-        } catch(JSONException e) {
-            throw new IllegalStateException(e);
-        }
+    public HttpResponse toHttpResponse() throws JSONException {
+        JSONObject body = new JSONObject().put(EXECUTION_RESULT, executionResult).put(LOT_ID, lotId);
+        return new HttpResponse(StatusCode.OK, body);
     }
 
     @Override

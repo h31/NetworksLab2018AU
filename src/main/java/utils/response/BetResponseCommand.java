@@ -1,11 +1,12 @@
 package utils.response;
 
 import http.HttpResponse;
+import org.json.JSONException;
 import utils.API;
 
 public class BetResponseCommand extends SimpleResponseCommand {
 
-    public BetResponseCommand(HttpResponse httpResponse) {
+    public BetResponseCommand(HttpResponse httpResponse) throws JSONException {
         super(httpResponse);
     }
 

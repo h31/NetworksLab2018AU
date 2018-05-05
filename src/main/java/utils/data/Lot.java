@@ -21,15 +21,11 @@ public class Lot {
         this.lotId = lotId;
     }
 
-    public Lot(JSONObject jsonObject) {
-        try {
-            description = jsonObject.getString(DESCRIPTION);
-            currentPrice = jsonObject.getInt(CURRENT_PRICE);
-            currentLeader = new User(jsonObject.getJSONObject(CURRENT_LEADER));
-            lotId = jsonObject.getInt(LOT_ID);
-        } catch (JSONException e) {
-            throw new IllegalStateException("No such field: description/currentPrice/currentLeader/lotId");
-        }
+    public Lot(JSONObject jsonObject) throws JSONException {
+        description = jsonObject.getString(DESCRIPTION);
+        currentPrice = jsonObject.getInt(CURRENT_PRICE);
+        currentLeader = new User(jsonObject.getJSONObject(CURRENT_LEADER));
+        lotId = jsonObject.getInt(LOT_ID);
     }
 
     public Lot(String description, int startValue, int lotId) {
@@ -57,18 +53,14 @@ public class Lot {
         this.currentPrice = currentPrice;
     }
 
-    public JSONObject toJSONObject() {
-        try {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put(DESCRIPTION, description)
-                    .put(CURRENT_PRICE, currentPrice);
-            JSONObject currentLeaderJSONObject = currentLeader.toJSONObject();
-            jsonObject.put(CURRENT_LEADER, currentLeaderJSONObject)
-                    .put(LOT_ID, lotId);
-            return jsonObject;
-        } catch (JSONException e) {
-            throw new IllegalStateException(e);
-        }
+    public JSONObject toJSONObject() throws JSONException {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put(DESCRIPTION, description)
+                .put(CURRENT_PRICE, currentPrice);
+        JSONObject currentLeaderJSONObject = currentLeader.toJSONObject();
+        jsonObject.put(CURRENT_LEADER, currentLeaderJSONObject)
+                .put(LOT_ID, lotId);
+        return jsonObject;
     }
 
     public void setCurrentLeader(User currentLeader) {

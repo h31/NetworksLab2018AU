@@ -1,6 +1,10 @@
 package client;
 
 
+import org.json.JSONException;
+import utils.UnknownStatusCodeException;
+
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Main {
@@ -31,7 +35,14 @@ public class Main {
                 network.terminate();
                 break;
             } else {
-                System.out.println(logic.process(parseResult.getRequestCommand()));
+                try {
+                    System.out.println(logic.process(parseResult.getRequestCommand()));
+                } catch (IOException | JSONException | UnknownStatusCodeException e) {
+                    e.printStackTrace();
+                } catch (NullPointerException npe) {
+                    System.out.println("SERVER IS OFF");
+                    break;
+                }
             }
 
         }

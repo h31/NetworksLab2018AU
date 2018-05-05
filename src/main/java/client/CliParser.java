@@ -50,7 +50,7 @@ public class CliParser {
                 }
             }
         }
-        throw new IllegalStateException();
+        throw new IllegalStateException("bad command, man"); //TODO WTF
     }
 
     interface ParserCommand {

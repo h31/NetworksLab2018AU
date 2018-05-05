@@ -2,6 +2,7 @@ package http;
 
 import org.json.JSONObject;
 import server.StatusCode;
+import utils.UnknownStatusCodeException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,10 +18,10 @@ public class HttpResponse extends HttpPacket {
         this.statusCode = statusCode;
     }
 
-    public HttpResponse(BufferedReader br) throws IOException {
+    public HttpResponse(BufferedReader br) throws IOException, UnknownStatusCodeException {
         super(br);
         final String[] splitStartLine = startLine.split(" ");
-            this.statusCode = StatusCode.buildStatusCode(Integer.valueOf(splitStartLine[1]));
+        this.statusCode = StatusCode.buildStatusCode(Integer.valueOf(splitStartLine[1]));
     }
 
     private static String buildStartLine(StatusCode statusCode) {

@@ -1,11 +1,12 @@
 package utils.response;
 
 import http.HttpResponse;
+import org.json.JSONException;
 import utils.API;
 
 public class RegisterResponseCommand extends SimpleResponseCommand {
 
-    public RegisterResponseCommand(HttpResponse httpResponse) {
+    public RegisterResponseCommand(HttpResponse httpResponse) throws JSONException {
         super(httpResponse);
     }
 

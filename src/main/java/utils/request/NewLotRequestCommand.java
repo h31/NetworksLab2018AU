@@ -31,27 +31,18 @@ public class NewLotRequestCommand implements RequestCommand {
         return startValue;
     }
 
-    public NewLotRequestCommand(HttpRequest httpRequest) {
-        try {
-            this.description = httpRequest.getBody().getString(DESC_FIELD);
-            this.startValue = httpRequest.getBody().getInt(START_VALUE_FIELD);
-        } catch (JSONException e) {
-            throw new IllegalStateException("can't extract fields from new lot request json");
-        }
-
+    public NewLotRequestCommand(HttpRequest httpRequest) throws JSONException {
+        this.description = httpRequest.getBody().getString(DESC_FIELD);
+        this.startValue = httpRequest.getBody().getInt(START_VALUE_FIELD);
     }
 
     @Override
-    public HttpRequest toHttpRequest() {
-        try {
-            return new HttpRequest(REQUEST_URI, api.getHttpMethod(),
-                    new JSONObject()
-                            .put(DESC_FIELD, description)
-                            .put(START_VALUE_FIELD, startValue)
+    public HttpRequest toHttpRequest() throws JSONException {
+        return new HttpRequest(REQUEST_URI, api.getHttpMethod(),
+                new JSONObject()
+                        .put(DESC_FIELD, description)
+                        .put(START_VALUE_FIELD, startValue)
             );
-        } catch (JSONException e) {
-            throw new IllegalStateException("new lot request can't be converted to json");
-        }
     }
 
     @Override

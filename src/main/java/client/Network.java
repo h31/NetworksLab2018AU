@@ -2,6 +2,7 @@ package client;
 
 import http.HttpRequest;
 import http.HttpResponse;
+import utils.UnknownStatusCodeException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -42,20 +43,15 @@ public class Network {
         writer.flush();
     }
 
-    public HttpResponse receive()  {
-        try {
-            while (!reader.ready()) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    System.out.println(e);
-                }
+    public HttpResponse receive() throws UnknownStatusCodeException, IOException {
+        while (!reader.ready()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                System.out.println(e);
             }
-            return new HttpResponse(reader);
-        } catch (IOException e) {
-            // TODO
-            return null;
         }
+        return new HttpResponse(reader);
     }
 
     public void terminate() {
