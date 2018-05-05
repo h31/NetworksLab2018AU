@@ -30,12 +30,6 @@ void* reader(void *arg) {
     while (1) {
         vector_t msg = {};
         int n = read_message(sockfd, &msg);
-
-        time_t my_time;
-        struct tm * timeinfo;
-        time (&my_time);
-        timeinfo = localtime (&my_time);
-
         pthread_cleanup_push(free_vector, &msg);
                 if (n < 0) {
                     pthread_mutex_lock(&client->mutex);
@@ -51,7 +45,7 @@ void* reader(void *arg) {
                         if (client->is_closed == true) {
                             pthread_exit(NULL);
                         }
-                        printf("<%d:%d> %s\n", timeinfo->tm_hour, timeinfo->tm_min, msg.data);
+                        printf("%s\n", msg.data);
                 pthread_cleanup_pop(1);
         pthread_cleanup_pop(1);
     }

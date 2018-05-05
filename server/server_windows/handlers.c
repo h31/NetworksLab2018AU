@@ -4,6 +4,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <memory.h>
+#include <time.h>
 #include "lists.h"
 #include "client.h"
 #include "message.h"
@@ -46,11 +47,16 @@ DWORD WINAPI handle_client_read(LPVOID arg) {
         struct msg_list* node = malloc(sizeof(struct msg_list));
         node->next = NULL;
         node->client_name = client->name;
+
+		time_t my_time;
+		time(&my_time);
+		struct tm * timeinfo = localtime(&my_time);
         vector_t msg = { .data = NULL, .size = 0, .capacity = 0 };
-        msg.size = read_msg.size + client->name.size + 5;
+        msg.size = read_msg.size + client->name.size + 17;
         msg.capacity = msg.size + 1;
         msg.data = malloc(sizeof(char) * msg.capacity);
-        snprintf(msg.data, msg.size, "[%s]: %s", client->name.data, read_msg.data);
+        snprintf(msg.data, msg.size, "<%d:%d> [%s]: %s",
+					timeinfo->tm_hour, timeinfo->tm_min, client->name.data, read_msg.data);
         msg.data[msg.size] = '\0';
         free_vector(&read_msg);
         node->msg = msg;

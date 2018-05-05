@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
-#include <time.h>
 #include "vector.h"
 #include "client.h"
 #include "message.h"
@@ -36,10 +35,6 @@ DWORD WINAPI reader(LPVOID arg) {
 			LeaveCriticalSection(&client->msg_section);
 			return 1;
 		}
-        time_t my_time;
-        time(&my_time);
-		struct tm * timeinfo;
-		timeinfo = localtime(&my_time);
 
 		EnterCriticalSection(&client->msg_section);
         while (mode != READ && client->is_closed == false) {
@@ -49,7 +44,7 @@ DWORD WINAPI reader(LPVOID arg) {
 			LeaveCriticalSection(&client->msg_section);
 			return 0;
 		}
-        printf("<%d:%d> %s\n", timeinfo->tm_hour, timeinfo->tm_min, msg.data);
+        printf("%s\n", msg.data);
 		LeaveCriticalSection(&client->msg_section);
 	}
 }
