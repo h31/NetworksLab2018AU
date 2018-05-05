@@ -26,4 +26,20 @@ static void append(vector_t* msg, char elem) {
     }
 }
 
+static void append_line(vector_t* msg, char* buffer, size_t len) {
+    if (msg->size + len <= msg->capacity) {
+        strncpy(msg->data + msg->size, buffer, len);
+        msg->size += len;
+    } else {
+        char* temp = malloc(sizeof(char) * (msg->size * 2 + len));
+        bzero(temp, msg->size * 2 + len);
+        strncpy(temp, msg->data, msg->size);
+        strncpy(temp + msg->size, buffer, len);
+        free(msg->data);
+        msg->data = temp;
+        msg->capacity = msg->size * 2 + len;
+        msg->size += len;
+    }
+}
+
 #endif // VECTOR_H
