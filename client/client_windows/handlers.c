@@ -9,16 +9,21 @@ typedef enum {READ, WRITE} client_mode;
 client_mode mode = WRITE;
 
 void read_line(vector_t* msg) {
-    char ch;
-    msg->size = 0;
-    msg->capacity = 256;
-    msg->data = malloc(sizeof(char) * msg->capacity);
-	memset(msg->data, '\0', msg->capacity);
-    scanf("%c", &ch);
-    while (ch != '\n') {
-        append(msg, ch);
-        scanf("%c", &ch);
-    }
+	size_t buf_len = 0;
+	char* buffer;
+	ssize_t count = getline(&buffer, &buf_len, stdin);
+	if (count < 0) {
+		perror("cannot read line");
+		exit(-1);
+	}
+	if (count >= UINT32_MAX) {
+		fprintf(stderr, "too long message\n");
+		exit(-1);
+	}
+	msg->size = 0;
+	msg->capacity = (uint32_t)count;
+	msg->data = calloc(msg->capacity, sizeof(char));
+	append_line(msg, buffer, msg->capacity - 1);
 }
 
 DWORD WINAPI reader(LPVOID arg) {
