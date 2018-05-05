@@ -15,12 +15,8 @@ static void append(vector_t* msg, char elem) {
     if (msg->size < msg->capacity) {
         msg->data[msg->size++] = elem;
     } else {
-        char* temp = malloc(sizeof(char) * (msg->size) * 2);
-        bzero(temp, msg->size * 2);
-        strncpy(temp, msg->data, msg->size);
-        temp[msg->size] = elem;
-        free(msg->data);
-        msg->data = temp;
+        msg->data = realloc(msg->data, sizeof(char) * (msg->size) * 2);
+        msg->data[msg->size] = elem;
         msg->capacity = msg->size * 2;
         ++msg->size;
     }
@@ -31,12 +27,8 @@ static void append_line(vector_t* msg, char* buffer, size_t len) {
         strncpy(msg->data + msg->size, buffer, len);
         msg->size += len;
     } else {
-        char* temp = malloc(sizeof(char) * (msg->size * 2 + len));
-        bzero(temp, msg->size * 2 + len);
-        strncpy(temp, msg->data, msg->size);
-        strncpy(temp + msg->size, buffer, len);
-        free(msg->data);
-        msg->data = temp;
+        msg->data = realloc(msg->data, sizeof(char) * (msg->size * 2 + len));
+        strncpy(msg->data + msg->size, buffer, len);
         msg->capacity = msg->size * 2 + len;
         msg->size += len;
     }

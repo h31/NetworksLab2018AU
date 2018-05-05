@@ -4,7 +4,6 @@
 #include <memory.h>
 #include <pthread.h>
 #include <client.h>
-#include <vector.h>
 #include "vector.h"
 #include "client.h"
 #include "common_cleaner.h"
@@ -26,8 +25,7 @@ void read_line(vector_t* msg) {
 	}
 	msg->size = 0;
 	msg->capacity = (uint32_t)count;
-	msg->data = malloc(sizeof(char) * msg->capacity);
-	bzero(msg->data, msg->capacity);
+	msg->data = calloc(msg->capacity, sizeof(char));
     append_line(msg, buffer, msg->capacity - 1);
 }
 
@@ -38,22 +36,22 @@ void* reader(void *arg) {
         vector_t msg = {};
         int n = read_message(sockfd, &msg);
         pthread_cleanup_push(free_vector, &msg);
-                if (n < 0) {
-                    pthread_mutex_lock(&client->mutex);
-                    client->is_closed = true;
-                    pthread_mutex_unlock(&client->mutex);
-                    pthread_exit(NULL);
-                }
-                pthread_mutex_lock(&client->mutex);
-                pthread_cleanup_push(mutex_unlock, &client->mutex);
-                        while (mode != READ && client->is_closed == false) {
-                            pthread_cond_wait(&client->can_consume, &client->mutex);
-                        }
-                        if (client->is_closed == true) {
-                            pthread_exit(NULL);
-                        }
-                        printf("%s\n", msg.data);
-                pthread_cleanup_pop(1);
+		if (n < 0) {
+			pthread_mutex_lock(&client->mutex);
+			client->is_closed = true;
+			pthread_mutex_unlock(&client->mutex);
+			pthread_exit(NULL);
+		}
+		pthread_mutex_lock(&client->mutex);
+		pthread_cleanup_push(mutex_unlock, &client->mutex);
+		while (mode != READ && client->is_closed == false) {
+			pthread_cond_wait(&client->can_consume, &client->mutex);
+		}
+		if (client->is_closed == true) {
+			pthread_exit(NULL);
+		}
+		printf("%s\n", msg.data);
+		pthread_cleanup_pop(1);
         pthread_cleanup_pop(1);
     }
 }
@@ -64,44 +62,44 @@ void* writer(void *arg) {
     vector_t name = client->name;
     pthread_cleanup_push(close_socket, &client->sockfd);
 
-            int sockfd = client->sockfd;
-            pthread_mutex_lock(&client->mutex);
-            pthread_cleanup_push(mutex_unlock, &client->mutex);
-                    ssize_t n = write_message(sockfd, &name);
-                    if (n < 0) {
-                        perror("ERROR: cannot write to socket");
-                        client->is_closed = true;
-                        pthread_cond_signal(&client->can_consume);
-                        pthread_exit(NULL);
-                    }
-                    mode = READ;
-                    pthread_cond_signal(&client->can_consume);
-            pthread_cleanup_pop(1);
+	int sockfd = client->sockfd;
+	pthread_mutex_lock(&client->mutex);
+	pthread_cleanup_push(mutex_unlock, &client->mutex);
+	ssize_t n = write_message(sockfd, &name);
+	if (n < 0) {
+		perror("ERROR: cannot write to socket");
+		client->is_closed = true;
+		pthread_cond_signal(&client->can_consume);
+		pthread_exit(NULL);
+	}
+	mode = READ;
+	pthread_cond_signal(&client->can_consume);
+	pthread_cleanup_pop(1);
 
-            while (1) {
-                char m = '\0';
-                while (m != 'm') {
-                    scanf("%c", &m);
-                }
-                getchar();
-                pthread_mutex_lock(&client->mutex);
-                pthread_cleanup_push(mutex_unlock, &client->mutex);
-                        mode = WRITE;
-                        printf("[%s]: ", name.data);
-                        vector_t msg = {};
-                        pthread_cleanup_push(free_vector, &msg);
-                                read_line(&msg);
-                                mode = READ;
-                                ssize_t n = write_message(sockfd, &msg);
-                                if (n < 0) {
-                                    client->is_closed = true;
-                                    pthread_cond_signal(&client->can_consume);
-                                    pthread_exit(NULL);
-                                }
-                        pthread_cleanup_pop(1);
-                        pthread_cond_signal(&client->can_consume);
-                        pthread_mutex_unlock(&client->mutex);
-                pthread_cleanup_pop(0);
-            }
+	while (1) {
+		char m = '\0';
+		while (m != 'm') {
+			scanf("%c", &m);
+		}
+		getchar();
+		pthread_mutex_lock(&client->mutex);
+		pthread_cleanup_push(mutex_unlock, &client->mutex);
+		mode = WRITE;
+		printf("[%s]: ", name.data);
+		vector_t msg = {};
+		pthread_cleanup_push(free_vector, &msg);
+		read_line(&msg);
+		mode = READ;
+		ssize_t n = write_message(sockfd, &msg);
+		if (n < 0) {
+			client->is_closed = true;
+			pthread_cond_signal(&client->can_consume);
+			pthread_exit(NULL);
+		}
+		pthread_cleanup_pop(1);
+		pthread_cond_signal(&client->can_consume);
+		pthread_mutex_unlock(&client->mutex);
+		pthread_cleanup_pop(0);
+	}
     pthread_cleanup_pop(1);
 }
