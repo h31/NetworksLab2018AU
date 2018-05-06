@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.9)
+project(dns C)
+set(CMAKE_C_STANDARD 99)
+set(SOURCE_FILES client.c ../dns.c)
+add_executable(client ${SOURCE_FILES})
