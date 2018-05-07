@@ -136,16 +136,34 @@ class BalanceRequest: Request() {
     }
 }
 
-class BetRequest(val gameId: Int, val value: Int): Request() {
+class BetRequest(val gameId: Int, val value: Int, val type: BetType): Request() {
     override val resourcePath = BetRequest.resourcePath
 
     override val requestMethod = BetRequest.requestMethod
 
     override fun queryLine(): QueryLine {
-        return QueryLine(
+        val queryLinePairs = mutableListOf(
             Pair(gameIdQueryLineKey, gameId.toString()),
             Pair(valueQueryLineKey, value.toString())
         )
+
+        type.accept(object : BetTypeVisitor<Unit> {
+            override fun visit(betType: BetOnEvenNumbers) {
+                queryLinePairs.add(Pair(typeQueryLineKey, BetTypeEnumeration.EVEN.typeName))
+            }
+
+            override fun visit(betType: BetOnOddNumbers) {
+                queryLinePairs.add(Pair(typeQueryLineKey, BetTypeEnumeration.ODD.typeName))
+            }
+
+            override fun visit(betType: BetOnExactNumber) {
+                queryLinePairs.add(Pair(typeQueryLineKey, BetTypeEnumeration.EXACT.typeName))
+                queryLinePairs.add(Pair(numberQueryLineKey, betType.number.toString()))
+            }
+
+        })
+
+        return QueryLine(*queryLinePairs.toTypedArray())
     }
 
     companion object {
@@ -153,9 +171,29 @@ class BetRequest(val gameId: Int, val value: Int): Request() {
 
         val requestMethod: HttpRequestMethod = HttpRequestMethod.PUT
 
-        private val gameIdQueryLineKey = "id"
+        private const val gameIdQueryLineKey = "id"
 
-        private val valueQueryLineKey = "value"
+        private const val valueQueryLineKey = "value"
+
+        private const val typeQueryLineKey = "type"
+
+        private const val numberQueryLineKey = "number"
+
+        private enum class BetTypeEnumeration(val typeName: String) {
+            EVEN("even"), ODD("odd"), EXACT("exact");
+
+            companion object {
+                fun fromTypeName(typeName: String): BetTypeEnumeration {
+                    for (element in BetTypeEnumeration.values()) {
+                        if (element.typeName == typeName) {
+                            return element
+                        }
+                    }
+
+                    throw NoSuchElementException()
+                }
+            }
+        }
 
         fun fromHttpRepresentation(request: HttpRequest): BetRequest {
             if (request.uri.queryLine == null) {
@@ -164,8 +202,9 @@ class BetRequest(val gameId: Int, val value: Int): Request() {
 
             val gameIdString = request.uri.queryLine.keyValuePairs[gameIdQueryLineKey]
             val valueString = request.uri.queryLine.keyValuePairs[valueQueryLineKey]
+            val typeString = request.uri.queryLine.keyValuePairs[typeQueryLineKey]
 
-            if (gameIdString == null || valueString == null) {
+            if (gameIdString == null || valueString == null || typeString == null) {
                 throw InvalidHttpRequest()
             }
 
@@ -181,7 +220,31 @@ class BetRequest(val gameId: Int, val value: Int): Request() {
                 throw InvalidHttpRequest()
             }
 
-            return BetRequest(gameId, value)
+            val bet = try {
+                when (BetTypeEnumeration.fromTypeName(typeString)) {
+                    BetRequest.Companion.BetTypeEnumeration.EVEN -> BetOnEvenNumbers()
+
+                    BetRequest.Companion.BetTypeEnumeration.ODD -> BetOnOddNumbers()
+
+                    BetRequest.Companion.BetTypeEnumeration.EXACT -> {
+                        val numberString =
+                            request.uri.queryLine.keyValuePairs[numberQueryLineKey] ?:
+                                throw InvalidHttpRequest()
+
+                        val number = try {
+                            numberString.toInt()
+                        } catch (_: NumberFormatException) {
+                            throw InvalidHttpRequest()
+                        }
+
+                        BetOnExactNumber(number)
+                    }
+                }
+            } catch (_: NoSuchElementException) {
+                throw InvalidHttpRequest()
+            }
+
+            return BetRequest(gameId, value, bet)
         }
     }
 }
