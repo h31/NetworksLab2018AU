@@ -16,7 +16,7 @@ class Game(val id: Int) {
 
     private val boardSize = 36
 
-    private val value = Random().nextInt(boardSize) + 1
+    val value = Random().nextInt(boardSize) + 1
 
     private val bets = mutableMapOf<CasinoModel.Player, Bet>()
 

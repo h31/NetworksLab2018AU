@@ -72,11 +72,23 @@ class ClientHandler(
         }
 
         override fun handle(request: GameStartRequest): Response {
-            TODO()
+            try {
+                casinoModel.startNewGame()
+            } catch (_: GameIsRunningException) {
+                return ErrorResponse("Game is already running")
+            }
+
+            return OkResponse()
         }
 
         override fun handle(request: GameStatusRequest): Response {
-            TODO()
+            val game = casinoModel.getCurrentGame() ?: return GameStatusNegativeResponse()
+
+            return GameStatusPositiveResponse(
+                game.id,
+                game.secondsLeft(),
+                game.getBets().mapKeys { it.key.nickname }.mapValues { it.value.value }
+            )
         }
 
         override fun handle(request: BalanceRequest): Response {
@@ -88,7 +100,13 @@ class ClientHandler(
         }
 
         override fun handle(request: GameResultsRequest): Response {
-            TODO()
+            val game = casinoModel.getGame(request.gameId) ?:
+                return ErrorResponse("No results for game with given id")
+
+            return GameResultsResponse(
+                game.value,
+                game.getResults().mapKeys { it.key.nickname }
+            )
         }
 
         override fun handleSocketClosing() {
