@@ -17,7 +17,7 @@ class GameModel {
 
             nicknames.add(nickname)
 
-            return Player(nickname)
+            return PlayerImplementation(nickname)
         }
     }
 
@@ -34,7 +34,34 @@ class GameModel {
             isCroupierRegistered = true
             nicknames.add(nickname)
 
-            return Croupier(nickname)
+            return CroupierImplementation(nickname)
+        }
+    }
+
+    interface Role {
+        val nickname: String
+
+        fun destroy()
+    }
+
+    interface Player : Role
+
+    interface Croupier : Role
+
+    private inner class PlayerImplementation(override val nickname: String) : Player {
+        override fun destroy() {
+            synchronized(this@GameModel) {
+                nicknames.remove(nickname)
+            }
+        }
+    }
+
+    private inner class CroupierImplementation(override val nickname: String) : Croupier {
+        override fun destroy() {
+            synchronized(this@GameModel) {
+                isCroupierRegistered = false
+                nicknames.remove(nickname)
+            }
         }
     }
 }

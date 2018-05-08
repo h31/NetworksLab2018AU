@@ -9,7 +9,7 @@ class ClientHandler(
 ): Runnable {
     private var shouldStop = false
 
-    private var handler = RegistrationHandler()
+    private var handler: RequestHandler = RegistrationHandler()
 
     override fun run() {
         val communicator = ServerCommunicationSocket(clientSocket)
@@ -25,7 +25,9 @@ class ClientHandler(
                 when (request.clientRole) {
                     ClientRole.PLAYER -> gameModel.registerPlayer(request.nickname)
 
-                    ClientRole.CROUPIER -> gameModel.registerCroupier(request.nickname)
+                    ClientRole.CROUPIER -> {
+                        handler = CroupierHandler(gameModel.registerCroupier(request.nickname))
+                    }
                 }
             } catch (_: NicknameIsTaken) {
                 return ErrorResponse("Nickname is already taken")
@@ -37,23 +39,23 @@ class ClientHandler(
         }
 
         override fun handle(request: GameStartRequest): Response {
-            return ErrorResponse(errorMessage)
+            return ErrorResponse(unauthorizedRequestErrorMessage)
         }
 
         override fun handle(request: GameStatusRequest): Response {
-            return ErrorResponse(errorMessage)
+            return ErrorResponse(unauthorizedRequestErrorMessage)
         }
 
         override fun handle(request: BalanceRequest): Response {
-            return ErrorResponse(errorMessage)
+            return ErrorResponse(unauthorizedRequestErrorMessage)
         }
 
         override fun handle(request: BetRequest): Response {
-            return ErrorResponse(errorMessage)
+            return ErrorResponse(unauthorizedRequestErrorMessage)
         }
 
         override fun handle(request: GameResultsRequest): Response {
-            return ErrorResponse(errorMessage)
+            return ErrorResponse(unauthorizedRequestErrorMessage)
         }
 
         override fun handleSocketClosing() {
@@ -61,7 +63,42 @@ class ClientHandler(
         }
     }
 
+    private inner class CroupierHandler(val croupier: GameModel.Croupier): RequestHandler {
+        override fun handle(request: RegistrationRequest): Response {
+            return ErrorResponse(repeatedRegistrationErrorMessage)
+        }
+
+        override fun handle(request: GameStartRequest): Response {
+            TODO()
+        }
+
+        override fun handle(request: GameStatusRequest): Response {
+            TODO()
+        }
+
+        override fun handle(request: BalanceRequest): Response {
+            return ErrorResponse(unsupportedOperationErrorMessage)
+        }
+
+        override fun handle(request: BetRequest): Response {
+            return ErrorResponse(unsupportedOperationErrorMessage)
+        }
+
+        override fun handle(request: GameResultsRequest): Response {
+            TODO()
+        }
+
+        override fun handleSocketClosing() {
+            croupier.destroy()
+            shouldStop = true
+        }
+    }
+
     private companion object {
-        const val errorMessage = "Unauthorized request"
+        const val unauthorizedRequestErrorMessage = "Unauthorized request"
+
+        const val repeatedRegistrationErrorMessage = "Repeated registration"
+
+        const val unsupportedOperationErrorMessage = "Unsupported operation"
     }
 }
