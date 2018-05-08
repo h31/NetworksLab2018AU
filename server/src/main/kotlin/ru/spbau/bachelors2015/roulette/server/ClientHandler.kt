@@ -5,7 +5,7 @@ import java.net.Socket
 
 class ClientHandler(
     private val clientSocket: Socket,
-    private val gameModel: GameModel
+    private val casinoModel: CasinoModel
 ): Runnable {
     private var shouldStop = false
 
@@ -23,15 +23,18 @@ class ClientHandler(
         override fun handle(request: RegistrationRequest): Response {
             try {
                 when (request.clientRole) {
-                    ClientRole.PLAYER -> gameModel.registerPlayer(request.nickname)
+                    ClientRole.PLAYER -> {
+                        casinoModel.registerPlayer(request.nickname)
+                        TODO("need to create a handler")
+                    }
 
                     ClientRole.CROUPIER -> {
-                        handler = CroupierHandler(gameModel.registerCroupier(request.nickname))
+                        handler = CroupierHandler(casinoModel.registerCroupier(request.nickname))
                     }
                 }
-            } catch (_: NicknameIsTaken) {
+            } catch (_: NicknameIsTakenException) {
                 return ErrorResponse("Nickname is already taken")
-            } catch (_: CroupierIsAlreadyRegistered) {
+            } catch (_: CroupierIsAlreadyRegisteredException) {
                 return ErrorResponse("There is already a croupier in the game")
             }
 
@@ -63,7 +66,7 @@ class ClientHandler(
         }
     }
 
-    private inner class CroupierHandler(val croupier: GameModel.Croupier): RequestHandler {
+    private inner class CroupierHandler(val croupier: CasinoModel.Croupier): RequestHandler {
         override fun handle(request: RegistrationRequest): Response {
             return ErrorResponse(repeatedRegistrationErrorMessage)
         }

@@ -1,10 +1,10 @@
 package ru.spbau.bachelors2015.roulette.server
 
-class NicknameIsTaken: Exception()
+class NicknameIsTakenException: Exception()
 
-class CroupierIsAlreadyRegistered: Exception()
+class CroupierIsAlreadyRegisteredException: Exception()
 
-class GameModel {
+class CasinoModel {
     private var isCroupierRegistered = false
 
     private val nicknames = mutableSetOf<String>()
@@ -12,7 +12,7 @@ class GameModel {
     fun registerPlayer(nickname: String): Player {
         synchronized(this) {
             if (nicknames.contains(nickname)) {
-                throw NicknameIsTaken()
+                throw NicknameIsTakenException()
             }
 
             nicknames.add(nickname)
@@ -24,11 +24,11 @@ class GameModel {
     fun registerCroupier(nickname: String): Croupier {
         synchronized(this) {
             if (nicknames.contains(nickname)) {
-                throw NicknameIsTaken()
+                throw NicknameIsTakenException()
             }
 
             if (isCroupierRegistered) {
-                throw CroupierIsAlreadyRegistered()
+                throw CroupierIsAlreadyRegisteredException()
             }
 
             isCroupierRegistered = true
@@ -50,7 +50,9 @@ class GameModel {
 
     private inner class PlayerImplementation(override val nickname: String) : Player {
         override fun destroy() {
-            synchronized(this@GameModel) {
+            // TODO: need to handle destruction during active game
+
+            synchronized(this@CasinoModel) {
                 nicknames.remove(nickname)
             }
         }
@@ -58,7 +60,9 @@ class GameModel {
 
     private inner class CroupierImplementation(override val nickname: String) : Croupier {
         override fun destroy() {
-            synchronized(this@GameModel) {
+            // TODO: need to handle destruction during active game
+
+            synchronized(this@CasinoModel) {
                 isCroupierRegistered = false
                 nicknames.remove(nickname)
             }

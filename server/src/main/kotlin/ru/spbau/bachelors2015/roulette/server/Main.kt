@@ -5,11 +5,11 @@ import java.net.ServerSocket
 fun main(args: Array<String>) {
     val port = args[0].toInt()
     val serverSocket = ServerSocket(port)
-    val gameModel = GameModel()
+    val casinoModel = CasinoModel()
 
     while (true) {
         val socket = serverSocket.accept()
-        val clientThread = Thread(ClientHandler(socket, gameModel))
+        val clientThread = Thread(ClientHandler(socket, casinoModel))
         clientThread.run()
     }
 }
