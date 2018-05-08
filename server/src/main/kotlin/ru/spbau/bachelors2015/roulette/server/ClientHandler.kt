@@ -22,14 +22,13 @@ class ClientHandler(
     private inner class RegistrationHandler: RequestHandler {
         override fun handle(request: RegistrationRequest): Response {
             try {
-                when (request.clientRole) {
+                handler = when (request.clientRole) {
                     ClientRole.PLAYER -> {
-                        casinoModel.registerPlayer(request.nickname)
-                        TODO("need to create a handler")
+                        PlayerHandler(casinoModel.registerPlayer(request.nickname))
                     }
 
                     ClientRole.CROUPIER -> {
-                        handler = CroupierHandler(casinoModel.registerCroupier(request.nickname))
+                        CroupierHandler(casinoModel.registerCroupier(request.nickname))
                     }
                 }
             } catch (_: NicknameIsTakenException) {
@@ -66,19 +65,9 @@ class ClientHandler(
         }
     }
 
-    private inner class CroupierHandler(val croupier: CasinoModel.Croupier): RequestHandler {
+    private abstract inner class CommonHandler: RequestHandler {
         override fun handle(request: RegistrationRequest): Response {
             return ErrorResponse(repeatedRegistrationErrorMessage)
-        }
-
-        override fun handle(request: GameStartRequest): Response {
-            try {
-                casinoModel.startNewGame()
-            } catch (_: GameIsRunningException) {
-                return ErrorResponse("Game is already running")
-            }
-
-            return OkResponse()
         }
 
         override fun handle(request: GameStatusRequest): Response {
@@ -91,22 +80,53 @@ class ClientHandler(
             )
         }
 
+        override fun handle(request: GameResultsRequest): Response {
+            val game = casinoModel.getGame(request.gameId) ?:
+            return ErrorResponse("No results for game with given id")
+
+            return GameResultsResponse(
+                game.value,
+                game.getResults().mapKeys { it.key.nickname }
+            )
+        }
+    }
+
+    private inner class PlayerHandler(val player: CasinoModel.Player): CommonHandler() {
+        override fun handle(request: GameStartRequest): Response {
+            return ErrorResponse(unsupportedOperationErrorMessage)
+        }
+
+        override fun handle(request: BalanceRequest): Response {
+            TODO("not implemented")
+        }
+
+        override fun handle(request: BetRequest): Response {
+            TODO("not implemented")
+        }
+
+        override fun handleSocketClosing() {
+            player.destroy()
+            shouldStop = true
+        }
+    }
+
+    private inner class CroupierHandler(val croupier: CasinoModel.Croupier): CommonHandler() {
+        override fun handle(request: GameStartRequest): Response {
+            try {
+                casinoModel.startNewGame()
+            } catch (_: GameIsRunningException) {
+                return ErrorResponse("Game is already running")
+            }
+
+            return OkResponse()
+        }
+
         override fun handle(request: BalanceRequest): Response {
             return ErrorResponse(unsupportedOperationErrorMessage)
         }
 
         override fun handle(request: BetRequest): Response {
             return ErrorResponse(unsupportedOperationErrorMessage)
-        }
-
-        override fun handle(request: GameResultsRequest): Response {
-            val game = casinoModel.getGame(request.gameId) ?:
-                return ErrorResponse("No results for game with given id")
-
-            return GameResultsResponse(
-                game.value,
-                game.getResults().mapKeys { it.key.nickname }
-            )
         }
 
         override fun handleSocketClosing() {
