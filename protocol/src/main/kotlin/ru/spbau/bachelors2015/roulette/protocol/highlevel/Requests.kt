@@ -147,7 +147,7 @@ class BetRequest(val gameId: Int, val bet: Bet): Request() {
             Pair(valueQueryLineKey, bet.value.toString())
         )
 
-        bet.accept(object : BetTypeVisitor<Unit> {
+        bet.accept(object : BetVisitor<Unit> {
             override fun visit(betType: BetOnEvenNumbers) {
                 queryLinePairs.add(Pair(typeQueryLineKey, BetTypeEnumeration.EVEN.typeName))
             }
