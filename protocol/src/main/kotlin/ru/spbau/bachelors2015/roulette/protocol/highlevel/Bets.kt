@@ -1,11 +1,11 @@
 package ru.spbau.bachelors2015.roulette.protocol.highlevel
 
 interface BetVisitor<T> {
-    fun visit(betType: BetOnEvenNumbers): T
+    fun visit(bet: BetOnEvenNumbers): T
 
-    fun visit(betType: BetOnOddNumbers): T
+    fun visit(bet: BetOnOddNumbers): T
 
-    fun visit(betType: BetOnExactNumber): T
+    fun visit(bet: BetOnExactNumber): T
 }
 
 abstract class Bet(val value: Int) {

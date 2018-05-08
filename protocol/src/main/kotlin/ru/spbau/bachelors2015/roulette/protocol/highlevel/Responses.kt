@@ -176,7 +176,7 @@ class BalanceResponse(val balance: Int): Response() {
 
 class GameResultsResponse(
     val rouletteValue: Int,
-    val balanceChanges: Map<String, Int>
+    val payout: Map<String, Int>
 ): Response() {
     override val status = HttpResponseStatus.OK
 
@@ -184,7 +184,7 @@ class GameResultsResponse(
         append(rouletteValue)
         append(HttpMessageElements.newlineDelimiter)
 
-        for ((nickname, balanceChange) in balanceChanges) {
+        for ((nickname, balanceChange) in payout) {
             append(nickname)
             append(HttpMessageElements.spaceDelimiter)
             append(balanceChange)
