@@ -14,6 +14,10 @@ class BetHasAlreadyBeenMadeException: Exception()
 class Game(val id: Int) {
     private val beginTime = System.nanoTime()
 
+    private val boardSize = 36
+
+    private val value = Random().nextInt(boardSize) + 1
+
     private val betsImplementation = mutableMapOf<CasinoModel.Player, Bet>()
 
     val bets: Map<CasinoModel.Player, Bet> = betsImplementation
@@ -47,9 +51,6 @@ class Game(val id: Int) {
         if (!isOver()) {
             throw GameIsNotOverException()
         }
-
-        val boardSize = 36
-        val value = Random().nextInt(boardSize) + 1
 
         return GameResults(bets.mapValues { (_, bet) ->
             if (bet.isWinningWith(value)) {
