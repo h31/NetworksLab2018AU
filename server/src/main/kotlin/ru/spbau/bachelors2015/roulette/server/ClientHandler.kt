@@ -97,11 +97,27 @@ class ClientHandler(
         }
 
         override fun handle(request: BalanceRequest): Response {
-            TODO("not implemented")
+            return BalanceResponse(player.balance)
         }
 
         override fun handle(request: BetRequest): Response {
-            TODO("not implemented")
+            val game = casinoModel.getCurrentGame() ?:
+                return ErrorResponse("No game is running")
+
+            if (player.balance < request.bet.value) {
+                return ErrorResponse("Not enough money to make a bet")
+            }
+
+            try {
+                game.makeBet(player, request.bet)
+            } catch (_: GameIsOverException) {
+                return ErrorResponse("Game is over")
+            } catch (_: BetHasAlreadyBeenMadeException) {
+                return ErrorResponse("Bet has already been made")
+            }
+
+            player.balance -= request.bet.value
+            return OkResponse()
         }
 
         override fun handleSocketClosing() {

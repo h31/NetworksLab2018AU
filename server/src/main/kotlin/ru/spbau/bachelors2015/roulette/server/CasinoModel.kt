@@ -79,11 +79,15 @@ class CasinoModel {
         fun destroy()
     }
 
-    interface Player : Role
+    interface Player : Role {
+        var balance: Int
+    }
 
     interface Croupier : Role
 
     private inner class PlayerImplementation(override val nickname: String) : Player {
+        override var balance: Int = 1000
+
         override fun destroy() {
             synchronized(this@CasinoModel) {
                 nicknames.remove(nickname)
