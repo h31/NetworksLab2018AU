@@ -18,9 +18,13 @@ class Game(val id: Int) {
 
     private val value = Random().nextInt(boardSize) + 1
 
-    private val betsImplementation = mutableMapOf<CasinoModel.Player, Bet>()
+    private val bets = mutableMapOf<CasinoModel.Player, Bet>()
 
-    val bets: Map<CasinoModel.Player, Bet> = betsImplementation
+    fun getBets(): Map<CasinoModel.Player, Bet> {
+        synchronized(this) {
+            return bets.toMap()
+        }
+    }
 
     fun secondsLeft(): Int {
         val secondsPast = TimeUnit.SECONDS.convert(
@@ -40,19 +44,21 @@ class Game(val id: Int) {
             throw GameIsOverException()
         }
 
-        if (betsImplementation.containsKey(player)) {
-            throw BetHasAlreadyBeenMadeException()
-        }
+        synchronized(this) {
+            if (bets.containsKey(player)) {
+                throw BetHasAlreadyBeenMadeException()
+            }
 
-        betsImplementation[player] = bet
+            bets[player] = bet
+        }
     }
 
-    fun getResults(): GameResults {
+    fun getResults(): Map<CasinoModel.Player, Int> {
         if (!isOver()) {
             throw GameIsNotOverException()
         }
 
-        return GameResults(bets.mapValues { (_, bet) ->
+        return bets.mapValues { (_, bet) ->
             if (bet.isWinningWith(value)) {
                 bet.accept(object : BetVisitor<Int> {
                     override fun visit(bet: BetOnEvenNumbers): Int {
@@ -70,6 +76,6 @@ class Game(val id: Int) {
             } else {
                 0
             }
-        })
+        }
     }
 }

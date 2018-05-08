@@ -4,10 +4,18 @@ class NicknameIsTakenException: Exception()
 
 class CroupierIsAlreadyRegisteredException: Exception()
 
+class GameIsRunningException: Exception()
+
 class CasinoModel {
     private var isCroupierRegistered = false
 
     private val nicknames = mutableSetOf<String>()
+
+    private var freeGameId = 0
+
+    private var previousGame: Game? = null
+
+    private var currentGame: Game? = null
 
     fun registerPlayer(nickname: String): Player {
         synchronized(this) {
@@ -38,6 +46,33 @@ class CasinoModel {
         }
     }
 
+    fun getCurrentGame(): Game? {
+        return currentGame
+    }
+
+    fun getGame(id: Int): Game? {
+        synchronized(this) {
+            if (currentGame?.id == id) {
+                return currentGame
+            } else if (previousGame?.id == id) {
+                return previousGame
+            }
+
+            return null
+        }
+    }
+
+    fun startNewGame() {
+        synchronized(this) {
+            if (currentGame?.isOver() == false) {
+                throw GameIsRunningException()
+            }
+
+            previousGame = currentGame
+            currentGame = Game(++freeGameId)
+        }
+    }
+
     interface Role {
         val nickname: String
 
@@ -50,8 +85,6 @@ class CasinoModel {
 
     private inner class PlayerImplementation(override val nickname: String) : Player {
         override fun destroy() {
-            // TODO: need to handle destruction during active game
-
             synchronized(this@CasinoModel) {
                 nicknames.remove(nickname)
             }
@@ -60,8 +93,6 @@ class CasinoModel {
 
     private inner class CroupierImplementation(override val nickname: String) : Croupier {
         override fun destroy() {
-            // TODO: need to handle destruction during active game
-
             synchronized(this@CasinoModel) {
                 isCroupierRegistered = false
                 nicknames.remove(nickname)
