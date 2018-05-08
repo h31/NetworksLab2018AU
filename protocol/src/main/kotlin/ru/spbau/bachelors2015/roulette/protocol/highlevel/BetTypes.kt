@@ -8,13 +8,13 @@ interface BetTypeVisitor<T> {
     fun visit(betType: BetOnExactNumber): T
 }
 
-abstract class BetType {
+abstract class Bet(val value: Int) {
     abstract fun isWinningWith(number: Int): Boolean
 
     abstract fun <T> accept(visitor: BetTypeVisitor<T>): T
 }
 
-class BetOnEvenNumbers: BetType() {
+class BetOnEvenNumbers(value: Int): Bet(value) {
     override fun isWinningWith(number: Int): Boolean {
         return number % 2 == 0
     }
@@ -24,7 +24,7 @@ class BetOnEvenNumbers: BetType() {
     }
 }
 
-class BetOnOddNumbers: BetType() {
+class BetOnOddNumbers(value: Int): Bet(value) {
     override fun isWinningWith(number: Int): Boolean {
         return number % 2 == 1
     }
@@ -34,7 +34,7 @@ class BetOnOddNumbers: BetType() {
     }
 }
 
-class BetOnExactNumber(val number: Int): BetType() {
+class BetOnExactNumber(val number: Int, value: Int): Bet(value) {
     override fun isWinningWith(number: Int): Boolean {
         return this.number == number
     }

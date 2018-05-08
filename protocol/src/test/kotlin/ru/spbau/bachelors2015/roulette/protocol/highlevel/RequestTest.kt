@@ -37,12 +37,12 @@ class RequestTest {
 
     @Test
     fun betRequestTest() {
-        val request1 = BetRequest(1, 100, BetOnExactNumber(20))
+        val request1 = BetRequest(1, BetOnExactNumber(20, 100))
         val request2 = BetRequest.fromHttpRepresentation(request1.toHttpRepresentation())
 
         assertThat(request2.gameId, `is`(equalTo(request1.gameId)))
-        assertThat(request2.value, `is`(equalTo(request1.value)))
-        assertThat(request2.type.javaClass, `is`(equalTo(request1.type.javaClass)))
+        assertThat(request2.bet.javaClass, `is`(equalTo(request1.bet.javaClass)))
+        assertThat(request2.bet.value, `is`(equalTo(request1.bet.value)))
     }
 
     @Test

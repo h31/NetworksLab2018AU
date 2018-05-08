@@ -136,7 +136,7 @@ class BalanceRequest: Request() {
     }
 }
 
-class BetRequest(val gameId: Int, val value: Int, val type: BetType): Request() {
+class BetRequest(val gameId: Int, val bet: Bet): Request() {
     override val resourcePath = BetRequest.resourcePath
 
     override val requestMethod = BetRequest.requestMethod
@@ -144,10 +144,10 @@ class BetRequest(val gameId: Int, val value: Int, val type: BetType): Request() 
     override fun queryLine(): QueryLine {
         val queryLinePairs = mutableListOf(
             Pair(gameIdQueryLineKey, gameId.toString()),
-            Pair(valueQueryLineKey, value.toString())
+            Pair(valueQueryLineKey, bet.value.toString())
         )
 
-        type.accept(object : BetTypeVisitor<Unit> {
+        bet.accept(object : BetTypeVisitor<Unit> {
             override fun visit(betType: BetOnEvenNumbers) {
                 queryLinePairs.add(Pair(typeQueryLineKey, BetTypeEnumeration.EVEN.typeName))
             }
@@ -175,7 +175,7 @@ class BetRequest(val gameId: Int, val value: Int, val type: BetType): Request() 
 
         private const val valueQueryLineKey = "value"
 
-        private const val typeQueryLineKey = "type"
+        private const val typeQueryLineKey = "bet"
 
         private const val numberQueryLineKey = "number"
 
@@ -222,9 +222,9 @@ class BetRequest(val gameId: Int, val value: Int, val type: BetType): Request() 
 
             val bet = try {
                 when (BetTypeEnumeration.fromTypeName(typeString)) {
-                    BetRequest.Companion.BetTypeEnumeration.EVEN -> BetOnEvenNumbers()
+                    BetRequest.Companion.BetTypeEnumeration.EVEN -> BetOnEvenNumbers(value)
 
-                    BetRequest.Companion.BetTypeEnumeration.ODD -> BetOnOddNumbers()
+                    BetRequest.Companion.BetTypeEnumeration.ODD -> BetOnOddNumbers(value)
 
                     BetRequest.Companion.BetTypeEnumeration.EXACT -> {
                         val numberString =
@@ -237,14 +237,14 @@ class BetRequest(val gameId: Int, val value: Int, val type: BetType): Request() 
                             throw InvalidHttpRequest()
                         }
 
-                        BetOnExactNumber(number)
+                        BetOnExactNumber(number, value)
                     }
                 }
             } catch (_: NoSuchElementException) {
                 throw InvalidHttpRequest()
             }
 
-            return BetRequest(gameId, value, bet)
+            return BetRequest(gameId, bet)
         }
     }
 }
