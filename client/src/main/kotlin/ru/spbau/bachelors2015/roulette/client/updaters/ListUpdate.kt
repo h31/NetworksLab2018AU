@@ -1,6 +1,8 @@
-package ru.spbau.bachelors2015.roulette.client
+package ru.spbau.bachelors2015.roulette.client.updaters
 
 import javafx.scene.control.ListView
+import ru.spbau.bachelors2015.roulette.client.SceneFactory
+import ru.spbau.bachelors2015.roulette.client.handlers.GameStatusHandler
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.ClientCommunicationSocket
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameStatusRequest
 

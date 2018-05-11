@@ -1,8 +1,9 @@
-package ru.spbau.bachelors2015.roulette.client
+package ru.spbau.bachelors2015.roulette.client.handlers
 
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import javafx.scene.control.ListView
+import ru.spbau.bachelors2015.roulette.client.GameData
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.ErrorResponse
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameStatusNegativeResponse
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameStatusPositiveResponse

@@ -1,4 +1,4 @@
-package ru.spbau.bachelors2015.roulette.client
+package ru.spbau.bachelors2015.roulette.client.handlers
 
 import javafx.scene.control.Label
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.*

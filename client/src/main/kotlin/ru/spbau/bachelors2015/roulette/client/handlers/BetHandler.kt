@@ -1,4 +1,4 @@
-package ru.spbau.bachelors2015.roulette.client
+package ru.spbau.bachelors2015.roulette.client.handlers
 
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.BetResponseHandler
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.ErrorResponse
