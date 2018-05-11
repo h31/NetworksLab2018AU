@@ -8,12 +8,11 @@ import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameStatusNegativeResp
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameStatusPositiveResponse
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameStatusResponseHandler
 
-class GameStatusHandler(private val listView: ListView<String>,
-                        private val sceneFactory: SceneFactory): GameStatusResponseHandler {
+class GameStatusHandler(private val listView: ListView<String>): GameStatusResponseHandler {
     private val items: ObservableList<String> = FXCollections.observableArrayList()
 
     override fun handle(response: GameStatusPositiveResponse) {
-        sceneFactory.gameId = response.gameId
+        GameData.gameId = response.gameId
         val seconds = "Seconds left : " + response.secondsLeft
         items.add(seconds)
         for (entry in response.bets) {

@@ -21,8 +21,6 @@ import javafx.scene.control.ChoiceBox
 object SceneFactory {
     private const val width = 800.0
     private const val height = 600.0
-    private var nickname: String? = null
-    var gameId: Int? = null
 
     fun getRegistrationScene(client: ClientCommunicationSocket, callback: (scene: Scene) -> Unit): Scene {
         val vbox = VBox()
@@ -57,7 +55,7 @@ object SceneFactory {
 
     private fun connect(client: ClientCommunicationSocket, role: ClientRole, nickname: String, callback: () -> Unit) {
         val request = RegistrationRequest(role, nickname)
-        this.nickname = nickname
+        GameData.nickname = nickname
         client.send(request, RegistrationHandler(callback))
     }
 
@@ -133,7 +131,7 @@ object SceneFactory {
                 }
             }
 
-            val request = BetRequest(this.gameId!!, requestBet)
+            val request = BetRequest(GameData.gameId!!, requestBet)
             client.send(request, BetHandler())
             makeBetButton.isDisable = true
         }

@@ -11,6 +11,6 @@ class ListUpdate(
 ) : Runnable {
     override fun run() {
         val request = GameStatusRequest()
-        client.send(request, GameStatusHandler(listView, sceneFactory))
+        client.send(request, GameStatusHandler(listView))
     }
 }
