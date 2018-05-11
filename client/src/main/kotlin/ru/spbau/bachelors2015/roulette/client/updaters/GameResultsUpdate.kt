@@ -8,13 +8,11 @@ import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameResultsRequest
 
 class GameResultsUpdate(
         private val client: ClientCommunicationSocket,
-        private val score: Label,
         private val rouletteValue: Label,
         private val playerPayout: Label
 ) : Runnable {
     override fun run() {
         val request = GameResultsRequest(GameData.gameId!!)
-
-        client.send(request, GameResultsHandler(score, rouletteValue, playerPayout))
+        client.send(request, GameResultsHandler(rouletteValue, playerPayout))
     }
 }

@@ -33,4 +33,3 @@ fun main(args: Array<String>) {
 
     UI(client).main(emptyArray())
 }
-

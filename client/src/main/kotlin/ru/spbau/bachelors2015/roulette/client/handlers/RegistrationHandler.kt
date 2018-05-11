@@ -6,11 +6,9 @@ import ru.spbau.bachelors2015.roulette.protocol.highlevel.RegistrationResponseHa
 
 class RegistrationHandler(private val callback: () -> Unit) : RegistrationResponseHandler {
     override fun handle(response: ErrorResponse) {
-
     }
 
     override fun handle(response: OkResponse) {
         callback()
     }
-
 }

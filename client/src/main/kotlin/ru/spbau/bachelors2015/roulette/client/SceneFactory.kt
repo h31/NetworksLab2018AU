@@ -139,7 +139,10 @@ object SceneFactory {
             client.send(request, BetHandler())
             makeBetButton.isDisable = true
 
-            Thread(GameResultsUpdate(client, score, rouletteValue, playerPayout))
+            val resultsUpdater = Thread(GameResultsUpdate(client, rouletteValue, playerPayout))
+            resultsUpdater.start()
+            resultsUpdater.join()
+            Thread(BalanceUpdate(client, balance)).start()
         }
 
         (scene.root as VBox).children.addAll(choiceLabel, choiceBox, hbox, balance, score, rouletteValue, playerPayout)

@@ -11,6 +11,7 @@ const val NICKNAME_DEFAULT_VALUE = "nickname"
 const val BALANCE_PREFIX = "Your balance: "
 const val SCORE_PREFIX = "Your score: "
 const val PAYOUT_PREFIX = "Your payout: "
+const val ROULETTE_PREFIX = "Roulette value: "
 
 // button labels
 const val BET_BUTTON_LABEL = "Bet"

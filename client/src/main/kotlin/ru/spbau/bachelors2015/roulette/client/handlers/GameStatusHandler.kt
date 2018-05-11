@@ -29,5 +29,4 @@ class GameStatusHandler(private val listView: ListView<String>): GameStatusRespo
 
     override fun handle(response: ErrorResponse) {
     }
-
 }

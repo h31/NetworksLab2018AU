@@ -12,5 +12,4 @@ class BetHandler: BetResponseHandler {
     override fun handle(response: ErrorResponse) {
 
     }
-
 }
