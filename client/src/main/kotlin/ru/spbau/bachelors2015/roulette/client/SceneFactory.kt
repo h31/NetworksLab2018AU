@@ -10,12 +10,13 @@ import javafx.scene.control.TextField
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.*
-import javafx.scene.control.CheckBox
 import javafx.scene.control.ChoiceBox
-
-
-
-
+import ru.spbau.bachelors2015.roulette.client.handlers.BetHandler
+import ru.spbau.bachelors2015.roulette.client.handlers.GameStartHandler
+import ru.spbau.bachelors2015.roulette.client.handlers.RegistrationHandler
+import ru.spbau.bachelors2015.roulette.client.updaters.BalanceUpdate
+import ru.spbau.bachelors2015.roulette.client.updaters.GameResultsUpdate
+import ru.spbau.bachelors2015.roulette.client.updaters.ListUpdate
 
 
 object SceneFactory {
@@ -24,24 +25,26 @@ object SceneFactory {
 
     fun getRegistrationScene(client: ClientCommunicationSocket, callback: (scene: Scene) -> Unit): Scene {
         val vbox = VBox()
-        val roleChooser = Label("Connect to server:")
+        val roleChooser = Label(CONNECT_BUTTON_LABEL)
         roleChooser.alignment = Pos.CENTER
 
         val hbox = HBox()
-        val croupier = Button("As croupier")
+        val croupier = Button(CROUPIER_CONNECT)
 
-        val nameField = TextField("nickname")
+        val nameField = TextField(NICKNAME_DEFAULT_VALUE)
         nameField.alignment = Pos.CENTER
         nameField.prefWidth = 200.0
 
         croupier.setOnAction {
             val role = ClientRole.CROUPIER
+            GameData.role = role
             connect(client, role, nameField.text, {callback(getCroupierGameScene(client))})
         }
 
-        val player = Button("As player")
+        val player = Button(PLAYER_CONNECT)
         player.setOnAction {
             val role = ClientRole.PLAYER
+            GameData.role = role
             connect(client, role, nameField.text, {callback(getPlayerGameScene(client))})
         }
 
@@ -71,7 +74,7 @@ object SceneFactory {
 
     private fun getCroupierGameScene(client: ClientCommunicationSocket): Scene {
         val scene = baseGameScene(client)
-        val startButton = Button("Start game!")
+        val startButton = Button(START_BUTTON_LABEL)
 
         startButton.setOnAction {
             val request = GameStartRequest()
@@ -87,10 +90,10 @@ object SceneFactory {
         val hbox = HBox()
 
         val choiceBox = ChoiceBox<String>()
-        val choiceLabel = Label("Choose type of bet:")
-        choiceBox.items.add("odd")
-        choiceBox.items.add("even")
-        choiceBox.items.add("exact number")
+        val choiceLabel = Label(TYPE_OF_BET_LABEL)
+        choiceBox.items.add(ODD_NUMBERS)
+        choiceBox.items.add(EVEN_NUMBERS)
+        choiceBox.items.add(EXACT_NUMBER)
         choiceBox.selectionModel.selectFirst()
 
         val exactNumber = TextField()
@@ -107,24 +110,25 @@ object SceneFactory {
             }
         }
 
-        val makeBetButton = Button("Bet")
+        val makeBetButton = Button(BET_BUTTON_LABEL)
         hbox.children.addAll(textField, makeBetButton)
 
-        val balanceBox = HBox()
-        val balanceLabel = Label("Your balance:")
-        val balance = Label("")
-        balanceBox.children.addAll(balanceLabel, balance)
+        val balance = Label(BALANCE_PREFIX)
         Thread(BalanceUpdate(client, balance)).start()
+
+        val score = Label(SCORE_PREFIX)
+        val rouletteValue = Label("")
+        val playerPayout = Label(PAYOUT_PREFIX)
 
         makeBetButton.setOnAction {
             val bet = textField.text.toInt()
             balance.text = (balance.text.toInt() - bet).toString()
 
             val requestBet: Bet?
-            if (choiceBox.value == "odd") {
+            if (choiceBox.value == ODD_NUMBERS) {
                 requestBet = BetOnOddNumbers(bet)
             } else {
-                if (choiceBox.value == "even") {
+                if (choiceBox.value == EVEN_NUMBERS) {
                     requestBet = BetOnEvenNumbers(bet)
                 } else {
                     requestBet = BetOnExactNumber(exactNumber.text.toInt(), bet)
@@ -134,10 +138,11 @@ object SceneFactory {
             val request = BetRequest(GameData.gameId!!, requestBet)
             client.send(request, BetHandler())
             makeBetButton.isDisable = true
+
+            Thread(GameResultsUpdate(client, score, rouletteValue, playerPayout))
         }
 
-
-        (scene.root as VBox).children.addAll(choiceLabel, choiceBox, hbox, balanceBox)
+        (scene.root as VBox).children.addAll(choiceLabel, choiceBox, hbox, balance, score, rouletteValue, playerPayout)
 
         return scene
     }

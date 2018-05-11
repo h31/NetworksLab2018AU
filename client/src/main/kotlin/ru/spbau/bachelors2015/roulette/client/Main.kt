@@ -10,7 +10,7 @@ class UI(private val client: ClientCommunicationSocket) : Application() {
     private var primaryStage: Stage? = null
 
     override fun start(primaryStage: Stage) {
-        primaryStage.title = "Roulette"
+        primaryStage.title = WINDOW_TITLE
         val startScene = getRegistrationScene(client, {
             this.primaryStage!!.scene = it
         }
