@@ -104,9 +104,31 @@ class HttpInputStream(inputStream: InputStream): Closeable {
         }
 
         return Uri(
-            ResourcePath(tokens[0].split(ResourcePath.elementsSeparator)),
+            parseResourcePath(tokens[0]),
             parseQueryLine(tokens[1])
         )
+    }
+
+    private fun parseResourcePath(resourcePath: String): ResourcePath {
+        var resourceSequence = resourcePath.split(ResourcePath.elementsSeparator)
+
+        if (resourceSequence.isEmpty()) {
+            return ResourcePath()
+        }
+
+        if (resourceSequence.first().isEmpty()) {
+            resourceSequence = resourceSequence.drop(1)
+        }
+
+        if (resourceSequence.isEmpty()) {
+            return ResourcePath()
+        }
+
+        if (resourceSequence.last().isEmpty()) {
+            resourceSequence = resourceSequence.dropLast(1)
+        }
+
+        return ResourcePath(resourceSequence)
     }
 
     private fun parseQueryLine(queryLine: String): QueryLine {
