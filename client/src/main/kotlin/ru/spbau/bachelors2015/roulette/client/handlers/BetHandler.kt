@@ -10,6 +10,7 @@ class BetHandler: BetResponseHandler {
     }
 
     override fun handle(response: ErrorResponse) {
-
+        println(response.messageBody)
+        throw Exception("cannot make bet")
     }
 }

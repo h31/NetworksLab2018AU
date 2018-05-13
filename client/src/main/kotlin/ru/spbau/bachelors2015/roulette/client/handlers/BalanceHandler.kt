@@ -11,6 +11,7 @@ class BalanceHandler(private val balance: Label) : BalanceResponseHandler {
     }
 
     override fun handle(response: ErrorResponse) {
-
+        println(response.messageBody)
+        throw Exception("cannot get balance")
     }
 }

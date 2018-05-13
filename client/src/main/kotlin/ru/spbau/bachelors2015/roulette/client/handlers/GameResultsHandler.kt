@@ -19,6 +19,7 @@ class GameResultsHandler(
     }
 
     override fun handle(response: ErrorResponse) {
-
+        println(response.messageBody)
+        throw Exception("cannot get game results")
     }
 }

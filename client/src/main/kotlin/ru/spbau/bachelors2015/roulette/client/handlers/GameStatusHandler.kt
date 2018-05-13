@@ -28,5 +28,7 @@ class GameStatusHandler(private val listView: ListView<String>): GameStatusRespo
     }
 
     override fun handle(response: ErrorResponse) {
+        println(response.messageBody)
+        throw Exception("cannot get game status")
     }
 }
