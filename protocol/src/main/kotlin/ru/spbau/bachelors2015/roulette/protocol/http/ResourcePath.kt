@@ -9,6 +9,10 @@ class ResourcePath(elements: List<String>) {
 
     init {
         for (element in elements) {
+            if (element.isEmpty()) {
+                throw IllegalArgumentException("Path element is empty")
+            }
+
             if (element.contains(elementsSeparator)) {
                 throw IllegalArgumentException(
                     "Path element contains forbidden character: $elementsSeparator"
