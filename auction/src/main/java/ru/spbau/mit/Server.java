@@ -64,6 +64,8 @@ public class Server implements Closeable {
     public Server(InetSocketAddress address) throws IOException {
         this.serverSocket = new ServerSocket();
         serverSocket.bind(address);
+        lots.add(new Lot(10));
+        lots.add(new Lot(1234567890123L));
         serve();
     }
 
@@ -141,7 +143,8 @@ public class Server implements Closeable {
                     String clientRequest = receive();
                     log(Level.DEBUG, "Received request: " + clientRequest);
                     String[] headerAndBody = Protocol.splitOnHeaderAndBody(clientRequest);
-                    if (headerAndBody[0].equals(CLIENT_LIST_REQUEST_HEADER)) {
+                    String header = headerAndBody[0];
+                    if (header.equals(CLIENT_LIST_REQUEST_HEADER)) {
                         String response;
                         try {
                             List<Lot> lotsCopy = new ArrayList<>();
@@ -153,6 +156,7 @@ public class Server implements Closeable {
                             }
                             StringBuilder responseBuilder = new StringBuilder(SERVER_OK_RESPONSE_HEADER);
                             responseBuilder.append(Protocol.HEADER_AND_BODY_DELIMITER);
+                            responseBuilder.append(lotsCopy.size()).append("\n");
                             for (Lot lot : lotsCopy) {
                                 responseBuilder.append(String.format("%d %d %s\n", lot.getId(), lot.getCost(), lot.getName()));
                             }
@@ -162,11 +166,17 @@ public class Server implements Closeable {
                         }
                         log(Level.DEBUG, "Sending response: " + response);
                         send(response);
+                    } else if (header.equals(CLIENT_EXIT_REQUEST_HEADER)) {
+                        log(Level.INFO, "Closing client initiated.");
+                        send(SERVER_OK_RESPONSE_HEADER);
+                        finish = true;
+                        deassignAdmin();
                     }
                 }
             } catch (IOException e) {
                 LOGGER.error("ServerSession run error: " + e);
             }
+            log(Level.DEBUG, "session finished");
         }
 
         private void send(String response) throws IOException {
@@ -193,6 +203,17 @@ public class Server implements Closeable {
             }
         }
 
+        private void deassignAdmin() {
+            if (isAdmin) {
+                synchronized (serverStateMonitor) {
+                    if (adminClientSession != this) {
+                        throw new RuntimeException("adminClientSession is expected to be this");
+                    }
+                    adminClientSession = null;
+                }
+            }
+        }
+
         private void log(Level logLevel, String msg) {
             String logMessage = "session#" + this.toString() + ": " + msg;
             LOGGER.log(logLevel, logMessage);
@@ -212,7 +233,7 @@ public class Server implements Closeable {
             // TODO put response into Protocol's inner class.
             String response;
             if (roleString.equals(ClientRole.ADMIN.roleString())) {
-                log(Level.DEBUG, ": Client wants to be come an admin");
+                log(Level.DEBUG, ": Client wants to become an admin");
                 if (assignAdmin()) {
                     response = SERVER_OK_RESPONSE_HEADER;
                 } else {

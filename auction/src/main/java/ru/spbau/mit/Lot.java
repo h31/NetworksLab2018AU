@@ -17,6 +17,9 @@ public final class Lot {
         }
         this.name = name;
         this.cost = startCost;
+        if (startCost <= 0) {
+            throw new ProtocolException("cost should be positive");
+        }
     }
 
     public Lot(String name, long startCost) throws ProtocolException {
@@ -28,11 +31,12 @@ public final class Lot {
         this(other.id, other.name, other.cost);
     }
 
-//    public Lot(long startCost) {
-//        this.cost = startCost;
-//        this.id = lotCount.getAndIncrement();
-//        this.name = "Lot#" + String.valueOf(this.id);
-//    }
+    // For testing purposes only.
+    public Lot(long startCost) {
+        this.cost = startCost;
+        this.id = lotCount.getAndIncrement();
+        this.name = "Lot#" + String.valueOf(this.id);
+    }
 
     public String getName() {
         return name;

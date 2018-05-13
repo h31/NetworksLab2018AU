@@ -9,7 +9,10 @@ public class Protocol {
     public static final String VERSION = "1.0";
     public static final String CLIENT_INIT_REQUEST_HEADER = "GET /this_client/role " + CURRENT_PROTOCOL;
     public static final String CLIENT_LIST_REQUEST_HEADER = "GET /lots " + CURRENT_PROTOCOL;
+    public static final String CLIENT_EXIT_REQUEST_HEADER = "PUT /this_client/exit " + CURRENT_PROTOCOL;
+
     public static final String HEADER_AND_BODY_DELIMITER = "\n\n";
+    public static final String LINE_DELIMITER = "\n";
     public static final String SERVER_OK_RESPONSE_HEADER = CURRENT_PROTOCOL + " 200 OK";
     public static final String SERVER_ERROR_RESPONSE_HEADER = "504";
 

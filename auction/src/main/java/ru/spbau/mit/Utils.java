@@ -14,13 +14,13 @@ public class Utils {
     public static final String EXIT_COMMAND = "exit";
     public static final String LIST_COMMAND = "list";
 
-    public static void TODO(String msg) {
-        throw new NotImplementedException(msg);
-    }
-
-    public static void TODO() {
-        TODO("TODO");
-    }
+//    public static void TODO(String msg) {
+//        throw new NotImplementedException(msg);
+//    }
+//
+//    public static void TODO() {
+//        TODO("TODO");
+//    }
 
     public static InetSocketAddress socketAddressFromCommandLine(CommandLine commandLine) {
         String hostname = commandLine.getOptionValue(HOST_PARAMETER, "localhost");

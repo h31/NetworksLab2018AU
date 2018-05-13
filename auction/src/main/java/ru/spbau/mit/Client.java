@@ -45,11 +45,9 @@ public class Client implements Closeable {
             while (true) {
                 // TODO command line requests.
                 String line = scanner.nextLine().trim();
-                final boolean hasToFinish = line.equals(EXIT_COMMAND);
-                if (hasToFinish) {
+                if (line.equals(EXIT_COMMAND)) {
                     break;
-                }
-                if (line.equals(LIST_COMMAND)) {
+                } else if (line.equals(LIST_COMMAND)) {
                     LOGGER.info("Sending request on current lots list.");
                     List<Lot> lots = client.list();
                     System.out.println("Current lots");
@@ -70,16 +68,16 @@ public class Client implements Closeable {
     }
 
     public void register(ClientRole role) throws IOException, ProtocolException {
-        sendMessage(socket, clientInitRequest(role));
-        String serverInitResponse = receiveMessage(socket);
+        send(clientInitRequest(role));
+        String serverInitResponse = receive();
         checkServerOk(serverInitResponse);
     }
 
     public List<Lot> list() throws IOException, ProtocolException {
         final String request = CLIENT_LIST_REQUEST_HEADER;
-        sendMessage(socket, request);
+        send(request);
         LOGGER.debug("send request to server: " + request);
-        final String response = receiveMessage(socket);
+        final String response = receive();
         LOGGER.debug("server response: " + response);
 
         String[] headerAndBody = response.split("\n\n");
@@ -90,7 +88,7 @@ public class Client implements Closeable {
 
         List<Lot> result = new ArrayList<>();
         String firstLine = scanner.nextLine().trim();
-        int lotsCount = Integer.valueOf(firstLine);
+        int lotsCount = Integer.parseInt(firstLine);
         for (int i = 0; i < lotsCount; i++) {
             String lotLine = scanner.nextLine();
             String[] idAndCostAndName = lotLine.split(" ");
@@ -111,6 +109,17 @@ public class Client implements Closeable {
 
     @Override
     public void close() throws IOException {
-        socket.close();
+        if (socket != null) {
+            send(CLIENT_EXIT_REQUEST_HEADER);
+            socket.close();
+        }
+    }
+
+    private void send(String message) throws IOException {
+        sendMessage(socket, message);
+    }
+
+    private String receive() throws IOException {
+        return receiveMessage(socket);
     }
 }
