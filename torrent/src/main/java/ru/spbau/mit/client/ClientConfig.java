@@ -1,7 +1,6 @@
 package ru.spbau.mit.client;
 
 public final class ClientConfig {
-    public static final int THREADS_COUNT = 2;
     public static final String SERVER_HOST = "127.0.0.1";
     public static final int SERVER_PORT = 8081;
     public static final String CLIENT_RESOURCES = "./resources/";

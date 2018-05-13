@@ -2,9 +2,9 @@ package ru.spbau.mit;
 
 import ru.spbau.mit.http.Request;
 import ru.spbau.mit.http.Response;
+import ru.spbau.mit.tracker.request.ListRequest;
 import ru.spbau.mit.tracker.request.TrackerRequest;
 import ru.spbau.mit.tracker.response.*;
-import ru.spbau.mit.common.ResponseConfig;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -104,15 +104,14 @@ public final class Codec {
     public static TrackerResponse readResponse(DataInputStream dis, int id) {
         try {
             switch (id) {
-                case ResponseConfig.LIST_RESPONSE: return new ListResponse(Response.parse(dis.readUTF()).getData());
-                case ResponseConfig.UPLOAD_RESPONSE: return new UploadResponse(Response.parse(dis.readUTF()).getData());
-                case ResponseConfig.SOURCES_RESPONSE: return new SourcesResponse(Response.parse(dis.readUTF()).getData());
-                case ResponseConfig.UPDATE_RESPONSE: return new UpdateResponse(Response.parse(dis.readUTF()).getData());
+                case 1: return new ListResponse(Response.parse(dis.readUTF()).getData());
+                case 2: return new UploadResponse(Response.parse(dis.readUTF()).getData());
+                case 3: return new SourcesResponse(Response.parse(dis.readUTF()).getData());
+                case 4: return new UpdateResponse(Response.parse(dis.readUTF()).getData());
             }
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
         return null;
     }
-
 }

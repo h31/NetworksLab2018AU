@@ -2,13 +2,12 @@ package ru.spbau.mit.tracker;
 
 import ru.spbau.mit.Codec;
 import ru.spbau.mit.CommonConfig;
-import ru.spbau.mit.common.RequestConfig;
 import ru.spbau.mit.data.ClientInfo;
 import ru.spbau.mit.data.FileInfo;
-
+import ru.spbau.mit.common.api.Request;
+import ru.spbau.mit.common.api.RequestConfig;
 import ru.spbau.mit.tracker.api.TorrentTracker;
 import ru.spbau.mit.tracker.request.SourcesRequest;
-import ru.spbau.mit.tracker.request.TrackerRequest;
 import ru.spbau.mit.tracker.request.UpdateRequest;
 import ru.spbau.mit.tracker.request.UploadRequest;
 import ru.spbau.mit.tracker.response.ListResponse;
@@ -140,7 +139,7 @@ public class TorrentTrackerImpl implements TorrentTracker {
                  DataInputStream in = new DataInputStream(client.getInputStream())) {
 
                 while (true) {
-                    TrackerRequest request = (TrackerRequest) Codec.readRequest(in);
+                    Request request = (Request) Codec.readRequest(in);
                     switch (request.getType()) {
                         case RequestConfig.LIST_REQUEST:
                             list(out);

@@ -1,11 +1,11 @@
 package ru.spbau.mit.client.request;
 
-import ru.spbau.mit.common.RequestConfig;
-import ru.spbau.mit.tracker.request.TrackerRequest;
+import ru.spbau.mit.common.api.Request;
+import ru.spbau.mit.common.api.RequestConfig;
 
 import java.io.Serializable;
 
-public class StatClientRequest implements TrackerRequest, Serializable {
+public class StatClientRequest implements Request, Serializable {
     private int fileId;
 
     public StatClientRequest(int fileId) {

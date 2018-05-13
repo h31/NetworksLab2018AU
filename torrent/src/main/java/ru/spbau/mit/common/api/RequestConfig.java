@@ -1,4 +1,4 @@
-package ru.spbau.mit.common;
+package ru.spbau.mit.common.api;
 
 public final class RequestConfig {
     public static final byte LIST_REQUEST = 1;

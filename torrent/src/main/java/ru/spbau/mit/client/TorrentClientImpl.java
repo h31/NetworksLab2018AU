@@ -1,18 +1,22 @@
 package ru.spbau.mit.client;
 
 import ru.spbau.mit.Codec;
-import ru.spbau.mit.common.CommonConfig;
-import ru.spbau.mit.client.api.TorrentClient;
+import ru.spbau.mit.CommonConfig;
 import ru.spbau.mit.client.request.GetClientRequest;
 import ru.spbau.mit.client.request.StatClientRequest;
 import ru.spbau.mit.client.response.GetClientResponse;
 import ru.spbau.mit.client.response.StatClientResponse;
-import ru.spbau.mit.common.RequestConfig;
-import ru.spbau.mit.common.ResponseConfig;
+import ru.spbau.mit.common.api.Request;
+import ru.spbau.mit.common.api.RequestConfig;
 import ru.spbau.mit.data.ClientDataInfo;
 import ru.spbau.mit.data.ClientInfo;
 import ru.spbau.mit.data.FileContent;
-import ru.spbau.mit.tracker.request.*;
+import ru.spbau.mit.tracker.TrackerConfig;
+import ru.spbau.mit.client.api.TorrentClient;
+import ru.spbau.mit.tracker.request.ListRequest;
+import ru.spbau.mit.tracker.request.SourcesRequest;
+import ru.spbau.mit.tracker.request.UpdateRequest;
+import ru.spbau.mit.tracker.request.UploadRequest;
 import ru.spbau.mit.tracker.response.ListResponse;
 import ru.spbau.mit.tracker.response.SourcesResponse;
 import ru.spbau.mit.tracker.response.UpdateResponse;
@@ -33,10 +37,12 @@ import java.util.concurrent.Executors;
 public class TorrentClientImpl implements TorrentClient {
     private int port;
     private ServerSocket serverSocket;
-    private ExecutorService executorService = Executors.newFixedThreadPool(ClientConfig.THREADS_COUNT);
+    private ExecutorService executorService = Executors.newFixedThreadPool(TrackerConfig.THREADS_COUNT);
     private Map<Integer, List<Integer>> idToParts = new ConcurrentHashMap<>();
     private Map<Integer, String> idToPath = new ConcurrentHashMap<>();
     private Map<String, Integer> pathToId = new ConcurrentHashMap<>();
+//    private ObjectOutputStream objectOutputStream;
+//    private ObjectInputStream objectInputStream;
     private DataOutputStream dataOutputStream;
     private DataInputStream dataInputStream;
     private Socket socket;
@@ -49,7 +55,9 @@ public class TorrentClientImpl implements TorrentClient {
     @Override
     public synchronized ListResponse list() {
         Codec.writeRequest(dataOutputStream, new ListRequest());
-        return (ListResponse) Codec.readResponse(dataInputStream, ResponseConfig.LIST_RESPONSE);
+        return (ListResponse) Codec.readResponse(dataInputStream, 1);
+//        Codec.writeObject(objectOutputStream, new ListRequest());
+//        return (ListResponse) Codec.readObject(objectInputStream);
     }
 
     @Override
@@ -68,7 +76,9 @@ public class TorrentClientImpl implements TorrentClient {
         UploadResponse response;
         synchronized (this) {
             Codec.writeRequest(dataOutputStream, request);
-            response = (UploadResponse) Codec.readResponse(dataInputStream, ResponseConfig.UPLOAD_RESPONSE);
+            response = (UploadResponse) Codec.readResponse(dataInputStream, 2);
+//            Codec.writeObject(objectOutputStream, request);
+//            response = (UploadResponse) Codec.readObject(objectInputStream);
         }
         storePath(response.getFileId(), p.toAbsolutePath().toString());
         List<Integer> fileParts = new ArrayList<>();
@@ -83,13 +93,17 @@ public class TorrentClientImpl implements TorrentClient {
     @Override
     public synchronized SourcesResponse sources(SourcesRequest request) {
         Codec.writeRequest(dataOutputStream, request);
-        return (SourcesResponse) Codec.readResponse(dataInputStream, ResponseConfig.SOURCES_RESPONSE);
+        return (SourcesResponse) Codec.readResponse(dataInputStream, 3);
+//        Codec.writeObject(objectOutputStream, request);
+//        return (SourcesResponse) Codec.readObject(objectInputStream);
     }
 
     @Override
     public synchronized UpdateResponse update(UpdateRequest request) {
         Codec.writeRequest(dataOutputStream, request);
-        return (UpdateResponse) Codec.readResponse(dataInputStream, ResponseConfig.UPDATE_RESPONSE);
+        return (UpdateResponse) Codec.readResponse(dataInputStream, 4);
+//        Codec.writeObject(objectOutputStream, request);
+//        return (UpdateResponse) Codec.readObject(objectInputStream);
     }
 
     @Override
@@ -147,6 +161,8 @@ public class TorrentClientImpl implements TorrentClient {
                     + ClientConfig.SERVER_HOST + " in port " + ClientConfig.SERVER_PORT, e);
         }
         try {
+//            objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+//            objectInputStream = new ObjectInputStream(socket.getInputStream());
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
             dataInputStream = new DataInputStream(socket.getInputStream());
         } catch (IOException e) {
@@ -228,7 +244,7 @@ public class TorrentClientImpl implements TorrentClient {
                      ObjectInputStream in = new ObjectInputStream(client.getInputStream())) {
 
                 while (true) {
-                    TrackerRequest request = (TrackerRequest) in.readObject();
+                    Request request = (Request) in.readObject();
                     switch (request.getType()) {
                         case RequestConfig.STAT_REQUEST:
                             stat((StatClientRequest) request, out);
