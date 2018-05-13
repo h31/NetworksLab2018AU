@@ -55,98 +55,110 @@ class ClientCommunicationSocket(private val underlyingSocket: Socket): Closeable
     private val outputStream = HttpOutputStream(underlyingSocket.getOutputStream())
 
     fun send(request: RegistrationRequest, handler: RegistrationResponseHandler) {
-        val response = sendRequest(request)
+        synchronized(this) {
+            val response = sendRequest(request)
 
-        when (response.status) {
-            HttpResponseStatus.OK -> handler.handle(OkResponse.fromHttpRepresentation(response))
+            when (response.status) {
+                HttpResponseStatus.OK -> handler.handle(OkResponse.fromHttpRepresentation(response))
 
-            HttpResponseStatus.BAD_REQUEST -> handler.handle(
-                ErrorResponse.fromHttpRepresentation(response)
-            )
+                HttpResponseStatus.BAD_REQUEST -> handler.handle(
+                        ErrorResponse.fromHttpRepresentation(response)
+                )
 
-            else -> throw ProtocolException("Unexpected response status")
+                else -> throw ProtocolException("Unexpected response status")
+            }
         }
     }
 
     fun send(request: GameStartRequest, handler: GameStartResponseHandler) {
-        val response = sendRequest(request)
+        synchronized(this) {
+            val response = sendRequest(request)
 
-        when (response.status) {
-            HttpResponseStatus.OK -> handler.handle(
-                GameStartResponse.fromHttpRepresentation(response)
-            )
+            when (response.status) {
+                HttpResponseStatus.OK -> handler.handle(
+                        GameStartResponse.fromHttpRepresentation(response)
+                )
 
-            HttpResponseStatus.BAD_REQUEST -> handler.handle(
-                ErrorResponse.fromHttpRepresentation(response)
-            )
+                HttpResponseStatus.BAD_REQUEST -> handler.handle(
+                        ErrorResponse.fromHttpRepresentation(response)
+                )
 
-            else -> throw ProtocolException("Unexpected response status")
+                else -> throw ProtocolException("Unexpected response status")
+            }
         }
     }
 
     fun send(request: GameStatusRequest, handler: GameStatusResponseHandler) {
-        val response = sendRequest(request)
+        synchronized(this) {
+            val response = sendRequest(request)
 
-        when (response.status) {
-            HttpResponseStatus.OK -> handler.handle(
-                GameStatusPositiveResponse.fromHttpRepresentation(response)
-            )
+            when (response.status) {
+                HttpResponseStatus.OK -> handler.handle(
+                        GameStatusPositiveResponse.fromHttpRepresentation(response)
+                )
 
-            HttpResponseStatus.NO_CONTENT -> handler.handle(
-                GameStatusNegativeResponse.fromHttpRepresentation(response)
-            )
+                HttpResponseStatus.NO_CONTENT -> handler.handle(
+                        GameStatusNegativeResponse.fromHttpRepresentation(response)
+                )
 
-            HttpResponseStatus.BAD_REQUEST -> handler.handle(
-                ErrorResponse.fromHttpRepresentation(response)
-            )
+                HttpResponseStatus.BAD_REQUEST -> handler.handle(
+                        ErrorResponse.fromHttpRepresentation(response)
+                )
+            }
         }
     }
 
     fun send(request: BalanceRequest, handler: BalanceResponseHandler) {
-        val response = sendRequest(request)
+        synchronized(this) {
+            val response = sendRequest(request)
 
-        when (response.status) {
-            HttpResponseStatus.OK -> handler.handle(
-                BalanceResponse.fromHttpRepresentation(response)
-            )
+            when (response.status) {
+                HttpResponseStatus.OK -> handler.handle(
+                        BalanceResponse.fromHttpRepresentation(response)
+                )
 
-            HttpResponseStatus.BAD_REQUEST -> handler.handle(
-                ErrorResponse.fromHttpRepresentation(response)
-            )
+                HttpResponseStatus.BAD_REQUEST -> handler.handle(
+                        ErrorResponse.fromHttpRepresentation(response)
+                )
 
-            else -> throw ProtocolException("Unexpected response status")
+                else -> throw ProtocolException("Unexpected response status")
+            }
         }
     }
 
     fun send(request: BetRequest, handler: BetResponseHandler) {
-        val response = sendRequest(request)
+        synchronized(this) {
+            val response = sendRequest(request)
 
-        when (response.status) {
-            HttpResponseStatus.OK -> handler.handle(
-                OkResponse.fromHttpRepresentation(response)
-            )
+            when (response.status) {
+                HttpResponseStatus.OK -> handler.handle(
+                        OkResponse.fromHttpRepresentation(response)
+                )
 
-            HttpResponseStatus.BAD_REQUEST -> handler.handle(
-                ErrorResponse.fromHttpRepresentation(response)
-            )
+                HttpResponseStatus.BAD_REQUEST -> handler.handle(
+                        ErrorResponse.fromHttpRepresentation(response)
+                )
 
-            else -> throw ProtocolException("Unexpected response status")
+                else -> throw ProtocolException("Unexpected response status")
+            }
         }
     }
 
     fun send(request: GameResultsRequest, handler: GameResultsResponseHandler) {
-        val response = sendRequest(request)
+        synchronized(this) {
+            val response = sendRequest(request)
 
-        when (response.status) {
-            HttpResponseStatus.OK -> handler.handle(
-                GameResultsResponse.fromHttpRepresentation(response)
-            )
+            when (response.status) {
+                HttpResponseStatus.OK -> handler.handle(
+                        GameResultsResponse.fromHttpRepresentation(response)
+                )
 
-            HttpResponseStatus.BAD_REQUEST -> handler.handle(
-                ErrorResponse.fromHttpRepresentation(response)
-            )
+                HttpResponseStatus.BAD_REQUEST -> handler.handle(
+                        ErrorResponse.fromHttpRepresentation(response)
+                )
 
-            else -> throw ProtocolException("Unexpected response status")
+                else -> throw ProtocolException("Unexpected response status")
+            }
         }
     }
 
@@ -154,7 +166,9 @@ class ClientCommunicationSocket(private val underlyingSocket: Socket): Closeable
      * Closes underlying socket.
      */
     override fun close() {
-        underlyingSocket.close()
+        synchronized(this) {
+            underlyingSocket.close()
+        }
     }
 
     private fun sendRequest(request: Request): HttpResponse {
