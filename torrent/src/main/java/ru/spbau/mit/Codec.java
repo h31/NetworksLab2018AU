@@ -2,9 +2,9 @@ package ru.spbau.mit;
 
 import ru.spbau.mit.http.Request;
 import ru.spbau.mit.http.Response;
-import ru.spbau.mit.tracker.request.ListRequest;
 import ru.spbau.mit.tracker.request.TrackerRequest;
 import ru.spbau.mit.tracker.response.*;
+import ru.spbau.mit.common.ResponseConfig;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -58,6 +58,61 @@ public final class Codec {
         } catch (IOException e) {
             throw new IllegalStateException("cannot write to socket output stream", e);
         }
+    }
+
+    public static Object readObject(ObjectInputStream ois) {
+        try {
+            return ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public static void writeRequest(final DataOutputStream dos, TrackerRequest obj) {
+        try {
+            Request request = new Request();
+            request.setRequest(obj);
+            request.setVersion(1,1);
+            request.setAddress("localhost");
+            dos.writeUTF(request.getString());
+        } catch (IOException e) {
+            throw new IllegalStateException("cannot write to socket output stream", e);
+        }
+    }
+
+    public static TrackerRequest readRequest(DataInputStream dis) {
+        try {
+            return Request.parse(dis.readUTF());
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public static void writeResponse(final DataOutputStream dos, TrackerResponse obj) {
+        try {
+            Response response = new Response();
+            response.setCode(200);
+            response.setVersion(1,1);
+            response.setContentType("http/text");
+            response.setData(obj);
+            dos.writeUTF(response.getString());
+        } catch (IOException e) {
+            throw new IllegalStateException("cannot write to socket output stream", e);
+        }
+    }
+
+    public static TrackerResponse readResponse(DataInputStream dis, int id) {
+        try {
+            switch (id) {
+                case ResponseConfig.LIST_RESPONSE: return new ListResponse(Response.parse(dis.readUTF()).getData());
+                case ResponseConfig.UPLOAD_RESPONSE: return new UploadResponse(Response.parse(dis.readUTF()).getData());
+                case ResponseConfig.SOURCES_RESPONSE: return new SourcesResponse(Response.parse(dis.readUTF()).getData());
+                case ResponseConfig.UPDATE_RESPONSE: return new UpdateResponse(Response.parse(dis.readUTF()).getData());
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        return null;
     }
 
 }
