@@ -13,6 +13,7 @@ public class Utils {
 
     public static final String EXIT_COMMAND = "exit";
     public static final String LIST_COMMAND = "list";
+    public static final String FINISH_COMMAND = "finish";
 
 //    public static void TODO(String msg) {
 //        throw new NotImplementedException(msg);

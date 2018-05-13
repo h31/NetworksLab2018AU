@@ -5,9 +5,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Closeable;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -18,6 +20,7 @@ import static ru.spbau.mit.Utils.*;
 public class Client implements Closeable {
     private static final Logger LOGGER = LogManager.getLogger("Client");
     private Socket socket = new Socket();
+    private volatile boolean finish = false;
 
     public static void main(String[] args) {
         CommandLineParser parser = new DefaultParser();
@@ -39,24 +42,35 @@ public class Client implements Closeable {
             return;
         }
 
+        // TODO put main loop flow into client's method.
         Scanner scanner = new Scanner(System.in);
         try (Client client = new Client(socketAddress)) {
             client.register(clientRole);
-            while (true) {
+            LOGGER.info("Client registered successfully. Opening client commands' loop.");
+            label: while (!client.finish) {
                 // TODO command line requests.
-                String line = scanner.nextLine().trim();
-                if (line.equals(EXIT_COMMAND)) {
-                    break;
-                } else if (line.equals(LIST_COMMAND)) {
-                    LOGGER.info("Sending request on current lots list.");
-                    List<Lot> lots = client.list();
-                    System.out.println("Current lots");
-                    for (Lot lot : lots) {
-                        String msg = String.format("lot #%d \"%s\" cost: %d", lot.getId(), lot.getName(), lot.getCost());
-                        System.out.println(msg);
-                    }
+                LOGGER.debug("Waiting for next command from CLI.");
+                String command = scanner.nextLine().trim();
+                switch (command) {
+                    case EXIT_COMMAND:
+                        break label;
+                    case LIST_COMMAND:
+                        LOGGER.info("Sending request on current lots list.");
+                        List<Lot> lots = client.list();
+                        System.out.println("Current lots:");
+                        for (Lot lot : lots) {
+                            String msg = String.format("lot #%d \"%s\" cost: %d", lot.getId(), lot.getName(), lot.getCost());
+                            System.out.println(msg);
+                        }
+                        break;
+                    case FINISH_COMMAND:
+                        LOGGER.info("Sending finish request.");
+                        client.finish();
+                        break;
+                    default:
+                        LOGGER.error("Unknown client command: " + command);
+                        break;
                 }
-
             }
         } catch (IOException | ProtocolException e) {
             LOGGER.error("Client error: " + e);
@@ -107,10 +121,32 @@ public class Client implements Closeable {
         return result;
     }
 
+    public void finish() throws IOException, ProtocolException {
+        send(CLIENT_FINISH_REQUEST_HEADER);
+        String response = receive();
+        if (response.equals(SERVER_OK_RESPONSE_HEADER)) {
+            LOGGER.info("Auction finishing is acknowledged.");
+            finish = true;
+        } else {
+            String message = response.split(HEADER_AND_BODY_DELIMITER)[1];
+            LOGGER.info("Auction is not finished. Cause: " + message);
+        }
+    }
+
     @Override
     public void close() throws IOException {
         if (socket != null) {
-            send(CLIENT_EXIT_REQUEST_HEADER);
+            try {
+                send(CLIENT_EXIT_REQUEST_HEADER);
+                String response = receive();
+                if (!response.equals(SERVER_OK_RESPONSE_HEADER)) {
+                    LOGGER.warn("Bad response from server: " + response);
+                }
+            } catch (EOFException | SocketException e) {
+                LOGGER.warn("Server socket is closed on other side: " + e);
+            } catch (IOException e) {
+                LOGGER.error("Error while closing server: " + e);
+            }
             socket.close();
         }
     }

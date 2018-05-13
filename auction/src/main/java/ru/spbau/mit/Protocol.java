@@ -10,11 +10,11 @@ public class Protocol {
     public static final String CLIENT_INIT_REQUEST_HEADER = "GET /this_client/role " + CURRENT_PROTOCOL;
     public static final String CLIENT_LIST_REQUEST_HEADER = "GET /lots " + CURRENT_PROTOCOL;
     public static final String CLIENT_EXIT_REQUEST_HEADER = "PUT /this_client/exit " + CURRENT_PROTOCOL;
+    public static final String CLIENT_FINISH_REQUEST_HEADER = "PUT /finish " + CURRENT_PROTOCOL;
 
     public static final String HEADER_AND_BODY_DELIMITER = "\n\n";
     public static final String LINE_DELIMITER = "\n";
     public static final String SERVER_OK_RESPONSE_HEADER = CURRENT_PROTOCOL + " 200 OK";
-    public static final String SERVER_ERROR_RESPONSE_HEADER = "504";
 
     public enum ClientRole {
         ADMIN,
@@ -25,18 +25,6 @@ public class Protocol {
         }
     }
 
-//    public enum ClientRequest {
-//        INITIATE;
-//
-//        public String requestString() {
-//            switch (this) {
-//                case INITIATE:
-//                    return "init";
-//            }
-//            throw new RuntimeException("Unknown request");
-//        }
-//    }
-
     public static class ProtocolException extends Exception {
         ProtocolException(String msg) {
             super(msg);
@@ -46,10 +34,6 @@ public class Protocol {
         }
     }
 
-//    public static String clientGetIdRequest() {
-//        return "GET /client_id HTTP" + HTTP_VERSION;
-//    }
-
     public static String clientInitRequest(ClientRole clientRole) {
         return CLIENT_INIT_REQUEST_HEADER + HEADER_AND_BODY_DELIMITER + clientRole.roleString();
     }
@@ -58,6 +42,11 @@ public class Protocol {
         if (!responseHeader.equals(SERVER_OK_RESPONSE_HEADER)) {
             throw new ProtocolException("Unexpected response from server: " + responseHeader);
         }
+    }
+
+    public static String serverFailResponse(String message, boolean isServerFault) {
+        String header = CURRENT_PROTOCOL + (isServerFault ? " 504 FAIL" : " 200 FAIL");
+        return header + HEADER_AND_BODY_DELIMITER + message;
     }
 
     public static String[] splitOnHeaderAndBody(String request) {

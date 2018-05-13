@@ -46,14 +46,18 @@ public class Server implements Closeable {
             return;
         }
 
-        Scanner scanner = new Scanner(System.in);
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         try (Server server = new Server(socketAddress)) {
-            while (true) {
+            LOGGER.info("server is up and running");
+            while (!server.finish) {
                 // TODO command line requests.
-                String line = scanner.nextLine();
-                final boolean hasToFinish = line.trim().equals(EXIT_COMMAND);
-                if (hasToFinish) {
-                    break;
+                if (br.ready()) {
+                    String line = br.readLine();
+                    final boolean hasToFinish = line.trim().equals(EXIT_COMMAND);
+                    if (hasToFinish) {
+                        break;
+                    }
                 }
             }
         } catch (IOException e) {
@@ -129,6 +133,7 @@ public class Server implements Closeable {
     private class ServerSession implements Runnable {
         private Socket socket;
         private boolean isAdmin;
+        private boolean finishSession = false;
 
         ServerSession(Socket socket) {
             this.socket = socket;
@@ -139,38 +144,59 @@ public class Server implements Closeable {
             try {
                 init();
                 log(Level.DEBUG, "Initialization finished.");
-                while (!finish) {
+                while (!finish && !finishSession) {
                     String clientRequest = receive();
                     log(Level.DEBUG, "Received request: " + clientRequest);
+                    if (finish || finishSession) {
+                        send(serverFailResponse("Server is not available", true));
+                        break;
+                    }
                     String[] headerAndBody = Protocol.splitOnHeaderAndBody(clientRequest);
                     String header = headerAndBody[0];
-                    if (header.equals(CLIENT_LIST_REQUEST_HEADER)) {
-                        String response;
-                        try {
-                            List<Lot> lotsCopy = new ArrayList<>();
-                            synchronized (lots) {
-                                // creating lots snapshot.
-                                for (Lot lot : lots) {
-                                    lotsCopy.add(new Lot(lot));
+                    switch (header) {
+                        case CLIENT_LIST_REQUEST_HEADER: {
+                            String response;
+                            try {
+                                List<Lot> lotsCopy = new ArrayList<>();
+                                synchronized (lots) {
+                                    // creating lots snapshot.
+                                    for (Lot lot : lots) {
+                                        lotsCopy.add(new Lot(lot));
+                                    }
                                 }
+                                StringBuilder responseBuilder = new StringBuilder(SERVER_OK_RESPONSE_HEADER);
+                                responseBuilder.append(Protocol.HEADER_AND_BODY_DELIMITER);
+                                responseBuilder.append(lotsCopy.size()).append("\n");
+                                for (Lot lot : lotsCopy) {
+                                    responseBuilder.append(String.format("%d %d %s\n", lot.getId(), lot.getCost(), lot.getName()));
+                                }
+                                response = responseBuilder.toString();
+                            } catch (Throwable e) {
+                                response = serverFailResponse(e.getMessage(), true);
                             }
-                            StringBuilder responseBuilder = new StringBuilder(SERVER_OK_RESPONSE_HEADER);
-                            responseBuilder.append(Protocol.HEADER_AND_BODY_DELIMITER);
-                            responseBuilder.append(lotsCopy.size()).append("\n");
-                            for (Lot lot : lotsCopy) {
-                                responseBuilder.append(String.format("%d %d %s\n", lot.getId(), lot.getCost(), lot.getName()));
-                            }
-                            response = responseBuilder.toString();
-                        } catch (Throwable e) {
-                            response = SERVER_ERROR_RESPONSE_HEADER + HEADER_AND_BODY_DELIMITER + e.getMessage();
+                            log(Level.DEBUG, "Sending response: " + response);
+                            send(response);
+                            break;
                         }
-                        log(Level.DEBUG, "Sending response: " + response);
-                        send(response);
-                    } else if (header.equals(CLIENT_EXIT_REQUEST_HEADER)) {
-                        log(Level.INFO, "Closing client initiated.");
-                        send(SERVER_OK_RESPONSE_HEADER);
-                        finish = true;
-                        deassignAdmin();
+                        case CLIENT_EXIT_REQUEST_HEADER:
+                            log(Level.INFO, "Closing client initiated.");
+                            send(SERVER_OK_RESPONSE_HEADER);
+                            finishSession = true;
+                            deassignAdmin();
+                            break;
+                        case CLIENT_FINISH_REQUEST_HEADER: {
+                            // finishing auction request.
+                            String response;
+                            if (!isAdmin) {
+                                response = serverFailResponse("Client is not authorized for this operation", false);
+                            } else {
+                                finish = true;
+                                response = SERVER_OK_RESPONSE_HEADER;
+                                LOGGER.info("Auction is finished.");
+                            }
+                            send(response);
+                            break;
+                        }
                     }
                 }
             } catch (IOException e) {
@@ -221,7 +247,6 @@ public class Server implements Closeable {
 
         private void init() throws IOException {
             String clientInitialRequest = receiveMessage(socket);
-
             String[] headerAndBody = Protocol.splitOnHeaderAndBody(clientInitialRequest);
             // TODO put into a separate function.
             String headerString = headerAndBody[0];
@@ -233,14 +258,15 @@ public class Server implements Closeable {
             // TODO put response into Protocol's inner class.
             String response;
             if (roleString.equals(ClientRole.ADMIN.roleString())) {
-                log(Level.DEBUG, ": Client wants to become an admin");
                 if (assignAdmin()) {
+                    log(Level.DEBUG, "Client becomes an admin: OK");
                     response = SERVER_OK_RESPONSE_HEADER;
                 } else {
-                    response = CURRENT_PROTOCOL + " 200 FAIL\n\nrole is busy";
+                    log(Level.DEBUG, "Client becomes an admin but role is busy");
+                    response = serverFailResponse("role is busy", false);
                 }
             } else if (!roleString.equals(ClientRole.PARTICIPANT.roleString())) {
-                response = CURRENT_PROTOCOL + " 200 FAIL\n\nrole is wrong";
+                response = serverFailResponse("role is wrong", false);
             } else {
                 isAdmin = false;
                 response = SERVER_OK_RESPONSE_HEADER;
