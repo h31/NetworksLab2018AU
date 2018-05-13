@@ -7,36 +7,32 @@ public class Protocol {
     public static final String HTTP_VERSION = "1.1";
     public static final String CURRENT_PROTOCOL = "HTTP/" + HTTP_VERSION;
     public static final String VERSION = "1.0";
+    public static final String CLIENT_INIT_REQUEST_HEADER = "GET /this_client/role " + CURRENT_PROTOCOL;
+    public static final String CLIENT_LIST_REQUEST_HEADER = "GET /lots " + CURRENT_PROTOCOL;
+    public static final String HEADER_AND_BODY_DELIMITER = "\n\n";
+    public static final String SERVER_OK_RESPONSE_HEADER = CURRENT_PROTOCOL + " 200 OK";
+    public static final String SERVER_ERROR_RESPONSE_HEADER = "504";
 
     public enum ClientRole {
         ADMIN,
         PARTICIPANT;
 
-        public String roleString() {
-            if (this == ADMIN) {
-                return "admin";
-            } else if (this == PARTICIPANT) {
-                return "participant";
-            } else {
-                return null;
-            }
+        String roleString() {
+            return toString().toLowerCase();
         }
-
-        public static List<String> roleStrings = Arrays.asList(ADMIN.roleString(), PARTICIPANT.roleString());
     }
 
-    public enum ClientRequest {
-        INITIATE;
-
-        public String requestString() {
-            switch (this) {
-                case INITIATE:
-                    return "init";
-            }
-            throw new RuntimeException("Unknown request");
-        }
-
-    }
+//    public enum ClientRequest {
+//        INITIATE;
+//
+//        public String requestString() {
+//            switch (this) {
+//                case INITIATE:
+//                    return "init";
+//            }
+//            throw new RuntimeException("Unknown request");
+//        }
+//    }
 
     public static class ProtocolException extends Exception {
         ProtocolException(String msg) {
@@ -52,13 +48,20 @@ public class Protocol {
 //    }
 
     public static String clientInitRequest(ClientRole clientRole) {
-        return "GET /this_client/role " + CURRENT_PROTOCOL
-                + "\n\n" + clientRole.roleString();
+        return CLIENT_INIT_REQUEST_HEADER + HEADER_AND_BODY_DELIMITER + clientRole.roleString();
     }
 
-    public static void checkServerOk(String serverInitResponse) throws ProtocolException {
-        if (!serverInitResponse.equals(CURRENT_PROTOCOL + " 200 OK")) {
-            throw new ProtocolException("Unexpected response from server: " + serverInitResponse);
+    public static void checkServerOk(String responseHeader) throws ProtocolException {
+        if (!responseHeader.equals(SERVER_OK_RESPONSE_HEADER)) {
+            throw new ProtocolException("Unexpected response from server: " + responseHeader);
         }
+    }
+
+    public static String[] splitOnHeaderAndBody(String request) {
+        String[] headerAndBody = request.split(HEADER_AND_BODY_DELIMITER);
+        if (headerAndBody.length > 2) {
+            throw new RuntimeException("Wrong request");
+        }
+        return headerAndBody;
     }
 }

@@ -127,7 +127,6 @@ public class Server implements Closeable {
     private class ServerSession implements Runnable {
         private Socket socket;
         private boolean isAdmin;
-        private static final String okResponse =  CURRENT_PROTOCOL + " 200 OK";
 
         ServerSession(Socket socket) {
             this.socket = socket;
@@ -136,37 +135,46 @@ public class Server implements Closeable {
         @Override
         public void run() {
             try {
-                String clientRequest = receiveRequest(socket);
-                String[] headerAndBody = clientRequest.split("\n\n");
-                if (headerAndBody.length != 2) {
-                    throw new RuntimeException("protocol");
-                }
-                // TODO put into a separate function.
-                String headerString = headerAndBody[0];
-                if (!headerString.equals("GET /this_client/role " + CURRENT_PROTOCOL)) {
-                    throw new RuntimeException("Unexpected request from client.");
-                }
-                String roleString = headerAndBody[1];
-                // TODO other http codes on failures??
-                String response;
-                if (roleString.equals(ClientRole.ADMIN.roleString())) {
-                    log(Level.DEBUG, ": Client wants to be come an admin");
-                    if (assignAdmin()) {
-                        response = okResponse;
-                    } else {
-                        response = CURRENT_PROTOCOL + " 200 FAIL\n\nrole is busy";
+                init();
+                log(Level.DEBUG, "Initialization finished.");
+                while (!finish) {
+                    String clientRequest = receive();
+                    log(Level.DEBUG, "Received request: " + clientRequest);
+                    String[] headerAndBody = Protocol.splitOnHeaderAndBody(clientRequest);
+                    if (headerAndBody[0].equals(CLIENT_LIST_REQUEST_HEADER)) {
+                        String response;
+                        try {
+                            List<Lot> lotsCopy = new ArrayList<>();
+                            synchronized (lots) {
+                                // creating lots snapshot.
+                                for (Lot lot : lots) {
+                                    lotsCopy.add(new Lot(lot));
+                                }
+                            }
+                            StringBuilder responseBuilder = new StringBuilder(SERVER_OK_RESPONSE_HEADER);
+                            responseBuilder.append(Protocol.HEADER_AND_BODY_DELIMITER);
+                            for (Lot lot : lotsCopy) {
+                                responseBuilder.append(String.format("%d %d %s\n", lot.getId(), lot.getCost(), lot.getName()));
+                            }
+                            response = responseBuilder.toString();
+                        } catch (Throwable e) {
+                            response = SERVER_ERROR_RESPONSE_HEADER + HEADER_AND_BODY_DELIMITER + e.getMessage();
+                        }
+                        log(Level.DEBUG, "Sending response: " + response);
+                        send(response);
                     }
-                } else if (!roleString.equals(ClientRole.PARTICIPANT.roleString())) {
-                    response = CURRENT_PROTOCOL + " 200 FAIL\n\nrole is wrong";
-                } else {
-                    isAdmin = false;
-                    response = okResponse;
                 }
-                log(Level.DEBUG, "sending response: " + response);
-                sendRequest(socket, response);
             } catch (IOException e) {
                 LOGGER.error("ServerSession run error: " + e);
             }
+        }
+
+        private void send(String response) throws IOException {
+            sendMessage(socket, response);
+        }
+
+        private String receive() throws IOException {
+            return receiveMessage(socket);
         }
 
         /**
@@ -188,6 +196,36 @@ public class Server implements Closeable {
         private void log(Level logLevel, String msg) {
             String logMessage = "session#" + this.toString() + ": " + msg;
             LOGGER.log(logLevel, logMessage);
+        }
+
+        private void init() throws IOException {
+            String clientInitialRequest = receiveMessage(socket);
+
+            String[] headerAndBody = Protocol.splitOnHeaderAndBody(clientInitialRequest);
+            // TODO put into a separate function.
+            String headerString = headerAndBody[0];
+            if (!headerString.equals(CLIENT_INIT_REQUEST_HEADER)) {
+                throw new RuntimeException("Unexpected request from client.");
+            }
+            String roleString = headerAndBody[1];
+            // TODO other http codes on failures??
+            // TODO put response into Protocol's inner class.
+            String response;
+            if (roleString.equals(ClientRole.ADMIN.roleString())) {
+                log(Level.DEBUG, ": Client wants to be come an admin");
+                if (assignAdmin()) {
+                    response = SERVER_OK_RESPONSE_HEADER;
+                } else {
+                    response = CURRENT_PROTOCOL + " 200 FAIL\n\nrole is busy";
+                }
+            } else if (!roleString.equals(ClientRole.PARTICIPANT.roleString())) {
+                response = CURRENT_PROTOCOL + " 200 FAIL\n\nrole is wrong";
+            } else {
+                isAdmin = false;
+                response = SERVER_OK_RESPONSE_HEADER;
+            }
+            log(Level.DEBUG, "sending response: " + response);
+            sendMessage(socket, response);
         }
     }
 

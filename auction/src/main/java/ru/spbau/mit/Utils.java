@@ -12,6 +12,7 @@ public class Utils {
     public static final String CLIENT_ROLE_PARAMETER = "role";
 
     public static final String EXIT_COMMAND = "exit";
+    public static final String LIST_COMMAND = "list";
 
     public static void TODO(String msg) {
         throw new NotImplementedException(msg);
@@ -28,11 +29,11 @@ public class Utils {
         return new InetSocketAddress(hostname, port);
     }
 
-    public static void sendRequest(Socket socket, String request) throws IOException {
+    public static void sendMessage(Socket socket, String request) throws IOException {
         new DataOutputStream(socket.getOutputStream()).writeUTF(request);
     }
 
-    public static String receiveRequest(Socket socket) throws IOException {
+    public static String receiveMessage(Socket socket) throws IOException {
         return new DataInputStream(socket.getInputStream()).readUTF();
     }
 }

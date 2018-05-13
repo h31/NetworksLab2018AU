@@ -8,7 +8,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import static ru.spbau.mit.Protocol.*;
@@ -17,7 +17,7 @@ import static ru.spbau.mit.Utils.*;
 
 public class Client implements Closeable {
     private static final Logger LOGGER = LogManager.getLogger("Client");
-    Socket socket = new Socket();
+    private Socket socket = new Socket();
 
     public static void main(String[] args) {
         CommandLineParser parser = new DefaultParser();
@@ -44,11 +44,21 @@ public class Client implements Closeable {
             client.register(clientRole);
             while (true) {
                 // TODO command line requests.
-                String line = scanner.nextLine();
-                final boolean hasToFinish = line.trim().equals(EXIT_COMMAND);
+                String line = scanner.nextLine().trim();
+                final boolean hasToFinish = line.equals(EXIT_COMMAND);
                 if (hasToFinish) {
                     break;
                 }
+                if (line.equals(LIST_COMMAND)) {
+                    LOGGER.info("Sending request on current lots list.");
+                    List<Lot> lots = client.list();
+                    System.out.println("Current lots");
+                    for (Lot lot : lots) {
+                        String msg = String.format("lot #%d \"%s\" cost: %d", lot.getId(), lot.getName(), lot.getCost());
+                        System.out.println(msg);
+                    }
+                }
+
             }
         } catch (IOException | ProtocolException e) {
             LOGGER.error("Client error: " + e);
@@ -60,9 +70,43 @@ public class Client implements Closeable {
     }
 
     public void register(ClientRole role) throws IOException, ProtocolException {
-        sendRequest(socket, clientInitRequest(role));
-        String serverInitResponse = receiveRequest(socket);
+        sendMessage(socket, clientInitRequest(role));
+        String serverInitResponse = receiveMessage(socket);
         checkServerOk(serverInitResponse);
+    }
+
+    public List<Lot> list() throws IOException, ProtocolException {
+        final String request = CLIENT_LIST_REQUEST_HEADER;
+        sendMessage(socket, request);
+        LOGGER.debug("send request to server: " + request);
+        final String response = receiveMessage(socket);
+        LOGGER.debug("server response: " + response);
+
+        String[] headerAndBody = response.split("\n\n");
+        String header = headerAndBody[0];
+        checkServerOk(header);
+        String body = headerAndBody[1];
+        Scanner scanner = new Scanner(body);
+
+        List<Lot> result = new ArrayList<>();
+        String firstLine = scanner.nextLine().trim();
+        int lotsCount = Integer.valueOf(firstLine);
+        for (int i = 0; i < lotsCount; i++) {
+            String lotLine = scanner.nextLine();
+            String[] idAndCostAndName = lotLine.split(" ");
+            long id = Long.parseLong(idAndCostAndName[0]);
+            long cost = Long.parseLong(idAndCostAndName[1]);
+            StringBuilder nameBuilder = new StringBuilder();
+            for (int j = 2; j < idAndCostAndName.length; j++) {
+                nameBuilder.append(idAndCostAndName[j]);
+                if (j + 1 < idAndCostAndName.length) {
+                    nameBuilder.append(" ");
+                }
+            }
+            String name = nameBuilder.toString();
+            result.add(new Lot(id, name, cost));
+        }
+        return result;
     }
 
     @Override
