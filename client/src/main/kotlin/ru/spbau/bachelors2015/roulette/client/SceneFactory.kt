@@ -1,5 +1,6 @@
 package ru.spbau.bachelors2015.roulette.client
 
+import javafx.beans.value.ChangeListener
 import javafx.geometry.Pos
 import javafx.scene.Group
 import javafx.scene.Scene
@@ -17,6 +18,9 @@ import ru.spbau.bachelors2015.roulette.client.handlers.RegistrationHandler
 import ru.spbau.bachelors2015.roulette.client.updaters.BalanceUpdate
 import ru.spbau.bachelors2015.roulette.client.updaters.GameResultsUpdate
 import ru.spbau.bachelors2015.roulette.client.updaters.ListUpdate
+import javafx.beans.value.ObservableValue
+
+
 
 
 object SceneFactory {
@@ -64,8 +68,9 @@ object SceneFactory {
 
     private fun baseGameScene(client: ClientCommunicationSocket): Scene {
         val listView = ListView<String>()
+        listView.items = GameData.items
+        Thread(ListUpdate(client)).start()
 
-        Thread(ListUpdate(client, listView, this)).start()
         val vbox = VBox()
         vbox.children.addAll(listView)
 
@@ -87,7 +92,7 @@ object SceneFactory {
 
     private fun getPlayerGameScene(client: ClientCommunicationSocket): Scene {
         val scene = baseGameScene(client)
-        val hbox = HBox()
+        val betBox = HBox()
 
         val choiceBox = ChoiceBox<String>()
         val choiceLabel = Label(TYPE_OF_BET_LABEL)
@@ -102,27 +107,35 @@ object SceneFactory {
                 exactNumber.text = newValue.replace("[^\\d]".toRegex(), "")
             }
         }
+        exactNumber.isDisable = true
+        val exactNumberLabel = Label(ENTER_EXACT_NUMBER)
+        val exactNumberBox = HBox()
+        exactNumberBox.children.addAll(exactNumberLabel, exactNumber)
 
-        val textField = TextField()
-        textField.textProperty().addListener { _, _, newValue ->
+        val changeListener = ChangeListener<Any> { observable, oldValue, newValue ->
+            exactNumber.isDisable = newValue != EXACT_NUMBER
+        }
+        choiceBox.getSelectionModel().selectedItemProperty().addListener(changeListener);
+
+        val betField = TextField()
+        betField.textProperty().addListener { _, _, newValue ->
             if (!newValue.matches("\\d*".toRegex())) {
-                textField.text = newValue.replace("[^\\d]".toRegex(), "")
+                betField.text = newValue.replace("[^\\d]".toRegex(), "")
             }
         }
 
         val makeBetButton = Button(BET_BUTTON_LABEL)
-        hbox.children.addAll(textField, makeBetButton)
+        val betEnterLabel = Label(ENTER_BET)
+        betBox.children.addAll(betEnterLabel, betField, makeBetButton)
 
         val balance = Label(BALANCE_PREFIX)
         Thread(BalanceUpdate(client, balance)).start()
 
-        val score = Label(SCORE_PREFIX)
-        val rouletteValue = Label("")
+        val rouletteValue = Label(ROULETTE_PREFIX)
         val playerPayout = Label(PAYOUT_PREFIX)
 
         makeBetButton.setOnAction {
-            val bet = textField.text.toInt()
-            balance.text = (balance.text.toInt() - bet).toString()
+            val bet = betField.text.toInt()
 
             val requestBet: Bet?
             if (choiceBox.value == ODD_NUMBERS) {
@@ -139,13 +152,11 @@ object SceneFactory {
             client.send(request, BetHandler())
             makeBetButton.isDisable = true
 
-            val resultsUpdater = Thread(GameResultsUpdate(client, rouletteValue, playerPayout))
-            resultsUpdater.start()
-            resultsUpdater.join()
-            Thread(BalanceUpdate(client, balance)).start()
+            Thread(GameResultsUpdate(client, rouletteValue, playerPayout, makeBetButton)).start()
         }
 
-        (scene.root as VBox).children.addAll(choiceLabel, choiceBox, hbox, balance, score, rouletteValue, playerPayout)
+        (scene.root as VBox).children.addAll(choiceLabel, choiceBox, exactNumberBox,
+                betBox, balance, rouletteValue, playerPayout)
 
         return scene
     }

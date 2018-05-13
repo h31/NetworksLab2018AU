@@ -10,7 +10,10 @@ class BalanceUpdate(
         private val balance: Label
 ) : Runnable {
     override fun run() {
-        val request = BalanceRequest()
-        client.send(request, BalanceHandler(balance))
+        while (true) {
+            val request = BalanceRequest()
+            client.send(request, BalanceHandler(balance))
+            Thread.sleep(1000)
+        }
     }
 }
