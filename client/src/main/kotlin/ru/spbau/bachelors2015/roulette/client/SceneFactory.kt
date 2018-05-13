@@ -1,5 +1,6 @@
 package ru.spbau.bachelors2015.roulette.client
 
+import javafx.application.Platform
 import javafx.geometry.Pos
 import javafx.scene.Group
 import javafx.scene.Scene
@@ -64,8 +65,9 @@ object SceneFactory {
 
     private fun baseGameScene(client: ClientCommunicationSocket): Scene {
         val listView = ListView<String>()
+        listView.items = GameData.items
+        Thread(ListUpdate(client)).start()
 
-        Thread(ListUpdate(client, listView, this)).start()
         val vbox = VBox()
         vbox.children.addAll(listView)
 

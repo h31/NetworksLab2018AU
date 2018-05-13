@@ -1,27 +1,35 @@
 package ru.spbau.bachelors2015.roulette.client.handlers
 
-import javafx.collections.FXCollections
-import javafx.collections.ObservableList
-import javafx.scene.control.ListView
+import javafx.application.Platform
 import ru.spbau.bachelors2015.roulette.client.GameData
+import ru.spbau.bachelors2015.roulette.client.GameData.items
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.ErrorResponse
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameStatusNegativeResponse
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameStatusPositiveResponse
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameStatusResponseHandler
 
-class GameStatusHandler(private val listView: ListView<String>): GameStatusResponseHandler {
-    private val items: ObservableList<String> = FXCollections.observableArrayList()
-
+class GameStatusHandler : GameStatusResponseHandler {
     override fun handle(response: GameStatusPositiveResponse) {
+        Platform.runLater(object : Runnable {
+            override fun run() {
+               updateGameStatus(response)
+            }
+        })
+    }
+
+    private fun updateGameStatus(response: GameStatusPositiveResponse) {
         GameData.gameId = response.gameId
         val seconds = "Seconds left : " + response.secondsLeft
+
+        items.clear()
         items.add(seconds)
         for (entry in response.bets) {
             val label = entry.key + " with bet: " + entry.value
             items.add(label)
+            println(label)
         }
 
-        listView.items = items
+        println(seconds)
     }
 
     override fun handle(response: GameStatusNegativeResponse) {
