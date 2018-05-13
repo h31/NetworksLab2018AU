@@ -9,4 +9,5 @@ object GameData {
     var gameId: Int? = null
     var role: ClientRole? = null
     val items: ObservableList<String> = FXCollections.observableArrayList()
+    var secondsLeft = 10
 }

@@ -1,6 +1,5 @@
 package ru.spbau.bachelors2015.roulette.client
 
-import javafx.application.Platform
 import javafx.geometry.Pos
 import javafx.scene.Group
 import javafx.scene.Scene
@@ -95,7 +94,7 @@ object SceneFactory {
         val choiceLabel = Label(TYPE_OF_BET_LABEL)
         choiceBox.items.add(ODD_NUMBERS)
         choiceBox.items.add(EVEN_NUMBERS)
-        choiceBox.items.add(EXACT_NUMBER)
+        //choiceBox.items.add(EXACT_NUMBER)
         choiceBox.selectionModel.selectFirst()
 
         val exactNumber = TextField()
@@ -118,8 +117,7 @@ object SceneFactory {
         val balance = Label(BALANCE_PREFIX)
         Thread(BalanceUpdate(client, balance)).start()
 
-        val score = Label(SCORE_PREFIX)
-        val rouletteValue = Label("")
+        val rouletteValue = Label(ROULETTE_PREFIX)
         val playerPayout = Label(PAYOUT_PREFIX)
 
         makeBetButton.setOnAction {
@@ -138,16 +136,12 @@ object SceneFactory {
 
             val request = BetRequest(GameData.gameId!!, requestBet)
             client.send(request, BetHandler())
-            Thread(BalanceUpdate(client, balance)).start()
             makeBetButton.isDisable = true
 
-            val resultsUpdater = Thread(GameResultsUpdate(client, rouletteValue, playerPayout))
-            resultsUpdater.start()
-            resultsUpdater.join()
-            Thread(BalanceUpdate(client, balance)).start()
+            Thread(GameResultsUpdate(client, rouletteValue, playerPayout, makeBetButton)).start()
         }
 
-        (scene.root as VBox).children.addAll(choiceLabel, choiceBox, hbox, balance, score, rouletteValue, playerPayout)
+        (scene.root as VBox).children.addAll(choiceLabel, choiceBox, hbox, balance, rouletteValue, playerPayout)
 
         return scene
     }

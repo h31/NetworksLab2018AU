@@ -3,6 +3,7 @@ package ru.spbau.bachelors2015.roulette.client.handlers
 import javafx.application.Platform
 import ru.spbau.bachelors2015.roulette.client.GameData
 import ru.spbau.bachelors2015.roulette.client.GameData.items
+import ru.spbau.bachelors2015.roulette.client.updaters.GameResultsUpdate
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.ErrorResponse
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameStatusNegativeResponse
 import ru.spbau.bachelors2015.roulette.protocol.highlevel.GameStatusPositiveResponse
@@ -26,10 +27,8 @@ class GameStatusHandler : GameStatusResponseHandler {
         for (entry in response.bets) {
             val label = entry.key + " with bet: " + entry.value
             items.add(label)
-            println(label)
         }
-
-        println(seconds)
+        GameData.secondsLeft = response.secondsLeft
     }
 
     override fun handle(response: GameStatusNegativeResponse) {
