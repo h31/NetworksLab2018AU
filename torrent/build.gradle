@@ -1,12 +1,18 @@
-group 'ru.spbau.mit'
+group 'ru.spbau.mit.java2'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
+apply plugin: 'checkstyle'
 
 sourceCompatibility = 1.9
 
 repositories {
     mavenCentral()
+}
+
+checkstyle {
+    toolVersion = "6.+"
+    sourceSets = [project.sourceSets.main]
 }
 
 dependencies {
