@@ -16,9 +16,25 @@ class Game(val id: Int) {
 
     private val boardSize = 36
 
+    private val bets = mutableMapOf<CasinoModel.Player, Bet>()
+
+    private var isOver = false
+
     val value = Random().nextInt(boardSize) + 1
 
-    private val bets = mutableMapOf<CasinoModel.Player, Bet>()
+    init {
+        Thread(Runnable {
+            Thread.sleep(roundDurationSeconds * 1000L)
+
+            synchronized(this@Game) {
+                getPayouts().forEach {
+                    it.key.addMoney(it.value)
+                }
+            }
+
+            isOver = true
+        }).start()
+    }
 
     fun getBets(): Map<CasinoModel.Player, Bet> {
         synchronized(this) {
@@ -32,11 +48,11 @@ class Game(val id: Int) {
             TimeUnit.NANOSECONDS
         )
 
-        return max(0, 10 - secondsPast).toInt()
+        return max(0, roundDurationSeconds - secondsPast).toInt()
     }
 
     fun isOver(): Boolean {
-        return secondsLeft() == 0
+        return isOver
     }
 
     fun makeBet(player: CasinoModel.Player, bet: Bet) {
@@ -50,6 +66,7 @@ class Game(val id: Int) {
             }
 
             bets[player] = bet
+            player.subtractMoney(bet.value)
         }
     }
 
@@ -58,6 +75,10 @@ class Game(val id: Int) {
             throw GameIsNotOverException()
         }
 
+        return getPayouts()
+    }
+
+    private fun getPayouts() : Map<CasinoModel.Player, Int> {
         return bets.mapValues { (_, bet) ->
             if (bet.isWinningWith(value)) {
                 bet.accept(object : BetVisitor<Int> {
@@ -77,5 +98,9 @@ class Game(val id: Int) {
                 0
             }
         }
+    }
+
+    companion object {
+        const val roundDurationSeconds = 10
     }
 }

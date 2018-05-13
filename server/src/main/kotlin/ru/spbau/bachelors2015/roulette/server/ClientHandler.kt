@@ -101,14 +101,14 @@ class ClientHandler(
         }
 
         override fun handle(request: BalanceRequest): Response {
-            return BalanceResponse(player.balance)
+            return BalanceResponse(player.getBalance())
         }
 
         override fun handle(request: BetRequest): Response {
             val game = casinoModel.getCurrentGame() ?:
                 return ErrorResponse("No game is running")
 
-            if (player.balance < request.bet.value) {
+            if (player.getBalance() < request.bet.value) {
                 return ErrorResponse("Not enough money to make a bet")
             }
 
@@ -120,7 +120,6 @@ class ClientHandler(
                 return ErrorResponse("Bet has already been made")
             }
 
-            player.balance -= request.bet.value
             return OkResponse()
         }
 

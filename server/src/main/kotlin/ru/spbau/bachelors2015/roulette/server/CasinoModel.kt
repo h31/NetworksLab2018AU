@@ -83,13 +83,35 @@ class CasinoModel {
     }
 
     interface Player : Role {
-        var balance: Int
+        fun getBalance() : Int
+
+        fun addMoney(amount: Int)
+
+        fun subtractMoney(amount: Int)
     }
 
     interface Croupier : Role
 
     private inner class PlayerImplementation(override val nickname: String) : Player {
-        override var balance: Int = 1000
+        private var balance: Int = initialBalance
+
+        override fun getBalance(): Int {
+            synchronized(this) {
+                return balance
+            }
+        }
+
+        override fun addMoney(amount: Int) {
+            synchronized(this) {
+                balance += amount
+            }
+        }
+
+        override fun subtractMoney(amount: Int) {
+            synchronized(this) {
+                balance -= amount
+            }
+        }
 
         override fun destroy() {
             synchronized(this@CasinoModel) {
@@ -105,5 +127,9 @@ class CasinoModel {
                 nicknames.remove(nickname)
             }
         }
+    }
+
+    companion object {
+        const val initialBalance = 1000
     }
 }
