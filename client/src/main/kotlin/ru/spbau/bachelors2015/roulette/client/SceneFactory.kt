@@ -122,7 +122,6 @@ object SceneFactory {
 
         makeBetButton.setOnAction {
             val bet = textField.text.toInt()
-            balance.text = (balance.text.toInt() - bet).toString()
 
             val requestBet: Bet?
             if (choiceBox.value == ODD_NUMBERS) {
@@ -137,6 +136,7 @@ object SceneFactory {
 
             val request = BetRequest(GameData.gameId!!, requestBet)
             client.send(request, BetHandler())
+            Thread(BalanceUpdate(client, balance)).start()
             makeBetButton.isDisable = true
 
             val resultsUpdater = Thread(GameResultsUpdate(client, rouletteValue, playerPayout))
