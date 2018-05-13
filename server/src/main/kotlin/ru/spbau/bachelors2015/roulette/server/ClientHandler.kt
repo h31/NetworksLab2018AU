@@ -128,13 +128,13 @@ class ClientHandler(
 
     private inner class CroupierHandler(val croupier: CasinoModel.Croupier): CommonHandler() {
         override fun handle(request: GameStartRequest): Response {
-            try {
+            val newGame = try {
                 casinoModel.startNewGame()
             } catch (_: GameIsRunningException) {
                 return ErrorResponse("Game is already running")
             }
 
-            return OkResponse()
+            return GameStartResponse(newGame.id)
         }
 
         override fun handle(request: BalanceRequest): Response {

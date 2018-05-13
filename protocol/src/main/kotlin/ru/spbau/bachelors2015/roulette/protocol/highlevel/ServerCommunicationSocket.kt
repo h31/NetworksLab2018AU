@@ -4,6 +4,7 @@ import ru.spbau.bachelors2015.roulette.protocol.http.HttpInputStream
 import ru.spbau.bachelors2015.roulette.protocol.http.HttpOutputStream
 import java.io.Closeable
 import java.io.IOException
+import java.net.ProtocolException
 import java.net.Socket
 
 interface RequestHandler {
@@ -29,9 +30,9 @@ class ServerCommunicationSocket(private val underlyingSocket: Socket): Closeable
 
     fun handleNextRequest(handler: RequestHandler) {
         try {
-            val request = inputStream.readHttpRequest()
-
             val response = try {
+                val request = inputStream.readHttpRequest()
+
                 when (request.uri.path) {
                     RegistrationRequest.resourcePath ->
                         handler.handle(RegistrationRequest.fromHttpRepresentation(request))
@@ -53,6 +54,8 @@ class ServerCommunicationSocket(private val underlyingSocket: Socket): Closeable
 
                     else -> ErrorResponse("Unknown resource")
                 }
+            } catch (e: ProtocolException) {
+                ErrorResponse("Protocol violation: ${e.message}")
             } catch (_: InvalidHttpRequest) {
                 ErrorResponse("Invalid request format")
             }

@@ -11,9 +11,9 @@ class ServerTest {
     @JvmField
     val serverRule = ServerRule()
 
-    @Test
+    @Test(timeout = 1000)
     fun registrationRequest() {
-        class MyHandler : RegistrationResponseHandler {
+        class RegistrationHandler : RegistrationResponseHandler {
             override fun handle(response: ErrorResponse) {
                 fail()
             }
@@ -25,6 +25,36 @@ class ServerTest {
             ClientCommunicationSocket(Socket("localhost", ServerRule.serverPort))
 
         val request = RegistrationRequest(ClientRole.CROUPIER, "nickname")
-        clientSocket.send(request, MyHandler())
+        clientSocket.send(request, RegistrationHandler())
+    }
+
+    @Test(timeout = 1000)
+    fun gameStartRequest() {
+        class RegistrationHandler : RegistrationResponseHandler {
+            override fun handle(response: ErrorResponse) {
+                fail()
+            }
+
+            override fun handle(response: OkResponse) {}
+        }
+
+        class GameStartHandler : GameStartResponseHandler {
+            override fun handle(response: GameStartResponse) {
+            }
+
+            override fun handle(response: ErrorResponse) {
+                fail()
+            }
+        }
+
+        val clientSocket =
+                ClientCommunicationSocket(Socket("localhost", ServerRule.serverPort))
+
+        clientSocket.send(
+            RegistrationRequest(ClientRole.CROUPIER, "nickname"),
+            RegistrationHandler()
+        )
+
+        clientSocket.send(GameStartRequest(), GameStartHandler())
     }
 }

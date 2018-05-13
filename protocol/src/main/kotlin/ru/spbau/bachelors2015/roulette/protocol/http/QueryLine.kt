@@ -4,11 +4,18 @@ package ru.spbau.bachelors2015.roulette.protocol.http
  * A query line that can appear in URI. It consists of key value pairs.
  */
 class QueryLine(keyValuePairs: Map<String, String>) {
-    constructor(vararg keyValuePairs: Pair<String, String>) : this(keyValuePairs.toMap())
+    constructor(
+        firstPair: Pair<String, String>,
+        vararg keyValuePairs: Pair<String, String>
+    ) : this(keyValuePairs.union(listOf(firstPair)).toMap())
 
     val keyValuePairs: Map<String, String> = keyValuePairs.toMap()
 
     init {
+        if (keyValuePairs.isEmpty()) {
+            throw IllegalArgumentException("Empty query line is forbidden")
+        }
+
         for (entry in keyValuePairs) {
             if (entry.key.contains(pairsSeparator) ||
                 entry.key.contains(keyValuePairSeparator) ||

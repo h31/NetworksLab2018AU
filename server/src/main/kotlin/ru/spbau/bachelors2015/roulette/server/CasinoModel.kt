@@ -62,14 +62,17 @@ class CasinoModel {
         }
     }
 
-    fun startNewGame() {
+    fun startNewGame(): Game {
         synchronized(this) {
             if (currentGame?.isOver() == false) {
                 throw GameIsRunningException()
             }
 
             previousGame = currentGame
-            currentGame = Game(++freeGameId)
+            val newGame = Game(++freeGameId)
+            currentGame = newGame
+
+            return newGame
         }
     }
 

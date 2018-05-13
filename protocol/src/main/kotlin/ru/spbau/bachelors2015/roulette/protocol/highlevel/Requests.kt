@@ -24,7 +24,7 @@ abstract class Request {
 
     protected abstract val requestMethod: HttpRequestMethod
 
-    protected abstract fun queryLine(): QueryLine
+    protected abstract fun queryLine(): QueryLine?
 }
 
 enum class ClientRole(val stringRepresentation: String) {
@@ -81,8 +81,8 @@ class GameStartRequest: Request() {
 
     override val requestMethod = GameStartRequest.requestMethod
 
-    override fun queryLine(): QueryLine {
-        return QueryLine()
+    override fun queryLine(): QueryLine? {
+        return null
     }
 
     companion object {
@@ -101,8 +101,8 @@ class GameStatusRequest: Request() {
 
     override val requestMethod = GameStatusRequest.requestMethod
 
-    override fun queryLine(): QueryLine {
-        return QueryLine()
+    override fun queryLine(): QueryLine? {
+        return null
     }
 
     companion object {
@@ -121,8 +121,8 @@ class BalanceRequest: Request() {
 
     override val requestMethod = BalanceRequest.requestMethod
 
-    override fun queryLine(): QueryLine {
-        return QueryLine()
+    override fun queryLine(): QueryLine? {
+        return null
     }
 
     companion object {
@@ -163,7 +163,7 @@ class BetRequest(val gameId: Int, val bet: Bet): Request() {
 
         })
 
-        return QueryLine(*queryLinePairs.toTypedArray())
+        return QueryLine(queryLinePairs.toMap())
     }
 
     companion object {

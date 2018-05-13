@@ -99,14 +99,17 @@ class HttpInputStream(inputStream: InputStream): Closeable {
 
     private fun parseUri(uri: String): Uri {
         val tokens = uri.split(Uri.queryLineSeparator)
-        if (tokens.size != 2) {
-            throw ProtocolException("Invalid HTTP request URI")
-        }
 
-        return Uri(
-            parseResourcePath(tokens[0]),
-            parseQueryLine(tokens[1])
-        )
+        return when (tokens.size) {
+            1 -> Uri(parseResourcePath(tokens[0]), null)
+
+            2 -> Uri(
+                parseResourcePath(tokens[0]),
+                parseQueryLine(tokens[1])
+            )
+
+            else -> throw ProtocolException("Invalid HTTP request URI")
+        }
     }
 
     private fun parseResourcePath(resourcePath: String): ResourcePath {
@@ -134,10 +137,10 @@ class HttpInputStream(inputStream: InputStream): Closeable {
     private fun parseQueryLine(queryLine: String): QueryLine {
         try {
             return QueryLine(
-                    parseKeyValuePairs(
-                        queryLine.split(QueryLine.pairsSeparator),
-                        QueryLine.keyValuePairSeparator
-                    )
+                parseKeyValuePairs(
+                    queryLine.split(QueryLine.pairsSeparator),
+                    QueryLine.keyValuePairSeparator
+                )
             )
         } catch (_: IllegalArgumentException) {
             throw ProtocolException("Invalid query line in HTTP request")
@@ -183,8 +186,8 @@ class HttpInputStream(inputStream: InputStream): Closeable {
     }
 
     private fun parseKeyValuePairs(
-            headers: List<String>,
-            separator: Char
+        headers: List<String>,
+        separator: Char
     ): MutableMap<String, String> {
         return hashMapOf(*headers.map { parseOneKeyValuePair(it, separator) }.toTypedArray())
     }
