@@ -82,7 +82,11 @@ class ClientHandler(
 
         override fun handle(request: GameResultsRequest): Response {
             val game = casinoModel.getGame(request.gameId) ?:
-            return ErrorResponse("No results for game with given id")
+                return ErrorResponse("No results for game with given id")
+
+            if (!game.isOver()) {
+                return ErrorResponse("Game is not over")
+            }
 
             return GameResultsResponse(
                 game.value,
