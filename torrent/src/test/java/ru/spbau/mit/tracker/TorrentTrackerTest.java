@@ -2,7 +2,7 @@ package ru.spbau.mit.tracker;
 
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
-import ru.spbau.mit.CommonConfig;
+import ru.spbau.mit.common.CommonConfig;
 import ru.spbau.mit.client.ClientConfig;
 import ru.spbau.mit.client.TorrentClientImpl;
 import ru.spbau.mit.client.api.TorrentClient;

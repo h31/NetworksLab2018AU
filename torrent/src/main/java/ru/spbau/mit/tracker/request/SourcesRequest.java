@@ -1,12 +1,8 @@
 package ru.spbau.mit.tracker.request;
 
-import ru.spbau.mit.common.api.Request;
-import ru.spbau.mit.common.api.RequestConfig;
-import ru.spbau.mit.tracker.response.SourcesResponse;
+import ru.spbau.mit.common.RequestConfig;
 
-import java.io.Serializable;
-
-public class SourcesRequest implements Request, TrackerRequest {
+public class SourcesRequest implements TrackerRequest {
     private int fileId;
 
     public SourcesRequest(int fileId) {

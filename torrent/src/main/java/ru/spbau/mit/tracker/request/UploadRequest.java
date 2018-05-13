@@ -1,11 +1,8 @@
 package ru.spbau.mit.tracker.request;
 
-import ru.spbau.mit.common.api.Request;
-import ru.spbau.mit.common.api.RequestConfig;
+import ru.spbau.mit.common.RequestConfig;
 
-import java.io.Serializable;
-
-public class UploadRequest implements Request, TrackerRequest {
+public class UploadRequest implements TrackerRequest {
     private String name;
     private long size;
 
