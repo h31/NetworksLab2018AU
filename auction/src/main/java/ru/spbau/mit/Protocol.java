@@ -11,6 +11,8 @@ public class Protocol {
     public static final String CLIENT_LIST_REQUEST_HEADER = "GET /lots " + CURRENT_PROTOCOL;
     public static final String CLIENT_EXIT_REQUEST_HEADER = "PUT /this_client/exit " + CURRENT_PROTOCOL;
     public static final String CLIENT_FINISH_REQUEST_HEADER = "PUT /finish " + CURRENT_PROTOCOL;
+    public static final String CLIENT_ADD_REQUEST_HEADER = "PUT /add_lot " + CURRENT_PROTOCOL;
+    public static final String CLIENT_BET_REQUEST_HEADER = "PUT /bet_lot " + CURRENT_PROTOCOL;
 
     public static final String HEADER_AND_BODY_DELIMITER = "\n\n";
     public static final String LINE_DELIMITER = "\n";
