@@ -60,7 +60,7 @@ static void client_session(const SocketWrapper &acceptSocket) {
 
 int main(int argc, char **argv) {
     if (argc != 2) {
-        std::cerr << "USAGE: " << argv[0] << " port" << std::endl;
+        std::cerr << "USAGE: " << argv[0] << " <port>" << std::endl;
         exit(1);
     }
     try {

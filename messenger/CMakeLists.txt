@@ -22,4 +22,3 @@ endif()
 
 add_subdirectory(${SERVER_PROJECT})
 add_subdirectory(${CLIENT_PROJECT})
-
