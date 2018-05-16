@@ -1,0 +1,5 @@
+rootProject.name = 'roulette'
+include 'protocol'
+include 'client'
+include 'server'
+
