@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     completed = true;
     pthread_cancel(thread);
     pthread_join(thread, nullptr);
-    closesocket(sockfd);
+    close(sockfd);
 
     return 0;
 }

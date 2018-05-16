@@ -44,7 +44,7 @@ void* listener_for_messages(void* arg) {
     pthread_mutex_lock(&resending_mutex);
     active_socket_vector.erase(sender);
     pthread_mutex_unlock(&resending_mutex);
-    closesocket(sender);
+    close(sender);
     delete((SOCKET*)arg);
 }
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
     SOCKET sockfd = socket(AF_INET, SOCK_STREAM, 0);
     uint16_t portno;
-    int clilen;
+    socklen_t clilen;
     sockaddr_in serv_addr, cli_addr;
 
     if (sockfd < 0) {

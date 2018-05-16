@@ -8,7 +8,7 @@ bool send_message(message &msg, SOCKET sock) {
     size_t len = 3 + msg.sender.length() + 6 + msg.message_text.length();
     char buffer[len + 1];
     snprintf(buffer, len + 1, "%03d%s%06d%s", msg.sender.length(), msg.sender.c_str(), msg.message_text.length(), msg.message_text.c_str());
-    return send(sock, buffer, len, 0) == SOCKET_ERROR;
+    return send(sock, buffer, len, 0) == SO_ERROR;
 }
 
 message* recieve_message(SOCKET sock) {
