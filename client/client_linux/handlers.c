@@ -26,7 +26,7 @@ void read_line(vector_t* msg) {
 	msg->size = 0;
 	msg->capacity = (uint32_t)count;
 	msg->data = calloc(msg->capacity, sizeof(char));
-    append_line(msg, buffer, msg->capacity - 1);
+	append_line(msg, buffer, msg->capacity - 1);
 }
 
 void* reader(void *arg) {
