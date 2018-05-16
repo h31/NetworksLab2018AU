@@ -3,4 +3,4 @@ project(client)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(client main.cpp message.h)
+add_executable(client main.cpp message.h utils.h)

@@ -5,14 +5,15 @@
 
 struct header {
     uint16_t ID;
-    uint16_t QR:1;
-    uint16_t Opcode:4;
-    uint16_t AA:1;
-    uint16_t TC:1;
-    uint16_t RD:1;
-    uint16_t RA:1;
-    uint16_t Z:3;
-    uint16_t RCODE:4;
+    uint8_t RD:1;
+    uint8_t TC:1;
+    uint8_t AA:1;
+    uint8_t Opcode:4;
+    uint8_t QR:1;
+    uint8_t RCODE:4;
+    uint8_t Z:3;
+    uint8_t RA:1;
+
     uint16_t QDCOUNT;
     uint16_t ANCOUNT;
     uint16_t NSCOUNT;
@@ -24,22 +25,13 @@ struct dns_question {
     uint16_t QCLASS;
 };
 
+#pragma pack(push, 1)
 struct dns_rdata {
     uint16_t TYPE;
     uint16_t CLASS;
-    uint16_t TTL;
+    uint32_t TTL;
     uint16_t RDLENGTH;
 };
-
-struct query {
-    char* QNAME;
-    dns_question* question;
-};
-
-struct rr {
-    char* NAME;
-    dns_rdata* res;
-    char* RDATA;
-};
+#pragma pack(pop)
 
 #endif //SERVER_MESSAGE_H
