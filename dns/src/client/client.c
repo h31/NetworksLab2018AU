@@ -65,18 +65,16 @@ static void process_response(unsigned char *buf, int request_len)
 	exit(EXIT_FAILURE);
 }
 
+
 static int get_dns_record(unsigned char *host, unsigned char buf[QUERY_SIZE], struct sockaddr_in *dest)
 {
 	int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	int query_len = fill_query(host, buf);
 	socklen_t sl;
 
-	if (sendto(sock, (char*)buf, (size_t)query_len, 0, (struct sockaddr*)dest, sizeof(*dest)) < 0)
-		exit(EXIT_FAILURE);
-
+	guard(sendto(sock, (char*)buf, (size_t)query_len, 0, (struct sockaddr*)dest, sizeof(*dest)) < 0);
 	sl = sizeof *dest;
-	if (recvfrom(sock, (char*)buf, QUERY_SIZE, 0, (struct sockaddr*)dest, &sl) < 0)
-		exit(EXIT_FAILURE);
+	guard(recvfrom(sock, (char*)buf, QUERY_SIZE, 0, (struct sockaddr*)dest, &sl) < 0);
 
 	return query_len;
 }
@@ -96,7 +94,7 @@ int main(int argc , char *argv[])
 	struct sockaddr_in dns_addr = {};
 	int offset;
 
-	printf("hostname, dns_ip:\n");
+	printf("hostname dns_ip:\n");
 	scanf("%s" , hostname);
 	scanf("%s" , dns);
 

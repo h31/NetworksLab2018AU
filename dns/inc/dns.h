@@ -98,4 +98,20 @@ unsigned char *dns_to_url(unsigned char *reader, unsigned char *buffer, int *cou
 	return name;
 }
 
+#define error(expr) \
+do { \
+	perror(""); \
+	exit(EXIT_FAILURE); \
+} while (0)
+
+
+#define guard(expr) \
+do { \
+	int ret = (int)(expr); \
+	if (ret < 0) {\
+		error(expr);\
+	} \
+} while (0)
+
+
 #endif /* DNS_H */

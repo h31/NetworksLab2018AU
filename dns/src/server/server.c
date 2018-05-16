@@ -15,6 +15,14 @@ int main()
 	socklen_t sl;
 	ssize_t len;
 
+	FILE *fd = popen("cat /etc/resolv.conf | grep -P \"^[ ]*nameserver\" | grep -Po \"(^nameserver )\\K.*\"", "r");
+	if (!fd)
+		error("popen failed");
+	char ip[255];
+	if (fscanf(fd, "%s", ip) != 1)
+		error("");
+	pclose(fd);
+
 	sockin = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sockin < 0) {
 		ret = sockin;
@@ -44,8 +52,8 @@ int main()
 		}
 
 		addr_dns.sin_family = AF_INET;
-		addr_dns.sin_addr.s_addr = inet_addr("192.168.1.1");
-		addr_dns.sin_port = htons(53);
+		addr_dns.sin_addr.s_addr = inet_addr(ip);
+		addr_dns.sin_port = htons(DNS_PORT);
 
 		len = sendto(sockout, buf, (size_t)len, 0, (struct sockaddr*)&addr_dns, sizeof addr_dns);
 		if (len < 0) {
