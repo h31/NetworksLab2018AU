@@ -1,0 +1,16 @@
+language: c
+os: linux
+before_install: cd dns
+compiler:
+- gcc-4.9
+- clang
+script: ./build.sh && ./test.sh
+notifications:
+  email: false
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.9
+    - g++-4.9
