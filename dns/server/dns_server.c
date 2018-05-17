@@ -1,8 +1,7 @@
-#include <zconf.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <arpa/inet.h>
-#include <assert.h>
 
 #include "dns_server.h"
 #include "log.h"

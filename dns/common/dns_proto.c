@@ -1,6 +1,5 @@
 #include "dns_proto.h"
 
-#include <zconf.h>
 #include <assert.h>
 #include <string.h>
 
