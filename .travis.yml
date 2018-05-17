@@ -4,7 +4,7 @@ before_install: cd dns
 compiler:
 - gcc-4.9
 - clang
-script: mkdir build && (cd build && cmake .. && make)
+script: ./build.sh && ./test.sh
 notifications:
   email: false
 addons:

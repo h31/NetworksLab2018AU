@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "io_utils.h"
+#include "log.h"
 
 
 static const uint16_t OFFSET_TO_FIRST_NAME = 0xc00c;
@@ -149,6 +150,7 @@ success:
     return -1;
   }
   if (qtype != 1 || qclass != 1) {
+    LOG("WARNING: message type %d or type %d is not supported", qtype, qclass);
     errno = EPROTO;
     return -1;
   }
@@ -167,9 +169,19 @@ int parse_dns_answer(byte_buf_t* src, dns_answer_t* answer) {
     return -1;
   }
 
-  if (name_offset != OFFSET_TO_FIRST_NAME || qtype != 1 || qclass != 1 || rd_length != 4) {
-    errno = EPROTO;
-    return -1;
+  if (name_offset != OFFSET_TO_FIRST_NAME) {
+    LOG("Protocol error: expected offset: %d, actual %d", OFFSET_TO_FIRST_NAME, name_offset);
+    goto protocol_error;
+  }
+
+  if (qtype != 1 || qclass != 1) {
+    LOG("Protocol error: message type %d or type %d is not supported", qtype, qclass);
+    goto protocol_error;
+  }
+
+  if (rd_length != 4) {
+    LOG("Protocol error: expected rd_length: 4, actual %d", rd_length);
+    goto protocol_error;
   }
 
   if (byte_buf_read(src, &answer->address, sizeof(answer->address)) < 0) {
@@ -177,6 +189,10 @@ int parse_dns_answer(byte_buf_t* src, dns_answer_t* answer) {
   }
 
   return 0;
+
+protocol_error:
+  errno = EPROTO;
+  return -1;
 }
 
 int compile_dns_message(const dns_message_t* message, byte_buf_t* out) {
@@ -199,11 +215,18 @@ static int parse_header(byte_buf_t* src, dns_header_t* header) {
   }
 
   if (header->question_count > 1
-      || header->answer_count > 1
-      || header->authority_count > 0
-      || header->additional_count > 0) {
+      || header->answer_count > 1) {
+    LOG("Protocol error: Only a single request and / or answer in a message is supported");
     errno = EPROTO;
     return -1;
+  }
+
+  if (header->authority_count > 0) {
+    LOG("Warning: authorities are not supported");
+  }
+
+  if (header->additional_count > 0) {
+    LOG("Warning: additional fields are not supported");
   }
 
   return 0;
@@ -231,9 +254,6 @@ int parse_dns_message(byte_buf_t* src, dns_message_t* out) {
       goto error;
     }
   }
-
-  assert(message.header.authority_count == 0);
-  assert(message.header.additional_count == 0);
 
   if ((message.header.question_count == 1 && parse_dns_question(src, message.question) < 0)
       || (message.header.answer_count == 1 && parse_dns_answer(src, message.answer) < 0)) {
