@@ -32,7 +32,8 @@ int main()
     struct sockaddr_in serveraddr = {
         .sin_family = AF_INET,
         .sin_addr.s_addr = htonl(INADDR_ANY),
-        .sin_port = htons(PORT)
+        .sin_port = htons(PORT),
+        .sin_zero = {}
     };
 
     assert_error(bind(server_socket_fd, (struct sockaddr *)&serveraddr, sizeof serveraddr) >= 0, "ERROR: bind");  
@@ -61,7 +62,7 @@ int main()
         data->data_len = htons(4);
         reader += sizeof(struct R_DATA);
         *(int*)reader = htonl(strlen((char*)qname));
-        n += strlen((char*)qname) + 1 + sizeof(struct R_DATA) + 4;
+        n = 2 * strlen((char*)qname) + 2 + sizeof(struct R_DATA) + sizeof(struct DNS_HEADER) + sizeof(struct QUESTION) + 4;
 
         const struct hostent * const hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr, sizeof clientaddr.sin_addr.s_addr, AF_INET);
         assert_error(hostp != NULL, "ERROR: gethostbyaddr");
