@@ -119,6 +119,11 @@ int __cdecl main() {
 	struct addrinfo *result = NULL;
 	struct addrinfo hints;
 
+    if (argc != 2) {
+        fprintf(stderr, "usage: server_windows port\n");
+        exit(0);
+    }
+
 
 	// Initialize Winsock
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -133,7 +138,7 @@ int __cdecl main() {
 	hints.ai_protocol = IPPROTO_TCP;
 
 	// Resolve the server address and port
-	iResult = getaddrinfo("localhost", "5001", &hints, &result);
+	iResult = getaddrinfo("localhost", argv[1], &hints, &result);
 	if (iResult != 0) {
 		printf("getaddrinfo failed with error: %d\n", iResult);
 		WSACleanup();

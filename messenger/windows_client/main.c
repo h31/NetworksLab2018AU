@@ -125,8 +125,8 @@ int __cdecl main(int argc, wchar_t **argv) {
 
     char buffer[256];
 
-    if (argc < 4) {
-        fprintf(stderr, "usage client_windows hostname port nickname\n");
+    if (argc != 4) {
+        fprintf(stderr, "usage: client_windows hostname port nickname\n");
         exit(0);
     }
 

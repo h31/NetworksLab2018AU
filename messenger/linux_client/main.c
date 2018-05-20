@@ -116,8 +116,8 @@ int main(int argc, char *argv[]) {
 
     char buffer[256] = {};
 
-    if (argc < 4) {
-        fprintf(stderr, "usage %s hostname port nickname\n", argv[0]);
+    if (argc != 4) {
+        fprintf(stderr, "usage: %s hostname port nickname\n", argv[0]);
         exit(0);
     }
 

@@ -123,9 +123,15 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if (argc != 2) {
+        fprintf(stderr, "usage: %s port\n", argv[0]);
+        exit(0);
+    }
+
+    portno = (uint16_t) atoi(argv[1]);
+
     /* Initialize socket structure */
     bzero((char *) &serv_addr, sizeof(serv_addr));
-    portno = 5001;
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
