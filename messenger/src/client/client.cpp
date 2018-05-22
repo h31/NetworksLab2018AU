@@ -4,14 +4,17 @@
 #include <string>
 #include <memory>
 #include <time.h>
+#include <iomanip>
 
 #include "socket.hpp"
 
 void print_time()
 {
 	time_t t = time(0);
-	struct tm * now = localtime( & t );
-	std::cout << '<' << now->tm_hour << ':' << now->tm_min << "> ";
+	struct tm * now = localtime(&t);
+
+	std::cout << '<' << std::setw(2) << std::setfill('0') << now->tm_hour
+	        << ':' << std::setw(2) << std::setfill('0') << now->tm_min << "> ";
 }
 
 std::unique_ptr<char[]> extract_name(net::socket& sock)
