@@ -1,3 +1,4 @@
+#include <string.h>
 #include "server.h"
 #include "message.h"
 #include <ctime>

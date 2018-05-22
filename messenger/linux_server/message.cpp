@@ -1,4 +1,5 @@
-#include <strings.h>
+#include <string.h>
+#include <stdexcept>
 #include "message.h"
 
 elegram::message::message(int socket)

@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <string.h>
 #include "client.h"
 
 char * getline(void) {
