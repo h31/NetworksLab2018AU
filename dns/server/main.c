@@ -76,7 +76,6 @@ int main(int argc, char **argv) {
 				++start;
 			}
 
-			uint8_t name_length = start;
 			int addr_res = getaddrinfo(addr, NULL, &hints, &answer_addr);
 			uint8_t rcode;
 			switch (addr_res) {
@@ -127,7 +126,8 @@ int main(int argc, char **argv) {
 				header->ancount = htons(1);
 			}
 
-			offset += strlen((const char*)name) + 1 + sizeof(question_t);
+			uint8_t name_length = (uint8_t) strlen((const char*) name);
+			offset += name_length + 1 + sizeof(question_t);
 			if (header->ancount != 0) {
 				char* resource_name_ptr = (char *) (buffer + offset);
 				memcpy(resource_name_ptr, name, name_length + 1);
@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
 				answer->rdlength = htons(4);
 				struct sockaddr_in *ipv4 = (struct sockaddr_in *)answer_addr->ai_addr;
 				char* ip = inet_ntoa(ipv4->sin_addr);
-//			printf("%s\t%s\n", addr, ip);
+				printf("%s\t%s\n", addr, ip);
 				uint8_t octet = 0;
 				offset += sizeof(answer_t);
 				uint8_t* rdata = (uint8_t*) (buffer + offset);
