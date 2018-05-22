@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <iostream>
+#include <string.h>
+
 #include "message.h"
 
 const size_t MAX_SIZE = 256;
@@ -59,11 +61,10 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    sockaddr_in si_me{
-            .sin_family = AF_INET,
-            .sin_port = htons(portno),
-            .sin_addr.s_addr =htonl(INADDR_ANY)
-    };
+    sockaddr_in si_me{};
+    si_me.sin_family = AF_INET;
+    si_me.sin_port = htons(portno);
+    si_me.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if (bind(sockfd, (struct sockaddr *) &si_me, sizeof(si_me)) == -1) {
         std::cerr << "ERROR bind";

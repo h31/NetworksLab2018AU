@@ -53,11 +53,10 @@ int main(int argc, char *argv[]) {
                                                                       1]);
     question->QCLASS = htons(1);
     question->QTYPE = htons(1);
-    sockaddr_in dest{
-            .sin_family = AF_INET,
-            .sin_port = htons(portno),
-            .sin_addr.s_addr = inet_addr(argv[1])
-    };
+    sockaddr_in dest{};
+    dest.sin_family = AF_INET;
+    dest.sin_port = htons(portno);
+    dest.sin_addr.s_addr = inet_addr(argv[1]);
     int dest_size = sizeof(dest);
     int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sockfd < 0) {
@@ -104,9 +103,8 @@ int main(int argc, char *argv[]) {
             memcpy(rdata, reader, ntohs(data->RDLENGTH));
             rdata[ntohs(data->RDLENGTH)] = 0;
             reader += ntohs(data->RDLENGTH);
-            sockaddr_in ip = {
-                    .sin_addr.s_addr = *(unsigned int *) rdata
-            };
+            sockaddr_in ip = {};
+	    ip.sin_addr.s_addr = *(unsigned int *) rdata;
             std::cout << "IP: " << inet_ntoa(ip.sin_addr) << std::endl;
             delete[]rdata;
         } else {
