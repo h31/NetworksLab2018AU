@@ -91,8 +91,8 @@ void inner_client_handling(int socket_id) {
         struct tm* timeinfo;
         time(&rawtime);
         timeinfo = localtime(&rawtime);
-        char time[6];
-        strftime(time, 6, "%H%M%S", timeinfo);
+        char time[10];
+        strftime(time, 10, "%H%M%S", timeinfo);
         printf("Received the message from %d: %s\n", socket_id, buffer);
         send_message_to_everyone(login, buffer, time, socket_id);
     }
