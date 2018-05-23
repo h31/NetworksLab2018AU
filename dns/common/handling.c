@@ -82,32 +82,34 @@ uint8_t* form_response(uint8_t *query, address_t address) {
 		query = skip_question(query);
 	}
 
-	// Name
-	*(query++) = 0xc0;
-	*(query++) = 0x0c;
+	const int size = 12;
+	uint8_t data[] = {
+		// Name
+		0xc0,
+		0x0c,
 
-	// Type
-	*(query++) = 0x00;
-	*(query++) = 0x01;
+		// Type
+		0x00,
+		0x01,
 
-	// Class
-	*(query++) = 0x00;
-	*(query++) = 0x01;
+		// Class
+		0x00,
+		0x01,
 
-	// TTL
-	*(query++) = 0x00;
-	*(query++) = 0x00;
-	*(query++) = 0x00;
-	*(query++) = 0xff;
+		// TTL
+		0x00,
+		0x00,
+		0x00,
+		0xff,
 
-	// Data length
-	*(query++) = 0x00;
-	*(query++) = 0x04;
+		// Data length
+		0x00,
+		0x04
+	};
 
-	*(query++) = address.bytes[0];
-	*(query++) = address.bytes[1];
-	*(query++) = address.bytes[2];
-	*(query++) = address.bytes[3];
+	memcpy(query, data, size);
+	query += size;
 
-	return query;
+	memcpy(query, address.bytes, 4);
+	return query + 4;
 }

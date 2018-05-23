@@ -29,43 +29,53 @@ void convert_name_to_byte_sequence(char *name, uint8_t *dest) {
 }
 
 uint8_t* write_request_header(uint8_t dest[]) {
-	// Transaction ID
-	*(dest++) = 0x00;
-	*(dest++) = 0x00;
+	const int size = 12;
 
-	// Query type
-	*(dest++) = 0x01;
-	*(dest++) = 0x00;
+	uint8_t data[] = {
+		// Transaction ID
+		0x00,
+		0x00,
 
-	// Number of questions
-	*(dest++) = 0x00;
-	*(dest++) = 0x01;
+		// Query type
+		0x01,
+		0x00,
 
-	// answer rrs
-	*(dest++) = 0x00;
-	*(dest++) = 0x00;
+		// Number of questions
+		0x00,
+		0x01,
 
-	// authority rrs
-	*(dest++) = 0x00;
-	*(dest++) = 0x00;
+		// answer rrs
+		0x00,
+		0x00,
 
-	// additional rrs
-	*(dest++) = 0x00;
-	*(dest++) = 0x00;
+		// authority rrs
+		0x00,
+		0x00,
 
-	return dest;
+		// additional rrs
+		0x00,
+		0x00
+	};
+
+	memcpy(dest, data, size);
+	return dest + size;
 }
 
 uint8_t* write_request_footer(uint8_t *dest) {
-	// Type
-	*(dest++) = 0x00;
-	*(dest++) = 0x01;
+	const int size = 4;
 
-	// Class
-	*(dest++) = 0x00;
-	*(dest++) = 0x01;
+	uint8_t data[] = {
+		// Type
+		0x00,
+		0x01,
 
-	return dest;
+		// Class
+		0x00,
+		0x01
+	};
+
+	memcpy(dest, data, size);
+	return dest + size;
 }
 
 uint8_t buffer[MAX_UDP_DATA_SIZE];
