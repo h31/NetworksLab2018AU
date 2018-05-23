@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-const uint16_t PORT = 5002;
+const uint16_t PORT = 5001;
 #define CLIENTS_CAPACITY 5
 #define LOGIN_CAPACITY 16
 #define BUFFER_CAPACITY 256
