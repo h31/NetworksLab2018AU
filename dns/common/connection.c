@@ -14,7 +14,7 @@ int get_udp_sock() {
 	return sock;
 }
 
-struct sockaddr_in get_external_addr(char *server_addr, uint16_t port) {
+struct sockaddr_in get_server_addr(char *server_addr, uint16_t port) {
 	struct sockaddr_in addr;
 	memset((char*) &addr, 0, sizeof(addr));
 

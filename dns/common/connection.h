@@ -10,7 +10,7 @@
 #define MAX_UDP_DATA_SIZE (65507)
 
 int get_udp_sock();
-struct sockaddr_in get_external_addr(char *server_addr, uint16_t port);
+struct sockaddr_in get_server_addr(char *server_addr, uint16_t port);
 struct sockaddr_in bind_to_port(int sock, uint16_t port);
 
 #endif /* CONNECTION_H_ */

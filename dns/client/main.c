@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
 	}
 
     int sock = get_udp_sock();
-    struct sockaddr_in addr = get_external_addr(argv[1], (uint16_t) atoi(argv[2]));
+    struct sockaddr_in addr = get_server_addr(argv[1], (uint16_t) atoi(argv[2]));
 
     uint8_t *response = request_addr(sock, &addr, argv[3]);
     print_server_response(response);
