@@ -2,23 +2,19 @@
 #include <stdlib.h>
 
 #include <netdb.h>
-#include <assert.h>
-#include <netinet/in.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <time.h>
 
 #include <string.h>
 
-const uint16_t PORT = 5001;
+const uint16_t PORT = 5002;
 #define CLIENTS_CAPACITY 5
-#define LOGIN_CAPACITY 8
-#define BUFFER_CAPACITY 4096
+#define LOGIN_CAPACITY 16
+#define BUFFER_CAPACITY 256
 #define TIME_OFFSET 19
 int server_socket;
 int clients[CLIENTS_CAPACITY];
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-char buffer[BUFFER_CAPACITY];
 char login[CLIENTS_CAPACITY][LOGIN_CAPACITY];
 struct sockaddr_in server_address, client_address;
 
@@ -61,19 +57,30 @@ void clean(int index) {
     pthread_mutex_unlock(&mutex);
 }
 
-void broadcast(int index, char* buffer, int bytes) {
+void broadcast(char* buffer, size_t bytes) {
     pthread_mutex_lock(&mutex);
     for (int i = 0; i < CLIENTS_CAPACITY; i++) {
         if (!clients[i]) {
             continue;
         }
-        write(clients[i], buffer, bytes);
+        ssize_t total_write_bytes = 0;
+        while (total_write_bytes < bytes) {
+            ssize_t write_bytes = write(clients[i], buffer, bytes);
+            //printf("%zi %zi %zi\n", write_bytes, total_write_bytes, bytes);
+            if (write_bytes <= 0) {
+                //perror("WRITE ERROR");
+                clients[i] = 0;
+                break;
+            }
+            total_write_bytes += write_bytes;
+        }
+        //printf("BROADCASTED %s\n", buffer);
     }
     pthread_mutex_unlock(&mutex);
 }
 
 void* client_handling_routine(void* arg) {
-    int client_socket = (int)arg;
+    int client_socket = (int) arg;
     int index = find_slot_for_client(client_socket);
     if (index == -1) {
         write(client_socket, "-", 1);
@@ -82,31 +89,64 @@ void* client_handling_routine(void* arg) {
     } else {
         write(client_socket, "+", 1);
     }
-    ssize_t bytes_read = read(client_socket, login[index], LOGIN_CAPACITY - 1);
-    if (bytes_read <= 0) {
-        perror("ERROR on login reading");
-        clean(index);
+
+    char expected_bytes_tmp[1];
+    ssize_t tmp = read(client_socket, expected_bytes_tmp, 1);
+    if (tmp <= 0) {
+        printf("READING ERROR");
         return NULL;
     }
+    ssize_t expected_bytes = expected_bytes_tmp[0];
+    ssize_t total_read_bytes = 0;
+    while (total_read_bytes < expected_bytes) {
+        ssize_t read_bytes = read(client_socket, login[index] + total_read_bytes, expected_bytes - total_read_bytes);
+        if (read_bytes <= 0) {
+            //perror("READING ERROR");
+            clean(index);
+            return NULL;
+        }
+        total_read_bytes += read_bytes;
+    }
+
     char buffer[BUFFER_CAPACITY];
-    int offset = strlen(login[index]) + 4 + TIME_OFFSET;
+    size_t offset = strlen(login[index]) + 5 + TIME_OFFSET;
     while (1) {
         memset(buffer, 0, sizeof(buffer));
-        bytes_read = read(client_socket, buffer + offset, BUFFER_CAPACITY - 1);
-        if (bytes_read <= 0 || buffer[offset] == 1) {
-            break;
+        expected_bytes_tmp[0] = 0;
+        tmp = read(client_socket, expected_bytes_tmp, 1);
+        if (tmp <= 0) {
+            //perror("READING ERROR");
+            return NULL;
         }
+        expected_bytes = expected_bytes_tmp[0];
+        total_read_bytes = 0;
+        while (total_read_bytes < expected_bytes) {
+            ssize_t read_bytes = read(
+                    client_socket,
+                    buffer + total_read_bytes + offset,
+                    (size_t) (expected_bytes - total_read_bytes)
+            );
+            //printf("%zi %zi %zi\n", read_bytes, total_read_bytes, expected_bytes);
+            if (read_bytes <= 0) {
+                //perror("READING ERROR");
+                clean(index);
+                return NULL;
+            }
+            total_read_bytes += read_bytes;
+        }
+
         time_t orig_format;
         time(&orig_format);
-        memcpy(buffer, asctime(gmtime(&orig_format)), TIME_OFFSET);
-        buffer[TIME_OFFSET] = '[';
-        memcpy(buffer + TIME_OFFSET + 1, login[index], strlen(login[index]));
-        buffer[TIME_OFFSET + 1 + strlen(login[index])] = ']';
-        buffer[TIME_OFFSET + 2 + strlen(login[index])] = ':';
-        buffer[TIME_OFFSET + 3 + strlen(login[index])] = ' ';
-        broadcast(index, buffer, bytes_read + offset);
+        buffer[0] = (char) (offset + total_read_bytes - 1);
+        memcpy(buffer + 1, asctime(gmtime(&orig_format)), TIME_OFFSET);
+        buffer[TIME_OFFSET + 1] = '[';
+        memcpy(buffer + TIME_OFFSET + 2, login[index], strlen(login[index]));
+        buffer[TIME_OFFSET + 2 + strlen(login[index])] = ']';
+        buffer[TIME_OFFSET + 3 + strlen(login[index])] = ':';
+        buffer[TIME_OFFSET + 4 + strlen(login[index])] = ' ';
+        //puts(buffer);
+        broadcast(buffer, offset + total_read_bytes);
     }
-    clean(index);
 }
 
 int main(int argc, char *argv[]) {
