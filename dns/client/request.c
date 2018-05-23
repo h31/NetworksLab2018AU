@@ -28,22 +28,28 @@ void convert_name_to_byte_sequence(char *name, uint8_t *dest) {
 	*len_ptr = 0;
 }
 
-uint8_t* write_request_header(uint8_t *dest) {
+uint8_t* write_request_header(uint8_t dest[]) {
+	// Transaction ID
 	*(dest++) = 0x00;
-	*(dest++) = 0x00; // ID!!!
+	*(dest++) = 0x00;
 
+	// Query type
 	*(dest++) = 0x01;
 	*(dest++) = 0x00;
 
+	// Number of questions
 	*(dest++) = 0x00;
 	*(dest++) = 0x01;
 
+	// answer rrs
 	*(dest++) = 0x00;
 	*(dest++) = 0x00;
 
+	// authority rrs
 	*(dest++) = 0x00;
 	*(dest++) = 0x00;
 
+	// additional rrs
 	*(dest++) = 0x00;
 	*(dest++) = 0x00;
 
@@ -51,9 +57,11 @@ uint8_t* write_request_header(uint8_t *dest) {
 }
 
 uint8_t* write_request_footer(uint8_t *dest) {
+	// Type
 	*(dest++) = 0x00;
 	*(dest++) = 0x01;
 
+	// Class
 	*(dest++) = 0x00;
 	*(dest++) = 0x01;
 

@@ -82,20 +82,25 @@ uint8_t* form_response(uint8_t *query, address_t address) {
 		query = skip_question(query);
 	}
 
+	// Name
 	*(query++) = 0xc0;
 	*(query++) = 0x0c;
 
+	// Type
 	*(query++) = 0x00;
 	*(query++) = 0x01;
 
+	// Class
 	*(query++) = 0x00;
 	*(query++) = 0x01;
 
+	// TTL
 	*(query++) = 0x00;
 	*(query++) = 0x00;
 	*(query++) = 0x00;
 	*(query++) = 0xff;
 
+	// Data length
 	*(query++) = 0x00;
 	*(query++) = 0x04;
 
