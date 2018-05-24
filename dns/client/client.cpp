@@ -128,7 +128,7 @@ void parse_message(char *message) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 4) {
+    if (argc != 4) {
         cout << "Wrong arguments format! Expected: server_ip port target_name" << endl;
         return 0;
     }
