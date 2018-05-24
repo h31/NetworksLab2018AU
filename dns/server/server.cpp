@@ -45,7 +45,7 @@ public:
         ID = 0;
         flags = 0;
         QDCOUNT = 0;
-    	ANCOUNT = 0;
+        ANCOUNT = 0;
         NSCOUNT = 0;
         ARCOUNT = 0;
     }
@@ -68,9 +68,8 @@ char* write_hostname(char* hostname, char* dst) {
             hostname++;
         } else {
     	    *(dst++) = 0;
-	}
+        }
     }
-    
     *(dst++) = 0;
     *(dst++) = 1;
     *(dst++) = 0;
@@ -92,9 +91,9 @@ char* read_hostname(char* ptr, char* message, char* dst) {
             *(dst++) = '.';
             ptr = read_hostname(ptr, message, dst);
         } else {
-            *dst = 0;	
+            *dst = 0;
             ptr++;
-	}
+	    }
     }
     return ptr;
 }
@@ -102,7 +101,7 @@ char* read_hostname(char* ptr, char* message, char* dst) {
 u_int64_t hash_address(char* address) {
     u_int64_t res = 0;
     while (*address != 0) {
-	res = res * 17 + (u_int64_t) (*(address++));
+	    res = res * 17 + (u_int64_t) (*(address++));
     }
     return res;
 }
@@ -127,7 +126,6 @@ void run_server(SOCKET socket) {
         response_header.ID = request_header.ID;
         response_header.flags = (1 << 7) | (1 << 8) | (1 << 15);
         for (int i = 0; i < request_header.QDCOUNT; i++) {
-
             input = read_hostname(input, request, domain);
             int qtype = ntohs(*((u_int16_t*) input));
             input += 2;
@@ -140,29 +138,29 @@ void run_server(SOCKET socket) {
             output = write_hostname(domain, output);
         }
         int response_len;
-        if ((response_header.flags & 4) != 0) {
+        if (response_header.flags & 4) {
             response_header.write(response);
             response_len = response_header.memory_size();;
         } else {
             response_header.QDCOUNT = request_header.QDCOUNT;
             response_header.ANCOUNT = request_header.QDCOUNT;
-            
+
             input = request + request_header.memory_size();
             for (int i = 0; i < request_header.QDCOUNT; i++) {
             	input = read_hostname(input, request, domain);
             	input += 4;
             	output = write_hostname(domain, output);
                 // write TTL
-                *(output++) = 0;  
-                *(output++) = 0;  
-                *(output++) = 1;  
-                *(output++) = 0;  
+                *(output++) = 0;
+                *(output++) = 0;
+                *(output++) = 1;
+                *(output++) = 0;
                 // write RDLENGTH
-                *(output++) = 0;  
-                *(output++) = 4;  
-	        // write "ip"
-	        *((u_int64_t *) output) = htonl(hash_address(domain));
-  		output += 4;
+                *(output++) = 0;
+                *(output++) = 4;
+                // write "ip"
+                *((u_int64_t *) output) = htonl(hash_address(domain));
+                output += 4;
             }
             response_header.write(response);
             response_len = output - response;
@@ -173,14 +171,14 @@ void run_server(SOCKET socket) {
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        cout << "Wrong arguments format! Expected: port" << endl;
+        cout << "Error: wrong arguments format! Expected: port" << endl;
         return 0;
     }
     uint16_t port_number = (uint16_t) atoi(argv[1]);
 
     SOCKET dns_socket = socket(AF_INET, SOCK_DGRAM, 0);
     if (dns_socket < 0) {
-        cout << "Failed to create socket!" << endl;
+        cout << "Error: failed to create socket!" << endl;
         return 1;
     }
 
@@ -190,17 +188,16 @@ int main(int argc, char *argv[]) {
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(port_number);
 
-    
     if (bind(dns_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        cout << "Failed to bind socket!" << endl;
+        cout << "Error: failed to bind socket!" << endl;
         return 2;
     }
 
-    cout << "DNS server started on port " << port_number << endl;
+    cout << "Info: DNS server started on port " << port_number << endl;
     run_server(dns_socket);
 
     if (close(dns_socket) < 0) {
-        cout << "Failed to close socket!" << endl;
+        cout << "Error: failed to close socket!" << endl;
         return 3;
     }
     return 0;

@@ -45,7 +45,7 @@ public:
         ID = 0;
         flags = 0;
         QDCOUNT = 0;
-    	ANCOUNT = 0;
+        ANCOUNT = 0;
         NSCOUNT = 0;
         ARCOUNT = 0;
     }
@@ -68,9 +68,9 @@ char* write_hostname(char* hostname, char* dst) {
             hostname++;
         } else {
     	    *(dst++) = 0;
-	}
+        }
     }
-    
+
     *(dst++) = 0;
     *(dst++) = 1;
     *(dst++) = 0;
@@ -92,9 +92,9 @@ char* read_hostname(char* ptr, char* message, char* dst) {
             *(dst++) = '.';
             ptr = read_hostname(ptr, message, dst);
         } else {
-            *dst = 0;	
+            *dst = 0;
             ptr++;
-	}
+	    }
     }
     return ptr;
 }
@@ -115,7 +115,7 @@ void parse_message(char *message) {
         input = read_hostname(input, message, tmp);
         int type = ntohs(*((u_int16_t *) input));
         if (type != 1) {
-            printf("Unsupported type in answer %d\n", type);
+            cout << "Warning: unexpected answer type! Answer skipped." << endl;
             continue;
         }
         cout << tmp << " has address ";
@@ -129,14 +129,14 @@ void parse_message(char *message) {
 
 int main(int argc, char *argv[]) {
     if (argc != 4) {
-        cout << "Wrong arguments format! Expected: server_ip port target_name" << endl;
+        cout << "Error: wrong arguments format! Expected: server_ip port target_name" << endl;
         return 0;
     }
     u_int16_t port_number = (uint16_t) atoi(argv[2]);
 
     struct hostent *server = gethostbyname(argv[1]);
     if (server == NULL) {
-        cout << "DNS server wasn't found!" << endl;
+        cout << "Error: DNS server wasn't found!" << endl;
         return 1;
     }
 
@@ -145,7 +145,6 @@ int main(int argc, char *argv[]) {
     memcpy((char*) &serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
     serv_addr.sin_port = htons(port_number);
 
-    
     // Create request-message
     char message[1024] = {};
 
@@ -163,22 +162,22 @@ int main(int argc, char *argv[]) {
     // Create a socket
     SOCKET dns_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (dns_socket < 0) {
-        cout << "Failed to create socket!" << endl;
+        cout << "Error: failed to create socket!" << endl;
         return 2;
     }
     // Send request-message
     sendto(dns_socket, message, message_len, 0, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
-    
+
     // Parse response-message
     if (recv(dns_socket, message, 255, 0) < 0) {
-        cout << "Error during message sending!" << endl;
+        cout << "Error: failed to send request!" << endl;
         return 3;
     }
     parse_message(message);
-    
+
     // Close socket
     if (close(dns_socket) < 0) {
-        cout << "Error during socket closing!" << endl;
+        cout << "Error: failed to close socket!" << endl;
         return 4;
     }
     return 0;
