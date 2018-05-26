@@ -1,12 +1,9 @@
 package ru.spbau.mit;
 
-import java.util.Arrays;
-import java.util.List;
-
 public class Protocol {
+    public static final String PROTOCOL_VERSION = "1.0";
     public static final String HTTP_VERSION = "1.1";
     public static final String CURRENT_PROTOCOL = "HTTP/" + HTTP_VERSION;
-    public static final String VERSION = "1.0";
     public static final String CLIENT_INIT_REQUEST_HEADER = "GET /this_client/role " + CURRENT_PROTOCOL;
     public static final String CLIENT_LIST_REQUEST_HEADER = "GET /lots " + CURRENT_PROTOCOL;
     public static final String CLIENT_EXIT_REQUEST_HEADER = "PUT /this_client/exit " + CURRENT_PROTOCOL;

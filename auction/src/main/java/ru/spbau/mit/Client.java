@@ -64,7 +64,7 @@ public class Client implements Closeable {
 
     @Override
     public void close() throws IOException {
-        if (socket != null && !socket.isClosed()) {
+        if (!socket.isClosed()) {
             try {
                 send(CLIENT_EXIT_REQUEST_HEADER);
                 String response = receive();

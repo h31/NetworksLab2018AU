@@ -18,14 +18,6 @@ public class Utils {
     public static final String ADD_COMMAND = "add";
     public static final String BET_COMMAND = "bet";
 
-//    public static void TODO(String msg) {
-//        throw new NotImplementedException(msg);
-//    }
-//
-//    public static void TODO() {
-//        TODO("TODO");
-//    }
-
     public static InetSocketAddress socketAddressFromCommandLine(CommandLine commandLine) {
         String hostname = commandLine.getOptionValue(HOST_PARAMETER, "localhost");
         String portString = commandLine.getOptionValue(PORT_PARAMETER);
