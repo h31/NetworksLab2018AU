@@ -1,0 +1,64 @@
+group 'ru.spbau.mit'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+
+    compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
+
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.9.1'
+}
+
+apply plugin: 'application'
+
+mainClassName = 'ru.spbau.mit.Server'
+
+// https://discuss.gradle.org/t/support-for-multiple-application-scripts-in-application-plugin/508
+task createAllStartScripts {
+    doLast {
+        // just a placeholder
+    }
+}
+
+def scripts = [
+    'server': 'ru.spbau.mit.Server',
+    'client':'ru.spbau.mit.Client'
+]
+
+scripts.each() { scriptName, className ->
+    def t = tasks.create(name: scriptName+'StartScript', type: CreateStartScripts) {
+        mainClassName = className
+        applicationName = scriptName
+        outputDir = new File(project.buildDir, 'scripts')
+        classpath = jar.outputs.files + project.configurations.runtime// + sourceSets.main.runtimeClasspath
+        // arguments to pass to the application
+//        args 'appArg1'
+    }
+    applicationDistribution.into("bin") {
+        from(t)
+        fileMode = 0755
+    }
+    createAllStartScripts.dependsOn(t)
+}
+
+//task serverStartScript(type: CreateStartScripts) {
+//    mainClassName = "ru.spbau.mit.Server"
+//    applicationName = "server"
+//    outputDir = new File(project.buildDir, 'scripts')
+//    classpath = jar.outputs.files + project.configurations.runtime
+//}
+//
+//applicationDistribution.into("bin") {
+//    from(serverStartScript)
+//    fileMode = 0755
+//}
