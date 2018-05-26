@@ -18,8 +18,17 @@ import static ru.spbau.mit.Protocol.*;
 import static ru.spbau.mit.Utils.*;
 
 public class Client implements Closeable {
+    private static final String HELP_STRING = // "# Help.\n" +
+            "Commands: \n"
+            + "- " + HELP_COMMAND   + ": Causes this help message to repeat.\n"
+            + "- " + EXIT_COMMAND   + ": Ending this client.\n"
+            + "- " + FINISH_COMMAND + ": (if admin) Finishes the auction.\n"
+            + "- " + LIST_COMMAND   + ": List current lots and their states.\n"
+            + "- " + ADD_COMMAND    + " <cost> <name>: (if admin)       Add a lot with specified <cost> and <name> to lots list.\n"
+            + "- " + BET_COMMAND    + " <cost> <id>  : (if participant) Bet a <cost> on lot with <name>.\n"
+    ;
     private static final Logger LOGGER = LogManager.getLogger("Client");
-    private Socket socket = new Socket();
+    private final Socket socket = new Socket();
     private volatile boolean finish = false;
     private ClientRole role = ClientRole.PARTICIPANT;
 
@@ -42,6 +51,7 @@ public class Client implements Closeable {
             LOGGER.error("Failed to parse" + e);
             return;
         }
+        System.out.println(HELP_STRING);
 
         try (Client client = new Client(socketAddress)) {
             client.register(clientRole);
@@ -54,7 +64,7 @@ public class Client implements Closeable {
 
     @Override
     public void close() throws IOException {
-        if (socket != null) {
+        if (socket != null && !socket.isClosed()) {
             try {
                 send(CLIENT_EXIT_REQUEST_HEADER);
                 String response = receive();
@@ -83,25 +93,30 @@ public class Client implements Closeable {
 
     public void mainLoop() throws IOException, ProtocolException {
         Scanner scanner = new Scanner(System.in);
-        label: while (!finish) {
+        while (!finish) {
             // TODO command line requests.
             LOGGER.debug("Waiting for next command from CLI.");
             String line = scanner.nextLine().trim();
             String command = line.split("\\s")[0];
             try {
                 switch (command) {
+                    case HELP_COMMAND:
+                        System.out.println(HELP_STRING);
+                        break;
                     case EXIT_COMMAND:
-                        break label;
+                        System.out.println("Exiting...");
+                        finish = true;
+                        break;
                     case LIST_COMMAND:
                         LOGGER.info("Sending request on current lots list.");
                         List<Lot> lots = list();
                         for (Lot lot : lots) {
-                            String msg = String.format("lot #%d \"%s\" cost: %d", lot.getId(), lot.getName(), lot.getCost());
+                            String msg = String.format("lot id: %d, name:\"%s\", cost: %d, state: %s", lot.getId(), lot.getName(), lot.getCost(), lot.getSoldState());
                             System.out.println(msg);
                         }
                         break;
                     case FINISH_COMMAND:
-                        LOGGER.info("Sending finish request.");
+                        LOGGER.info("Sending 'finish the auction' request.");
                         finish();
                         break;
                     case ADD_COMMAND:
@@ -115,7 +130,8 @@ public class Client implements Closeable {
                         break;
                 }
             } catch (ClientException e) {
-                LOGGER.error("Command error: " + e);
+                System.err.println("ERROR: " + e.getMessage());
+//                LOGGER.error("Command error: " + e);
             }
         }
     }
@@ -138,11 +154,15 @@ public class Client implements Closeable {
         int lotsCount = Integer.parseInt(firstLine);
         for (int i = 0; i < lotsCount; i++) {
             String lotLine = scanner.nextLine();
-            String[] idAndCostAndName = lotLine.split(" ");
+            String[] idAndCostAndName = lotLine.split(INLINE_DELIMITER);
             long id = Long.parseLong(idAndCostAndName[0]);
             long cost = Long.parseLong(idAndCostAndName[1]);
-            String name = buildStringFromSuffix(idAndCostAndName, 2, " ");
-            result.add(new Lot(id, name, cost));
+            String name = idAndCostAndName[2];
+//            String name = buildStringFromSuffix(idAndCostAndName, 2, " ");
+            Lot lot = new Lot(id, name, cost);
+            String soldState = idAndCostAndName.length >= 4 ? idAndCostAndName[3]: "";
+            lot.setSoldState(soldState);
+            result.add(lot);
         }
         return result;
     }
@@ -152,7 +172,6 @@ public class Client implements Closeable {
         String response = receive();
         if (response.equals(SERVER_OK_RESPONSE_HEADER)) {
             LOGGER.info("Auction finishing is acknowledged.");
-            finish = true;
         } else {
             String message = response.split(HEADER_AND_BODY_DELIMITER)[1];
             LOGGER.info("Auction is not finished. Cause: " + message);
@@ -174,28 +193,39 @@ public class Client implements Closeable {
         String response = receive();
         String[] headerAndBody = splitOnHeaderAndBody(response);
         String header = headerAndBody[0];
-        if (!header.equals(SERVER_OK_RESPONSE_HEADER)) {
-            throw new ClientException("Wrong response from server: " + response);
+        if (!header.equals(SERVER_OK_RESPONSE_HEADER) || headerAndBody.length < 2) {
+            throw new ClientException(getErrorMessageFromResponse(response));
+        } else {
+            LOGGER.info("OK: new lot's id: " + headerAndBody[1]);
         }
     }
 
     private void bet(String commandLine) throws IOException, ClientException {
         String[] tokens = commandLine.split(" ");
-        if (tokens.length < 3 || !tokens[0].equals(ADD_COMMAND)) {
+        if (tokens.length < 3 || !tokens[0].equals(BET_COMMAND)) {
             throw new ClientException("wrong command: " + commandLine);
         }
         if (role != ClientRole.PARTICIPANT) {
             throw new ClientException("Wrong role for bet command");
         }
-        long id = Long.parseLong(tokens[1]);
-        long cost = Long.parseLong(tokens[2]);
-        String request = CLIENT_ADD_REQUEST_HEADER + HEADER_AND_BODY_DELIMITER + String.format("%d %d", id, cost);
+        long id, cost;
+        try {
+            id = Long.parseLong(tokens[1]);
+            cost = Long.parseLong(tokens[2]);
+        } catch (NumberFormatException e) {
+            throw new ClientException("Error while parsing bet command: " + e.getMessage());
+        }
+
+        String request = CLIENT_BET_REQUEST_HEADER + HEADER_AND_BODY_DELIMITER + String.format("%d %d", id, cost);
         send(request);
         String response = receive();
         String[] headerAndBody = splitOnHeaderAndBody(response);
         String header = headerAndBody[0];
+
         if (!header.equals(SERVER_OK_RESPONSE_HEADER)) {
-            throw new ClientException("Wrong response from server: " + response);
+            throw new ClientException(getErrorMessageFromResponse(response));
+        } else {
+            LOGGER.info("OK: bet acknowledged.");
         }
     }
 

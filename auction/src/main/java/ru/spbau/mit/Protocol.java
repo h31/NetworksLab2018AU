@@ -16,6 +16,7 @@ public class Protocol {
 
     public static final String HEADER_AND_BODY_DELIMITER = "\n\n";
     public static final String LINE_DELIMITER = "\n";
+    public static final String INLINE_DELIMITER = "&";
     public static final String SERVER_OK_RESPONSE_HEADER = CURRENT_PROTOCOL + " 200 OK";
 
     public enum ClientRole {
@@ -31,9 +32,9 @@ public class Protocol {
         ProtocolException(String msg) {
             super(msg);
         }
-        ProtocolException() {
-            super("Something failed in protocol.");
-        }
+//        ProtocolException() {
+//            super("Something failed in protocol.");
+//        }
     }
 
     public static String clientInitRequest(ClientRole clientRole) {
@@ -57,5 +58,16 @@ public class Protocol {
             throw new RuntimeException("Wrong request");
         }
         return headerAndBody;
+    }
+
+    public static String getErrorMessageFromResponse(String response) {
+        String[] headerAndBody = response.split(HEADER_AND_BODY_DELIMITER);
+        if (headerAndBody.length > 2) {
+            return response;
+        } else if (headerAndBody.length == 2) {
+            return headerAndBody[1];
+        } else {
+            return "Empty error message";
+        }
     }
 }

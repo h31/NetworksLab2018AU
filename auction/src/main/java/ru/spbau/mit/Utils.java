@@ -11,6 +11,7 @@ public class Utils {
     public static final String PORT_PARAMETER = "port";
     public static final String CLIENT_ROLE_PARAMETER = "role";
 
+    public static final String HELP_COMMAND = "help";
     public static final String EXIT_COMMAND = "exit";
     public static final String LIST_COMMAND = "list";
     public static final String FINISH_COMMAND = "finish";
@@ -38,14 +39,6 @@ public class Utils {
 
     public static String receiveMessage(Socket socket) throws IOException {
         return new DataInputStream(socket.getInputStream()).readUTF();
-    }
-
-    public static String buildStringFromSuffix(String[] strings, int start, String delimiter) {
-        StringBuilder builder = new StringBuilder();
-        for (int i = start; i < strings.length; i++) {
-            builder.append(strings[i]).append(delimiter);
-        }
-        return builder.toString();
     }
 
     public static String buildStringFromSuffix(String[] strings, int start) {
