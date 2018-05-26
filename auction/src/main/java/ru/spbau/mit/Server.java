@@ -68,12 +68,12 @@ public class Server implements Closeable {
     public void serve() {
         acceptorThread = threadPool.submit(() -> {
             try {
-                while (State != ServerState.FINISHING) {
+                while (State != ServerState.CLOSING) {
                     Socket socket;
                     try {
                         socket = serverSocket.accept();
                     } catch (SocketException e) {
-                        if (State == ServerState.FINISHING) {
+                        if (State == ServerState.CLOSING) {
                             break;
                         } else {
                             throw e;
@@ -94,7 +94,7 @@ public class Server implements Closeable {
         State = ServerState.RUNNING;
         LOGGER.info("server is up and running");
         label:
-        while (State != ServerState.FINISHING) {
+        while (State != ServerState.CLOSING) {
             // TODO command line requests.
             if (br.ready()) {
                 String command = br.readLine().trim();
@@ -123,7 +123,7 @@ public class Server implements Closeable {
 
     @Override
     public void close() throws IOException {
-        State = ServerState.FINISHING;
+        State = ServerState.CLOSING;
         if (serverSocket != null) {
             serverSocket.close();
         }
@@ -149,6 +149,9 @@ public class Server implements Closeable {
     }
 
     void addLot(Lot lot) throws ServerException {
+        if (State == ServerState.AUCTION_FINISHED) {
+            throw new ServerException("Auction is already finished");
+        }
         synchronized (lotsMap) {
             if (lotsMap.containsKey(lot.getId())) {
                 throw new ServerException("lot with id#" + lot.getId() + " already in lotsMap.");
@@ -233,9 +236,9 @@ public class Server implements Closeable {
 
     enum ServerState {
         NONE,
-        RUNNING,
-        AUCTION_FINISHED,
-        FINISHING
+        RUNNING, // any lot modifications are processed.
+        AUCTION_FINISHED, // lot modifications are not allowed.
+        CLOSING // Server is about to close.
     }
 
     static class ServerException extends Exception {

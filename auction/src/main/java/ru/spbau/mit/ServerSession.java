@@ -39,10 +39,10 @@ class ServerSession implements Runnable {
                 return;
             }
 
-            while (server.State != Server.ServerState.FINISHING && !finishSession) {
+            while (server.State != Server.ServerState.CLOSING && !finishSession) {
                 String clientRequest = receive();
                 log(Level.DEBUG, "Received request: " + clientRequest);
-                if (server.State == Server.ServerState.FINISHING || finishSession) {
+                if (server.State == Server.ServerState.CLOSING || finishSession) {
                     send(serverFailResponse("Server is not available", true));
                     break;
                 }
