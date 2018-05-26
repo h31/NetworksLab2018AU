@@ -63,15 +63,11 @@ void DnsServerSocket::step() {
     sockaddr client_dest{};
     socklen_t client_destlen;
     auto recv_result = recvfrom(client_fd, buf, DNS_BUF_SIZE, 0, &client_dest, &client_destlen);
-//    assert(client_destlen == sizeof(sockaddr_in));
     if (recv_result < 0) {
         throw DnsError("recvfrom from client failed.");
     }
     
     unsigned char *qname = &buf[DNS_HEADER_SIZE];
-    auto const qname_length = strlen(reinterpret_cast<const char *>(qname));
-//    assert(static_cast<size_t>(recv_result) == DNS_HEADER_SIZE + (qname_length + 1) + QUESTION_SIZE);
-    
     unsigned char *reader = qname;
     int stop = 0;
     
