@@ -28,7 +28,7 @@ void* message_receiver(void* arg) {
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        cout << "usage " << string(argv[0]) << " hostname port";
+        cout << "usage " << string(argv[0]) << " hostname port\n";
         return 0;
     }
 

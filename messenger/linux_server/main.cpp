@@ -20,9 +20,7 @@ pthread_mutex_t resending_mutex;
 void resend_message(SOCKET sender, message& msg) {
     pthread_mutex_lock(&resending_mutex);
     for (SOCKET receiver : active_socket_vector) {
-        if (receiver != sender) {
-            send_message(msg, sender);
-        }
+        send_message(msg, receiver);
     }
     pthread_mutex_unlock(&resending_mutex);
 }
@@ -50,7 +48,7 @@ void* listener_for_messages(void* arg) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        cout << "usage " << string(argv[0]) << " port";
+        cout << "usage " << string(argv[0]) << " port\n";
         return 0;
     }
 
