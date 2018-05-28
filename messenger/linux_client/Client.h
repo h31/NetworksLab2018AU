@@ -34,7 +34,6 @@ public:
         serv_addr.sin_family = AF_INET;
         bcopy(server->h_addr, (char *) &serv_addr.sin_addr.s_addr, (size_t) server->h_length);
         serv_addr.sin_port = htons(port);
-        /* Now connect to the server */
         if (connect(client_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
             perror("ERROR connecting");
             exit(1);
@@ -80,7 +79,8 @@ private:
             if (input == "m") {
                 *user_is_typing = true;
                 std::cout << "Please enter the message: ";
-                std::cin >> input;
+                std::cin.ignore();
+                std::getline(std::cin , input);
                 Message new_message(nick, input);
                 new_message.write_to_socket(client_socket);
             } else if (input == "s") {

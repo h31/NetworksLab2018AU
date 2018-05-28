@@ -18,11 +18,10 @@
 #include "ClientHandler.h"
 #include "Server.h"
 
-uint16_t SERVER_PORT = 5001;
-
 int main(int argc, char *argv[]) {
     std::thread server_ui();
-    auto * server = new Server(SERVER_PORT, 1000);
+    int server_port = atoi(argv[1]);
+    auto * server = new Server(server_port, 1000);
     (*server).run();
     delete server;
     return 0;

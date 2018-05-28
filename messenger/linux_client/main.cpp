@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
     std::cout.setf(std::ios::unitbuf);
     
     if (argc < 3) {
-        fprintf(stderr, "usage %s hostname port\n", argv[0]);
+        fprintf(stderr, "usage: hostname port nickname\n", argv[0]);
         exit(0);
     }
 
