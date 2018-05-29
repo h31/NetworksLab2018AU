@@ -1,5 +1,9 @@
 # tic-tac-toe
 
+Это копия репозитория https://github.com/ArtyomLobanov/tic-tac-toe.git
+
+Мы не догадались сразу разрабатывать проект в форке этого репозитория, поэтому сейчас приходится использовать такие костыли.
+
 ### Сборка
 git clone https://github.com/ArtyomLobanov/tic-tac-toe.git
 
