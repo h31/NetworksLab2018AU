@@ -4,3 +4,4 @@ project(client_linux)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 
 add_executable(server_linux main.c)
+target_link_libraries(client_linux pthread)
