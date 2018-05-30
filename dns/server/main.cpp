@@ -84,18 +84,18 @@ int main(int argc, char *argv[]) {
         auto *qname = reinterpret_cast<char *>(&buffer[sizeof(header)]);
         auto *copy_name = new char[MAX_SIZE];
         strncpy(copy_name, qname, MAX_SIZE);
-        decode(reinterpret_cast<unsigned char *>(qname));
-        std::cout << qname << std::endl;
+        decode(reinterpret_cast<unsigned char *>(copy_name));
+        std::cout << copy_name << std::endl;
         auto *reader = reinterpret_cast<char *>(&buffer[sizeof(header) + strlen(qname) + 1 + sizeof(dns_question)]);
-        strcpy(reader, copy_name);
-        reader += strlen(copy_name) + 1;
+        strcpy(reader, qname);
+        reader += strlen(qname) + 1;
         dns_rdata *rdata = reinterpret_cast<dns_rdata *>(reader);
         rdata->TYPE = htons(1);
         rdata->TTL = htons(200);
         rdata->CLASS = htons(1);
         rdata->RDLENGTH = htons(4);
         reader += sizeof(dns_rdata);
-        hostent *hosten = gethostbyname(qname);
+        hostent *hosten = gethostbyname(copy_name);
         if (hosten == nullptr) {
             rdata->RDLENGTH = htons(0);
         } else {
@@ -103,8 +103,8 @@ int main(int argc, char *argv[]) {
         }
         if (sendto(sockfd,
                    buffer,
-                   sizeof(header) + strlen(qname) + 1 + sizeof(dns_question) + strlen(copy_name) + 1 +
-                   sizeof(dns_rdata) + ntohs(rdata->RDLENGTH), 0,
+                   sizeof(header) + strlen(qname) + 1 + sizeof(dns_question) + strlen(qname) + 1 +
+                   sizeof(dns_rdata) + 4, 0,
                    reinterpret_cast<const sockaddr *>(&si_other),
                    static_cast<socklen_t>(slen)) == -1) {
             std::cerr << "ERROR sendto";
