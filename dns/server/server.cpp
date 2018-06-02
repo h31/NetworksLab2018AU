@@ -13,7 +13,7 @@
 #include "../common/common.h"
 
 
-const static int PORT = 1234;
+const static int PORT = 53;
 char buffer[MAX_UDP_SIZE];
 
 
@@ -24,6 +24,8 @@ int main(int argc, char **argv) {
         std::cout << "ERROR: open socket" << std::endl;
         exit(1);
     }
+    const int optval = 1;
+    setsockopt(server_id, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval, sizeof(int));
 
     struct sockaddr_in addr = {};
     memset((char *) &addr, 0, sizeof(addr));
@@ -51,13 +53,12 @@ int main(int argc, char **argv) {
             exit(1);
         }
 
-//        size_t n = unpack();
         auto *dns = (struct DNS_HEADER *) buffer;
-        auto *qname = buffer + DNS_HEADER_SIZE;
+        auto *qname = buffer + sizeof(struct DNS_HEADER);
         dns->qr = 1;
         dns->ans_count = htons(1);
-        char *reader = buffer + DNS_HEADER_SIZE + strlen(qname) + 1 +
-                QUESTION_SIZE;
+        char *reader = buffer + sizeof(struct DNS_HEADER) + strlen(qname) + 1 +
+                sizeof(struct QUESTION);
 
         memcpy(reader, qname, strlen(qname) + 1);
         reader += strlen(qname) + 1;
@@ -67,9 +68,11 @@ int main(int argc, char **argv) {
         data->ttl = htonl(200);
         data->_class = htons(1);
         data->data_len = htons(4);
-        reader += R_DATA_SIZE;
+        reader += sizeof(struct R_DATA);
         *(int *) reader = htonl(static_cast<uint32_t>(strlen(qname)));
-        n += strlen(qname) + 1 + R_DATA_SIZE + 4;
+        n = 2 * strlen((char *) qname) + 2 + sizeof(struct R_DATA)
+            + sizeof(struct DNS_HEADER) + sizeof(struct QUESTION) + 4;
+
 
         struct hostent *hostp = gethostbyaddr(
                 (char *) &client_address.sin_addr.s_addr,
