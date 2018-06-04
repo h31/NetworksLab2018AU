@@ -10,28 +10,43 @@ Client::Client(char *hostname, uint16_t port){
 }
 
 void Client::run() {
-    std::string domain_name;
+    std::string line;
     uint16_t id = 0;
     char buf[BUFFER_SIZE];
     int buf_len = 0;
     while (true) {
-        std::cin >> domain_name;
-        dns_packet packet(id, QR_QUERY, domain_name.data());
-        id++;
-        buf_len = packet.to_bytes(buf);
-        sendto(socket_fd, buf, buf_len, 0, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
-        ssize_t nbytes = recv(socket_fd, buf, 255, 0);
-        dns_packet *response;
-        response = static_cast<dns_packet *>(calloc(1, sizeof(struct dns_packet)));
+        std::cout << "Please, enter a domain name or 'stop' to stop the client:" << std::endl;
+        std::cin >> line;
+        if (line != "stop") {
+            if (line.empty()) {
+                continue;
+            }
+            dns_packet packet(id, QR_QUERY, line);
+            id++;
+            buf_len = packet.to_bytes(buf);
+            sendto(socket_fd, buf, buf_len, 0, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+            ssize_t nbytes = recv(socket_fd, buf, 255, 0);
+            auto *response = new dns_packet();
+            response->dns_request_parse(buf, nbytes);
+            if (response->get_id() != packet.get_id()) {
+                std::cout << "Internal error" << std::endl;
+            }
 
-        response->dns_request_parse(buf, nbytes);
-        if (response->get_id() != packet.get_id()) {
-            std::cerr << "Wrong id of response message" << std::endl;
+            if (response->header.flags & 11 == 11) {
+                std::cout << "The DNS server does not have this domain address: " + line << std::endl;
+            }
+
+            for (int answ = 0; answ < response->header.ancount; answ++) {
+                for (int i = 0; i < response->RRs->at(answ).rdlength; i++) {
+                    char byte = response->RRs->at(answ).rdata[i];
+                    auto uns_byte = static_cast<uint8_t>(byte < 0 ? byte + 256 : byte);
+                    std::cout << std::to_string(uns_byte) << " ";
+                }
+                std::cout << std::endl;
+            }
+            delete response;
+        } else {
+            return;
         }
-        
-        for (int i = 0; i < response->RRs->at(0).rdlength; i++) {
-            std::cout <<  response->RRs->at(0).rdata[i] + 128 << " ";
-        }
-        std::cout << std::endl;
     }
 }

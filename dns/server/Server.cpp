@@ -31,6 +31,7 @@ void Server::open_sockets (uint16_t port)
 
 void Server::run()
 {
+    std::cout << "The DNS server is running" << std::endl;
     int req_size;
     char buf[PACKET_SIZE+4];
     socklen_t from_len;
@@ -46,11 +47,17 @@ void Server::run()
         pkt = static_cast<dns_packet *>(calloc (1, sizeof (struct dns_packet)));
         pkt->dns_request_parse(buf, req_size);
 
-        std::string ip = resolver->get_ip(pkt->get_data());
-
         dns_packet* packet = static_cast<dns_packet *>(calloc (1, sizeof (struct dns_packet)));
         packet->dns_request_parse(buf, req_size);
-        packet->addRR(pkt->get_data(), ip);
+
+        std::string ip = resolver->get_ip(pkt->get_data());
+        if (ip.empty()) {
+            packet->header.flags |= 11;
+        } else {
+            packet->header.flags |= 1 << 15;
+            std::string dom_name = (*(packet->questions))[0].qname;
+            packet->addRR(dom_name, ip);
+        }
         int buf_len = packet->to_bytes(buf);
         sendto (this->listenfd, buf, buf_len, 0, (struct sockaddr *) &from, from_len);
     }

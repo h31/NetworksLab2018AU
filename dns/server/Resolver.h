@@ -23,8 +23,12 @@ public:
         }
     }
 
-    const std::string & get_ip(const std::string &domain_name) {
-        return records[domain_name];
+    std::string get_ip(const std::string &domain_name) {
+        if (records.find(domain_name) != records.end()) {
+            return records[domain_name];
+        } else {
+            return "";
+        }
     }
 
 
