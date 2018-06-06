@@ -26,6 +26,7 @@ public class CliParser {
         commands.add(new CommandNewLot());
         commands.add(new CommandStopLot());
         commands.add(new CommandTerminate());
+        commands.add(new CommandHelp());
     }
 
     public ParseResult parse(String input) {
@@ -43,6 +44,10 @@ public class CliParser {
         }
         if (jCommander.getParsedCommand().equals("exit")) {
             return new ParseResult(null, false, true);
+        }
+        if (jCommander.getParsedCommand().equals("help")) {
+            jCommander.usage();
+            return new ParseResult(null, true, false);
         } else {
             for (ParserCommand command : commands) {
                 if (command.name().equals(jCommander.getParsedCommand())) {
@@ -61,10 +66,10 @@ public class CliParser {
     @Parameters(commandDescription = "register into system")
     public class CommandRegister implements ParserCommand {
 
-        @Parameter(names = "-name", description = "user name")
+        @Parameter(names = "-name", description = "user name", required = true)
         private String name;
 
-        @Parameter(names = "-role", description = "user role")
+        @Parameter(names = "-role", description = "user role", required = true)
         private UserRole userRole;
 
         @Override
@@ -95,10 +100,10 @@ public class CliParser {
     @Parameters(commandDescription = "make bet")
     public class CommandBet implements ParserCommand {
 
-        @Parameter(names = "-id", description = "lot id")
+        @Parameter(names = "-id", description = "lot id", required = true)
         private int lotId;
 
-        @Parameter(names = "-value", description = "lot value")
+        @Parameter(names = "-value", description = "lot value", required = true)
         private int value;
 
         @Override
@@ -115,10 +120,10 @@ public class CliParser {
     @Parameters(commandDescription = "create new lot")
     public class CommandNewLot implements ParserCommand {
 
-        @Parameter(names = "-desc", description = "lot description")
+        @Parameter(names = "-desc", description = "lot description", required = true)
         private String desc;
 
-        @Parameter(names = "-start", description = "start value for lot")
+        @Parameter(names = "-start", description = "start value for lot", required = true)
         private int startValue;
 
         @Override
@@ -135,7 +140,7 @@ public class CliParser {
     @Parameters(commandDescription = "stop lot")
     public class CommandStopLot implements ParserCommand {
 
-        @Parameter(names = "-id", description = "lot id")
+        @Parameter(names = "-id", description = "lot id", required = true)
         private int lotId;
 
 
@@ -156,6 +161,21 @@ public class CliParser {
         @Override
         public String name() {
             return "exit";
+        }
+
+        @Override
+        public RequestCommand buildRequest() {
+            return null;
+        }
+    }
+
+    @Parameters(commandDescription = "help")
+    public class CommandHelp implements ParserCommand {
+
+
+        @Override
+        public String name() {
+            return "help";
         }
 
         @Override
