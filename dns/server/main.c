@@ -4,8 +4,6 @@
 #include <netdb.h>
 #include <unistd.h>
 
-#include "dns.h"
-
 const uint16_t MAX_SIZE = 32768;
 uint8_t data_buffer[MAX_SIZE];
 char message_buffer[MAX_SIZE];
