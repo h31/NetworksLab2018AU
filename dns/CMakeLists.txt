@@ -8,4 +8,3 @@ set(CLIENT_SRC "client/main.c")
 
 add_executable(server.out ${SERVER_SRC})
 add_executable(client.out ${CLIENT_SRC})
-target_link_libraries(server_linux pthread)
