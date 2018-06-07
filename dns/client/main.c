@@ -50,7 +50,7 @@ uint8_t* build_dns_request(uint8_t* dest, char* domain) {
 
     dest = dest + index;
 
-    size_t size = 2 * strlen(domain);
+    size_t size = strlen(domain) + 2;
 
     uint8_t* converted_name = malloc(size);
     convert_domain(domain, converted_name);
