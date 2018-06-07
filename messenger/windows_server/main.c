@@ -27,6 +27,7 @@ void resize_client_ids() {
 
 
 int add_client(SOCKET socket) {
+    pthread_mutex_lock(&mutex);
     if (clients_count == max_count) {
         resize_client_ids();
     }
@@ -55,7 +56,7 @@ void send_message(char* nickname, char* message, char* time) {
     buffer[1 + nickname_len] = message_len;
     strcpy(buffer + 1 + nickname_len + 1, message);
     strcpy(buffer + 1 + nickname_len + 1 + message_len, time);
-
+    pthread_mutex_lock(&mutex);
     for (size_t i = 0; i < clients_count; i++) {
         printf("sending to client %zu with socket %d\n", i, client_ids[i]);
         if (client_ids[i] == INVALID_SOCKET) {
@@ -68,6 +69,7 @@ void send_message(char* nickname, char* message, char* time) {
         }
     }
 
+    pthread_mutex_unlock(&mutex);
     printf("message sent\n");
 }
 
@@ -129,11 +131,8 @@ void handle_client_input(int socket) {
 void* handle_client(void* arg) {
     int client_socket = (int) arg;
 
-    pthread_mutex_lock(&mutex);
     handle_client_input(client_socket);
     client_ids[client_socket] = INVALID_SOCKET;
-    pthread_mutex_unlock(&mutex);
-
 
     return (void*) 0;
 }
@@ -199,7 +198,7 @@ int main(int argc, char *argv[]) {
     SOCKET client_socket;
 
     pthread_mutex_init(&mutex, NULL);
-    max_count = 10;
+    max_count = 200;
     client_ids = malloc(sizeof(SOCKET) * max_count);
     printf("listening on port %d\n", 9000);
     while (1) {

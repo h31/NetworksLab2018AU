@@ -24,6 +24,7 @@ void resize_client_ids() {
 
 
 void add_client(int socket) {
+    pthread_mutex_lock(&mutex);
     if (clients_count == max_count) {
         resize_client_ids();
     }
@@ -31,6 +32,7 @@ void add_client(int socket) {
     printf("clients count %d\n", clients_count);
     client_ids[clients_count] = socket;
     clients_count++;
+    pthread_mutex_unlock(&mutex);
 }
 
 void send_message(char* nickname, char* message, char* time) {
@@ -80,6 +82,7 @@ void handle_client_input(int socket) {
     printf("received client's nickname: %s\n", nickname);
 
     char buffer[128];
+    bzero(buffer, 128);
     while (1) {
         bzero(buffer, 128);
         if (read(socket, buffer, 1) != 1) {
@@ -116,15 +119,11 @@ void handle_client_input(int socket) {
 void* handle_client(void* arg) {
     int client_socket = (int) arg;
 
-    pthread_mutex_lock(&mutex);
-
     printf("adding client to server\n");
     add_client(client_socket);
     printf("added client to server\n");
 
     handle_client_input(client_socket);
-
-    pthread_mutex_unlock(&mutex);
 
     if (close(client_socket) < 0) {
         printf("ERROR closing the socket %d\n", client_socket);
@@ -159,7 +158,7 @@ int main(int argc, char *argv[]) {
     }
 
     pthread_mutex_init(&mutex, NULL);
-    max_count = 10;
+    max_count = 200;
     client_ids = malloc(sizeof(int) * max_count);
 
     listen(sockfd, 5);

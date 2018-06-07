@@ -12,12 +12,13 @@ void* server_updates(void* arg) {
     char nickname[300];
     char message[300];
     char time[300];
-    bzero(message, 300);
-    bzero(nickname, 300);
-    bzero(time, 300);
 
     while (1) {
         pthread_testcancel();
+
+        bzero(message, 300);
+        bzero(nickname, 300);
+        bzero(time, 300);
 
         if (read(server_socket, nickname, 1) != 1) {
             perror("ERROR nickname len reading from socket");

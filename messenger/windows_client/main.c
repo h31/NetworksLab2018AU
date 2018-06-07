@@ -14,12 +14,13 @@ void* server_updates(void* arg) {
     char nickname[300];
     char message[300];
     char time[300];
-    memset(message, 0, 300);
-    memset(nickname, 0, 300);
-    memset(time, 0, 300);
 
     while (1) {
         pthread_testcancel();
+
+        memset(message, 0, 300);
+        memset(nickname, 0, 300);
+        memset(time, 0, 300);
 
         if (recv(*sock_p, nickname, 1, 0) != 1) {
             perror("ERROR nickname len reading from socket");
