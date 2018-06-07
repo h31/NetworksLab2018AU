@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
-project(client_linux)
+project(dns)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 
-set(SERVER_SRC "server/main.c" "${COMMON_SRC}")
-set(CLIENT_SRC "client/main.c" "${COMMON_SRC}")
+set(SERVER_SRC "server/main.c")
+set(CLIENT_SRC "client/main.c")
 
 add_executable(server.out ${SERVER_SRC})
 add_executable(client.out ${CLIENT_SRC})
+target_link_libraries(server_linux pthread)
