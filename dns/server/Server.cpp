@@ -68,6 +68,7 @@ void Server::serveClient() {
     std::string address = parseHostNameFromDNSRequest(buf);
     std::cout << "requested address: " << address << std::endl;
     std::string result = resolve(address);
+    std::cout << "resolved ip: " << result << std::endl;
     size_t resLen = writeDNSAResponse(buf, address, result);
 
     if (sendto(socketDescriptor, buf.data(), resLen, 0, (sockaddr *) &clientAddress, slen) == -1) {
