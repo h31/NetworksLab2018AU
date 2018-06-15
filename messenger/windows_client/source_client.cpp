@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
 		std::cout << "Failed to connect to server..." << std::endl;
 		return 1;
 	}
-
+        std::cout << "For sending message input m: <message>" << std::endl;
 	std::string input;
 	while (true) {
 		getline(std::cin, input);
