@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
 	}
 
 	std::string input;
-    std::cout << "For sending message input m: <message>" << std::endl;
+    std::cout << "For sending message input m:" << std::endl;
 	while (true) {
         getline(std::cin, input);
 		if (input.find("m:") == 0) {

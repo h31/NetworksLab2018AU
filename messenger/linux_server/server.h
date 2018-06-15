@@ -34,7 +34,7 @@ class server {
     std::map<int, std::thread> threads;
 	std::mutex connection_mutex;
 	int unused_connections = 0;
-    sockaddr_in server_addr;
+    struct sockaddr_in server_addr = {};
     unsigned int addrlen = sizeof(server_addr);
     int client_sock;
     std::thread serv_thread;

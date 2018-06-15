@@ -12,7 +12,7 @@
 
 class client {
     int socket_fb;
-    sockaddr_in server_addr;
+    struct sockaddr_in server_addr = {};
     unsigned int sizeofaddr = sizeof(server_addr);
 	std::string name;
 	bool is_input = false;
