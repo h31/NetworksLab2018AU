@@ -15,8 +15,8 @@
 
 class client {
 	SOCKET sock;				
-	SOCKADDR_IN client_addr;			
-	int sizeofaddr = sizeof(client_addr);
+	SOCKADDR_IN server_addr;			
+	int sizeofaddr = sizeof(server_addr);
 	std::string name;
 	bool is_input = false;
 	std::queue<std::string> message_queue;
