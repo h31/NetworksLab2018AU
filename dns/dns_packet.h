@@ -21,6 +21,9 @@ struct dns_packet {
     char* write_to_buf(size_t &offset);
 
     static dns_packet read_from_buffer(char* buffer);
+
+    void print_result();
 };
+
 
 #endif //DNS_CLIENT_DNS_PACKET_H

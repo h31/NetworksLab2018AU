@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 
 #define BUF_SIZE 65536
+#define T_A 1
 
 struct header {
         uint16_t _id;

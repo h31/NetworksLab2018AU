@@ -4,6 +4,7 @@ size_t query::get_size() {
     return name.length() + 1 + 4;
 }
 
+// Конвертировать `host = vk.com` в `name = 2vk3com`
 void query::set_name(const std::string &host) {
     std::string host_;
 
@@ -18,7 +19,6 @@ void query::set_name(const std::string &host) {
         }
     }
     host_ = std::string(1, static_cast<char>(k)) + host_;
-    std::reverse(host_.begin(), host_.end());
     name = host_;
 }
 
@@ -40,35 +40,14 @@ char *query::write_to_buffer() {
 }
 
 query query::read_from_buffer(char *&buffer) {
-    int current = 0;
+    auto pointer = buffer;
     std::string qname;
     for (; *buffer != '\0'; buffer++) {
         qname += *buffer;
     }
     buffer++;
-    std::string num;
-    std::string result;
-    while (buffer[current] != '\0') {
-        if (!result.empty()) {
-            result += ".";
-        }
-        if (isdigit(buffer[current])) {
-            std::string num = "";
-            do {
-                num += buffer[current];
-                current++;
-            } while (isdigit(buffer[current]));
-            if (buffer[current] != '\0') {
-                int count = atoi(num.c_str());
-                for (int i = 0; i < count; i++) {
-                    result += buffer[current++];
-                }
-            }
-        }
-    }
     query query_;
     query_.name = qname;
-    buffer += current;
     memcpy(&query_.type, buffer, sizeof(uint16_t));
     query_.type = ntohs(query_.type);
     buffer += sizeof(uint16_t);
@@ -77,5 +56,4 @@ query query::read_from_buffer(char *&buffer) {
     buffer += sizeof(uint16_t);
     return query_;
 }
-
 

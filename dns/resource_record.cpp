@@ -10,9 +10,6 @@ char *resource_record::write_to_buffer() {
     buffer[1] = 1;
     buffer += 2;
     resource_record to_send = resource_record();
-    to_send._name = htons(_name);
-    memcpy(buffer, &to_send._name, sizeof(uint16_t));
-    buffer += sizeof(uint16_t);
     to_send._type = htons(_type);
     memcpy(buffer, &to_send._type, sizeof(uint16_t));
     to_send._class = htons(_class);
@@ -29,45 +26,73 @@ char *resource_record::write_to_buffer() {
     return buffer;
 }
 
-std::string resource_record::read_name(char *buffer) {
-    int current = _name;
+std::string resource_record::read_name(char* pointer, char*& buffer) {
     std::string result;
-    while (buffer[current] != '\0') {
-        if (result != "") {
-            result += ".";
-        }
-        if (buffer[current]) {
-            int count = static_cast<int>(buffer[current++]);
-            for (int i = 0; i < count; i++) {
-                result += buffer[current++];
+    int count = 1;
+    bool jumped = false;
+
+    unsigned char *ubuffer = reinterpret_cast<unsigned char *>(buffer);
+
+    while (*ubuffer != '\0') {
+        while (*ubuffer < 192 && *ubuffer != '\0') {
+            result += *ubuffer++;
+            if (!jumped) {
+                count++;
             }
+        }
+
+        if (*ubuffer >= 192) {
+            int offset = (*ubuffer) * 256 + *(ubuffer + 1) - 49152;
+            ubuffer = reinterpret_cast<unsigned char *>(pointer) + offset;
+            jumped = true;
         }
     }
 
-    return result;
+    if (jumped) {
+        count++;
+    }
+
+    buffer += count;
+
+    std::string converted;
+
+    for (size_t i = 0; i < result.size(); ) {
+        if (!converted.empty()) {
+            converted += ".";
+        }
+        int cnt = static_cast<int>(result[i]);
+        i++;
+        for (int j = 0; j < cnt; ++j, ++i) {
+            converted += result[i];
+        }
+    }
+
+    return converted;
 }
 
-resource_record resource_record::read_from_buffer(char*& buffer) {
-    buffer += 2;
+resource_record resource_record::read_from_buffer(char* pointer, char*& buffer) {
     resource_record record{};
-    memcpy(&record._name, buffer, sizeof(uint16_t));
-    record._name = ntohs(record._name);
-    buffer += sizeof(uint16_t);
+    record._name = read_name(pointer, buffer);
     memcpy(&record._type, buffer, sizeof(uint16_t));
     record._type = ntohs(record._type);
     buffer += sizeof(uint16_t);
+
     memcpy(&record._class, buffer, sizeof(uint16_t));
     record._class = ntohs(record._class);
     buffer += sizeof(uint16_t);
+
     memcpy(&record._ttl, buffer, sizeof(uint32_t));
     record._ttl = ntohl(record._ttl);
     buffer += sizeof(uint32_t);
+
     memcpy(&record.rdata_length, buffer, sizeof(uint16_t));
     record.rdata_length = ntohs(record.rdata_length);
     buffer += sizeof(uint16_t);
+
     record._rdata = new char[record.rdata_length];
     for (int i = 0; i < record.rdata_length; ++i) {
-        record._rdata[i] = (*buffer)++;
+        record._rdata[i] = *buffer++;
     }
     return record;
 }
+

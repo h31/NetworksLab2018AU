@@ -7,7 +7,7 @@
 #include <cstring>
 
 struct resource_record {
-    uint16_t _name;
+    std::string _name;
     uint16_t _type;
     uint16_t _class;
     uint32_t _ttl;
@@ -16,11 +16,11 @@ struct resource_record {
 
     size_t get_size();
 
-    std::string read_name(char* buffer);
+    static std::string read_name(char* pointer, char*& buffer);
 
     char* write_to_buffer();
 
-    static resource_record read_from_buffer(char*& buffer);
+    static resource_record read_from_buffer(char* pointer, char*& buffer);
 };
 
 

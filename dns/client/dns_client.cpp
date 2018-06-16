@@ -23,24 +23,6 @@ dns_packet dns_client::create_packet(std::string &host) {
     return packet;
 }
 
-void dns_client::print_result(dns_packet &packet, char* buffer) {
-    int count = packet._header.t_answer_rrs;
-    if (packet._header._flags & 11) {
-        std::cout << "The DNS server does not have this domain address" << std::endl;
-    }
-    for (int i = 0; i < count; i++) {
-        resource_record answer = packet.answers[i];
-        std::cout << "Name: " << answer.read_name(buffer) << std::endl;
-
-        for (int j = 0; j < answer.rdata_length; j++) {
-            char byte = answer._rdata[j];
-            auto uns_byte = static_cast<uint8_t>(byte < 0 ? byte + 256 : byte);
-            std::cout << std::to_string(uns_byte) << ".";
-        }
-        std::cout << std::endl;
-    }
-}
-
 dns_client::dns_client(std::string const &dns_server, int port_no) {
     sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     server_addr.sin_family = AF_INET;
@@ -62,8 +44,8 @@ void dns_client::gethost(std::string host) {
     if (recvbytes <= 0) {
         std::cout << "Unexpected receive error"  + std::string(strerror(errno)) << std::endl;
     }
-    char* pointer = buffer;
     packet = dns_packet::read_from_buffer(buffer);
-    print_result(packet, pointer);
+    packet.print_result();
     delete []buffer;
 }
+
