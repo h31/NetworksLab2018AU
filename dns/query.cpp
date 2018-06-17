@@ -1,53 +1,32 @@
 #include "query.h"
 
+query::query(const name &_name)
+        : _name(_name)
+{}
+
 size_t query::get_size() {
-    return name.length() + 1 + 4;
-}
-
-// Конвертировать `host = vk.com` в `name = 2vk3com`
-void query::set_name(const std::string &host) {
-    std::string host_;
-
-    int k = 0;
-    for (auto it = host.rbegin(); it != host.rend(); it++) {
-        if (*it != '.') {
-            host_ = *it + host_;
-            k++;
-        } else {
-            host_ = std::string(1, static_cast<char>(k)) + host_;
-            k = 0;
-        }
-    }
-    host_ = std::string(1, static_cast<char>(k)) + host_;
-    name = host_;
+    return _name.length() + 2 * sizeof(uint16_t);
 }
 
 char *query::write_to_buffer() {
     char* buffer = new char[get_size()];
     char* pointer = buffer;
-    memcpy(buffer, name.c_str(), name.length());
-    buffer[name.length()] = '\0';
-    buffer += name.length() + 1;
-    query to_send;
+    _name.to_buffer(buffer);
 
-    to_send.type = type;
-    memcpy(buffer, &to_send.type, sizeof(uint16_t));
+    uint16_t ntype = htons(type);
+    memcpy(buffer, &ntype, sizeof(uint16_t));
     buffer += sizeof(uint16_t);
 
-    to_send._class = _class;
-    memcpy(buffer, &to_send._class, sizeof(uint16_t));
+    uint16_t nclass = htons(_class);
+    memcpy(buffer, &nclass, sizeof(uint16_t));
+
     return pointer;
 }
 
 query query::read_from_buffer(char *&buffer) {
     auto pointer = buffer;
-    std::string qname;
-    for (; *buffer != '\0'; buffer++) {
-        qname += *buffer;
-    }
-    buffer++;
-    query query_;
-    query_.name = qname;
+    name name_ = name::from_buffer(buffer, pointer);
+    query query_ = query(name_);
     memcpy(&query_.type, buffer, sizeof(uint16_t));
     query_.type = ntohs(query_.type);
     buffer += sizeof(uint16_t);
@@ -56,4 +35,5 @@ query query::read_from_buffer(char *&buffer) {
     buffer += sizeof(uint16_t);
     return query_;
 }
+
 

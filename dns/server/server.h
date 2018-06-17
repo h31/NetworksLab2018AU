@@ -13,7 +13,7 @@ class server {
     char* buffer = nullptr;
 
 public:
-    explicit server(std::string const& hosts_list);
+    explicit server(std::string const& hosts_list, int port = 1153);
 
     ~server();
 
@@ -21,3 +21,4 @@ public:
 };
 
 #endif // SERVER
+

@@ -5,16 +5,18 @@
 #include <string>
 #include <cstring>
 #include <algorithm>
- #include <netinet/in.h>
+#include <netinet/in.h>
+
+#include "name.h"
 
 struct query {
-    std::string name;
+    name _name;
     uint16_t type;
     uint16_t _class;
 
-    size_t get_size();
+    explicit query(const name &_name);
 
-    void set_name(const std::string& host);
+    size_t get_size();
 
     char* write_to_buffer();
 
@@ -23,3 +25,4 @@ struct query {
 
 
 #endif //DNS_CLIENT_QUERY_H
+

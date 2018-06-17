@@ -7,16 +7,18 @@
 dns_packet dns_client::create_packet(std::string &host) {
     header dns;
     dns._flags = 0;
-    dns._flags |= 1 << 8;
+    // was: // dns._flags |= 1 << 8;
+//    dns._flags |= 1 << 7; //recursion desired?
     dns._id = htons(1);
     dns.t_questions = 1;
     dns.t_answer_rrs = 0;
     dns.t_authority_rrs = 0;
     dns.t_additional_rrs = 0;
-    query query_;
-    query_.set_name(host);
-    query_.type = htons(T_A);
-    query_._class = htons(1);
+    name _name = name::from_decoded(host);
+    query query_ = query(_name);
+    query_.type = T_A;
+    query_._class = 1;
+
     dns_packet packet;
     packet._header = dns;
     packet.questions.push_back(query_);
@@ -46,6 +48,7 @@ void dns_client::gethost(std::string host) {
     }
     packet = dns_packet::read_from_buffer(buffer);
     packet.print_result();
-    delete []buffer;
+    delete[] buffer;
 }
+
 

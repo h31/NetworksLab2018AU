@@ -14,9 +14,9 @@
 struct dns_packet {
     header _header;
     std::vector<query> questions;
-    std::vector<resource_record> answers = std::vector<resource_record>();
-    std::vector<resource_record> authorities = std::vector<resource_record>();
-    std::vector<resource_record> additionals = std::vector<resource_record>();
+    std::vector<resource_record> answers;
+    std::vector<resource_record> authorities;
+    std::vector<resource_record> additionals;
 
     char* write_to_buf(size_t &offset);
 
@@ -25,5 +25,5 @@ struct dns_packet {
     void print_result();
 };
 
-
 #endif //DNS_CLIENT_DNS_PACKET_H
+

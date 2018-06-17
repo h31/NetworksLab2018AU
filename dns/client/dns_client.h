@@ -1,4 +1,4 @@
-﻿#ifndef DNS_CLIENT
+#ifndef DNS_CLIENT
 #define DNS_CLIENT
 
 #pragma once
@@ -14,8 +14,6 @@ class dns_client {
         socklen_t sizeofaddr = sizeof(server_addr);
         dns_packet create_packet(std::string& host);
 
-        void print_result(dns_packet& packet, char* buffer);
-
 public:
         dns_client(std::string const& dns_server, int port_no);
 
@@ -24,4 +22,5 @@ public:
 
 
 #endif // DNS_CLIENT
+
 

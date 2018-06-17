@@ -2,9 +2,11 @@
 
 char *dns_packet::write_to_buf(size_t &offset) {
     char* buffer = new char[BUF_SIZE];
+    bzero(buffer, BUF_SIZE);
     char* head = _header.write_to_buffer();
-    memcpy(buffer, head, 12);
-    offset = 12;
+    memcpy(buffer, head, HEADER_SIZE);
+    offset = HEADER_SIZE;
+    size_t name_offset = offset;
     for (int i = 0; i < _header.t_questions; ++i) {
         char* question = questions[i].write_to_buffer();
         size_t current_size = static_cast<size_t>(questions[i].get_size());
@@ -12,11 +14,13 @@ char *dns_packet::write_to_buf(size_t &offset) {
         delete[] question;
         offset += current_size;
     }
+
     for (int i = 0; i < _header.t_answer_rrs; ++i) {
-        char* answer = answers[i].write_to_buffer();
-        memcpy(buffer + offset, answer, answers[i].get_size());
+        char* answer = answers[i].write_to_buffer(name_offset);
+        size_t answer_size = answers[i].get_size();
+        memcpy(buffer + offset, answer, answer_size);
         delete[] answer;
-        offset += answers[i].get_size();
+        offset += answer_size;
     }
     return buffer;
 }
@@ -49,7 +53,7 @@ void dns_packet::print_result() {
 
     for (int i = 0; i < count; i++) {
         resource_record answer = answers[i];
-        std::cout << "Name: " << answer._name << std::endl;
+        std::cout << "Name: " << answer._name._decoded << std::endl;
         if (answer._type == T_A) {
             long *long_rdata = reinterpret_cast<long *>(answer._rdata);
             sockaddr_in address{};
@@ -60,4 +64,3 @@ void dns_packet::print_result() {
         }
     }
 }
-

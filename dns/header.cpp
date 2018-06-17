@@ -4,14 +4,15 @@
 #include <arpa/inet.h>
 
 char *header::write_to_buffer() {
-    char* buffer = new char[12];
-    header to_send = header();
+    char* buffer = new char[HEADER_SIZE];
+    header to_send;
     to_send._id = htons(_id);
     to_send._flags = htons(_flags);
     to_send.t_questions = htons(t_questions);
+    to_send.t_answer_rrs = htons(t_answer_rrs);
     to_send.t_authority_rrs = htons(t_authority_rrs);
     to_send.t_additional_rrs = htons(t_additional_rrs);
-    memcpy(buffer, &to_send, 12);
+    memcpy(buffer, &to_send, HEADER_SIZE);
     return buffer;
 }
 
@@ -37,3 +38,4 @@ header header::read_from_buffer(char *&buf) {
     buf += sizeof(uint16_t);
     return header_;
 }
+
